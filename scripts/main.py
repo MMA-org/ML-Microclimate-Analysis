@@ -1,6 +1,4 @@
 import argparse
-import os
-import sys
 from ml_microclimate.DataHandler import DatasetHandler
 from ml_microclimate.SegformerFinetuner import SegformerFinetuner
 from ml_microclimate.TrainingHandler import TrainingHandler
