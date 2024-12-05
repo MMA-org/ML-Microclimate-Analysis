@@ -4,18 +4,22 @@ import numpy as np
 
 class SemanticSegmentationDataset(Dataset):
     """
-    Dataset class for semantic segmentation tasks.
+    A custom dataset class for semantic segmentation tasks.
+
     Args:
-        data (list): List of dictionaries with image and mask file paths.
-        feature_extractor: Feature extractor for preprocessing images.
-        augment (bool): If True, apply data augmentation.
+        data (Dataset): The dataset containing images and masks.
+        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+        transform (callable, optional): Optional transform to be applied on a sample.
+
+    Attributes:
+        data (Dataset): The dataset containing images and masks.
+        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+        transform (callable, optional): Optional transform to be applied on a sample.
     """
 
     def __init__(self, data, feature_extractor=None, transform=None):
-        """
-        Initializes the class with the provided arguments.
-        """
-        self.data = data  # Data loaded from Hugging Face (list of dictionaries)
+        # Data loaded from Hugging Face (list of dictionaries)
+        self.data = data
         self.feature_extractor = feature_extractor
         self.transform = transform
 
@@ -23,6 +27,15 @@ class SemanticSegmentationDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
+        """
+        Retrieves the image and mask at the specified index.
+
+        Args:
+            idx (int): The index of the sample to retrieve.
+
+        Returns:
+            dict: A dictionary containing the preprocessed image and mask.
+        """
         # Get image path from the loaded data
         image = self.data[idx]['image'].convert("RGB")
         # Get mask path from the loaded data

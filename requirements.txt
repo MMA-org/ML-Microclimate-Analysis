@@ -1,5 +1,5 @@
 torch>=1.8.0
-pytorch-lightning<=2.0.0
+pytorch-lightning
 transformers>=4.0.0
 albumentations>=0.5.0
 datasets>=1.6.0
@@ -10,3 +10,5 @@ scikit-learn
 albumentations
 transformers
 huggingface_hub
+albucore==0.0.16
+matplotlib

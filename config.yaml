@@ -1,0 +1,20 @@
+# DATA
+building_repo: "nave1616/Building-Urban-Climate"
+landcover_repo: "nave1616/landcover-urban-climate"
+
+# VISUALIZATION
+figuredirectory: reports/figures/
+project:
+  data_dir: "nave1616/landcover-urban-climate" # need to be change to landcover_repo as default
+  models_dir: models
+  model_dir: models/model
+  checkpoint_dir: models/checkpoints
+  logs_dir: models/logs
+  results_dir: results
+
+training:
+  batch_size: 32
+  max_epochs: 50
+  learning_rate: 2e-5
+  num_workers: 4
+  model_name: b0
