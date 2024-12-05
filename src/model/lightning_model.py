@@ -3,6 +3,7 @@ from transformers import SegformerForSemanticSegmentation
 import torch
 from torch import nn
 from torchmetrics import JaccardIndex, Dice
+from pathlib import Path
 
 
 class SegformerFinetuner(pl.LightningModule):
@@ -31,7 +32,6 @@ class SegformerFinetuner(pl.LightningModule):
         self.id2label = id2label
         self.num_classes = len(id2label.keys())
         self.label2id = {v: k for k, v in self.id2label.items()}
-        self.ignore_index = 0
 
         # Model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
@@ -43,19 +43,15 @@ class SegformerFinetuner(pl.LightningModule):
             ignore_mismatched_sizes=True
         )
 
-        # Metrics (ignore_index removed)
-        self.train_iou = JaccardIndex(
-            task='multiclass', num_classes=self.num_classes, ignore_index=0)
-        self.train_dice = Dice(
-            average='micro', num_classes=self.num_classes, ignore_index=0)
-        self.val_iou = JaccardIndex(
-            task='multiclass', num_classes=self.num_classes, ignore_index=0)
-        self.val_dice = Dice(
-            average='micro', num_classes=self.num_classes, ignore_index=0)
-        self.test_iou = JaccardIndex(
-            task='multiclass', num_classes=self.num_classes, ignore_index=0)
-        self.test_dice = Dice(
-            average='micro', num_classes=self.num_classes, ignore_index=0)
+        # Initialize metrics
+        self.iou = JaccardIndex(
+            task='multiclass', num_classes=self.num_classes)
+        self.dice = Dice(average='micro', num_classes=self.num_classes)
+
+        # Initialize lists to store predictions and ground truth labels during the test phase.
+        # These will be used for generating metrics like the confusion matrix after testing
+        self.test_predictions = []
+        self.test_ground_truths = []
 
     def forward_pass(self, images, masks):
         outputs = self.model(pixel_values=images, labels=masks)
@@ -71,30 +67,11 @@ class SegformerFinetuner(pl.LightningModule):
         return loss, predicted
 
     def compute_and_log_metrics(self, predicted, masks, phase):
-        # Flatten predicted and masks for multiclass confusion matrix
-        predicted = predicted.view(-1)
-        masks = masks.view(-1)
+        predicted, masks = predicted.view(-1), masks.view(-1)
+        mask_ignore = (masks == 255)
+        predicted, masks = predicted[~mask_ignore], masks[~mask_ignore]
 
-        # Mask out the ignore class (255) from both predicted and masks
-        mask_ignore = (masks == 255)  # Exclude ignore (255) class
-        predicted = predicted[~mask_ignore]
-        masks = masks[~mask_ignore]
-
-        print(f"Predicted shape: {predicted.shape}, Mask shape: {masks.shape}")
-        print(f"Unique values in predicted: {torch.unique(predicted)}")
-        print(f"Unique values in masks: {torch.unique(masks)}")
-
-        # Compute IoU and Dice metrics
-        if phase == "train":
-            iou = self.train_iou(predicted, masks)
-            dice = self.train_dice(predicted, masks)
-        elif phase == "val":
-            iou = self.val_iou(predicted, masks)
-            dice = self.val_dice(predicted, masks)
-        else:  # phase == "test"
-            iou = self.test_iou(predicted, masks)
-            dice = self.test_dice(predicted, masks)
-
+        iou, dice = self.iou(predicted, masks), self.dice(predicted, masks)
         self.log(f"{phase}_iou", iou, on_epoch=True, prog_bar=True)
         self.log(f"{phase}_dice", dice, on_epoch=True, prog_bar=True)
 
@@ -117,6 +94,11 @@ class SegformerFinetuner(pl.LightningModule):
         loss, predicted = self.forward_pass(images, masks)
         self.compute_and_log_metrics(predicted, masks, phase="test")
         self.log("test_loss", loss, prog_bar=True)
+
+        # Store predictions and ground truths
+        self.test_predictions.extend(predicted.cpu().numpy().flatten())
+        self.test_ground_truths.extend(masks.cpu().numpy().flatten())
+
         return loss
 
     def configure_optimizers(self):
@@ -128,5 +110,22 @@ class SegformerFinetuner(pl.LightningModule):
         )
         return [optimizer], [scheduler]
 
-    def save_pretrained_model(self, path):
-        self.model.save_pretrained(path)
+
+def save_pretrained_model(self, path, version):
+    """
+    Save the pretrained model to the specified path within a versioned directory.
+
+    Args:
+        path (str or Path): Base directory where the model should be saved.
+        version (str): Version identifier to create a subdirectory.
+
+    Returns:
+        None
+    """
+    # Create the versioned directory
+    versioned_path = Path(path) / version
+    versioned_path.mkdir(parents=True, exist_ok=True)
+
+    # Save the model
+    self.model.save_pretrained(versioned_path)
+    print(f"Model saved to {versioned_path}")
