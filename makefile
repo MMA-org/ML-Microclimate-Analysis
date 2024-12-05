@@ -1,11 +1,9 @@
 # Variables
 PYTHON = python
 SRC_DIR = src
-SCRIPTS_DIR = scripts
-DATA_DIR = ~/.cache/huggingface/datasets
-CHECKPOINT_DIR = checkpoints
-MODELS_DIR = models
-RESULTS_DIR = results
+CONFIG = config.yaml
+VERSION = version_0  # Default version folder
+
 export NO_ALBUMENTATIONS_UPDATE=1
 # Default target
 .DEFAULT_GOAL := help
@@ -19,23 +17,23 @@ clean:  ## Clean up temporary files
 	@echo "Cleaning up..."
 	rm -rf $(MODELS_DIR) $(RESULTS_DIR) $(CHECKPOINT_DIR)
 
-download_data:  ## Download or preprocess data
+download_data:  ## Download data
 	@echo "Downloading or preprocessing data..."
-	$(PYTHON) $(SRC_DIR)/data/download_data.py
+	$(PYTHON) $(SRC_DIR)/data/download_data.py --config $(CONFIG)
 
 train:  ## Train the model
 	@echo "Training the model..."
-	$(PYTHON) $(SRC_DIR)/model/train.py
+	$(PYTHON) $(SRC_DIR)/model/train.py --config $(CONFIG)
 
 evaluate:  ## Evaluate the model
 	@echo "Evaluating the model..."
-	$(PYTHON) $(SRC_DIR)/model/evaluate.py
+	$(PYTHON) $(SRC_DIR)/model/evaluate.py --config $(CONFIG) --version $(VERSION)
 
 visualize:  ## Visualize results
 	@echo "Visualizing results..."
 	$(PYTHON) $(SRC_DIR)/model/visualize.py
 
-run_pipeline: setup download_data train evaluate visualize  ## Run the entire pipeline
+run_pipeline: train evaluate visualize  ## Run the entire pipeline
 	@echo "Running the full ML pipeline..."
 
 .PHONY: help setup clean download_data train evaluate visualize run_pipeline
