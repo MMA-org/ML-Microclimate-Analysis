@@ -22,12 +22,18 @@ class Loader:
     """
 
     def __init__(self, config):
-        self.dataset_path = config["project"]["data_dir"]
+        # Initialize paths and settings from the config
+        self.dataset_path = config.dataset_path
+        self.batch_size = config.training.batch_size
+        self.num_workers = config.training.num_workers
+
+        # Load dataset
         self.dataset = load_dataset(self.dataset_path)
-        self.batch_size = config["training"]["batch_size"]
-        self.num_workers = config["training"]["num_workers"]
+
+        # Initialize feature extractor
+        model_name = config.training.model_name
         self.feature_extractor = SegformerImageProcessor.from_pretrained(
-            f"nvidia/segformer-{config['training']['model_name']}-finetuned-ade-512-512"
+            f"nvidia/segformer-{model_name}-finetuned-ade-512-512"
         )
 
     def get_transforms(self):
