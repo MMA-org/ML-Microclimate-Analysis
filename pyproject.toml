@@ -31,7 +31,19 @@ where = ["src"]
 
 
 [project.optional-dependencies]
-dev = ["pre-commit", "black", "flake8"]
+dev = ["pre-commit", "black", "flake8", "pytest", "pytest-mock"]
 
 [project.scripts]
 ml = "scripts.main:main"
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Suppress all UserWarning messages
+filterwarnings = ["ignore::UserWarning"]
+
+# Add coverage options and specify which module to measure coverage for
+addopts = "--cov=src --cov-report=term-missing"
