@@ -40,11 +40,14 @@ class SemanticSegmentationDataset(Dataset):
         image = self.data[idx]['image'].convert("RGB")
         # Get mask path from the loaded data
         mask = self.data[idx]['mask'].convert("L")
+
         image = np.array(image)
         mask = np.array(mask)
 
         if self.transform:
-            image, mask = self.transform(image=image, mask=mask)
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
 
         # Apply feature extractor
         encoded_inputs = self.feature_extractor(

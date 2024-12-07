@@ -33,7 +33,7 @@ visualize:  ## Visualize results
 	@echo "Visualizing results..."
 	$(PYTHON) $(SRC_DIR)/model/visualize.py
 
-run_pipeline: train evaluate visualize  ## Run the entire pipeline
+run_pipeline: download_data train evaluate  ## Run the entire pipeline
 	@echo "Running the full ML pipeline..."
 
 .PHONY: help setup clean download_data train evaluate visualize run_pipeline

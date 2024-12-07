@@ -1,5 +1,5 @@
 # DATA
-dataset_path: "nave1616/landcover-urban-climate"
+dataset_path: "erikpinhasov/landcover_urban_climate"
 
 # VISUALIZATION
 figuredirectory: reports/figures/
@@ -14,5 +14,5 @@ training:
   max_epochs: 50
   learning_rate: 2e-5
   num_workers: 4
-  model_name: b0
+  model_name: b2
   patience: 10
