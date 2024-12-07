@@ -26,7 +26,7 @@ class SegformerFinetuner(pl.LightningModule):
         model (SegformerForSemanticSegmentation): The Segformer model for semantic segmentation.
     """
 
-    def __init__(self, id2label, metrics_interval=100, lr=2e-5, eps=1e-8, step_size=10, gamma=0.1):
+    def __init__(self, id2label, model_name="b0", metrics_interval=100, lr=2e-5, eps=1e-8, step_size=10, gamma=0.1):
         super(SegformerFinetuner, self).__init__()
         self.save_hyperparameters()
         self.id2label = id2label
@@ -35,7 +35,7 @@ class SegformerFinetuner(pl.LightningModule):
 
         # Model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
-            "nvidia/segformer-b0-finetuned-ade-512-512",
+            f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
             return_dict=True,
             num_labels=self.num_classes,
             id2label=self.id2label,

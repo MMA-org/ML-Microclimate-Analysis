@@ -29,7 +29,8 @@ def main():
     val_loader = loader.get_dataloader("validation")
 
     # Initialize model
-    model = SegformerFinetuner(id2label=lc_id2label)
+    model = SegformerFinetuner(
+        id2label=lc_id2label, model_name=config.training.model_name)
 
     # Define the logger
     logger = TensorBoardLogger(
