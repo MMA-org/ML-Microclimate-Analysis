@@ -17,7 +17,7 @@ class SemanticSegmentationDataset(Dataset):
         transform (callable, optional): Optional transform to be applied on a sample.
     """
 
-    def __init__(self, data, feature_extractor=None, transform=None):
+    def __init__(self, data, feature_extractor, transform=None):
         # Data loaded from Hugging Face (list of dictionaries)
         self.data = data
         self.feature_extractor = feature_extractor
@@ -46,11 +46,10 @@ class SemanticSegmentationDataset(Dataset):
         if self.transform:
             image, mask = self.transform(image=image, mask=mask)
 
-        if self.feature_extractor:
-            encoded_inputs = self.feature_extractor(
-                image, mask, return_tensors="pt")
-
+        # Apply feature extractor
+        encoded_inputs = self.feature_extractor(
+            image, mask, return_tensors="pt")
         for k, v in encoded_inputs.items():
-            encoded_inputs[k].squeeze_()  # remove batch dimension
+            encoded_inputs[k].squeeze_()  # Remove batch dimension
 
         return encoded_inputs
