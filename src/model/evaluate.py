@@ -1,28 +1,15 @@
-import argparse
-from model.lightning_model import SegformerFinetuner
-from data.loader import Loader
-from utils import Config, lc_id2label, find_checkpoint, plot_confusion_matrix
-from pytorch_lightning import Trainer
-from pathlib import Path
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Evaluate SegFormer")
-    parser.add_argument(
-        "--config", type=str, default="default.yaml", help="Path to config file"
-    )
-    parser.add_argument(
-        "--version", type=str, default="version_0", help="Version of model to evaluate"
-    )
-    args = parser.parse_args()
-
-    print(f"Evaluating model version: {args.version}")
-
-    # Load the configuration (directories are automatically created)
-    config = Config(args.config)
+def evaluate(config, version="0"):
+    from model.lightning_model import SegformerFinetuner
+    from data.loader import Loader
+    from utils import lc_id2label, find_checkpoint, plot_confusion_matrix
+    from pytorch_lightning import Trainer
+    from pathlib import Path
+    print(f"Evaluating model version: version_{version}")
 
     # Locate the checkpoint
-    checkpoint = find_checkpoint(config, args.version)
+    checkpoint = find_checkpoint(config, version)
     print(f"Using checkpoint: {checkpoint}")
 
     # Prepare the test dataloader
@@ -45,12 +32,8 @@ def main():
 
     # Plot and save the confusion matrix
     results_dir = Path(config.project.results_dir)
-    cm_save_path = results_dir / f"version_{args.version}_confusion_matrix.png"
+    cm_save_path = results_dir / f"version_{version}_confusion_matrix.png"
     labels = list(lc_id2label.values())
     plot_confusion_matrix(y_true, y_pred, labels, save_path=cm_save_path)
 
     print(f"Confusion matrix saved to {cm_save_path}")
-
-
-if __name__ == "__main__":
-    main()

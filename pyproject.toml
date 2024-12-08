@@ -35,7 +35,8 @@ where = ["src"]
 dev = ["pre-commit", "black", "flake8", "pytest", "pytest-mock"]
 
 [project.scripts]
-ml = "scripts.main:main"
+landcover-model = "main:main"
+lcm = "main:main"
 
 [tool.coverage.run]
 source = ["src"]
