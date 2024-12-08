@@ -72,9 +72,9 @@ class SegformerFinetuner(pl.LightningModule):
         masks = masks.view(-1)
 
         # Mask out ignored pixels (e.g., 255)
-        valid_mask = masks != 255
-        predicted = predicted[valid_mask]
-        masks = masks[valid_mask]
+        masks[masks == 255] = 5
+        predicted = predicted[masks]
+        masks = masks[masks]
 
         return predicted, masks
 
@@ -113,6 +113,7 @@ class SegformerFinetuner(pl.LightningModule):
         Execute one validation step.
         """
         images, masks = batch['pixel_values'], batch['labels']
+        print(torch.unique(masks))
         loss, predicted = self.forward_pass(images, masks)
 
         # Process metrics
@@ -206,7 +207,12 @@ class SegformerFinetuner(pl.LightningModule):
             # Load the best model weights
             best_model_path = checkpoint_callback.best_model_path
             # Load the best model weights
-            self.model.load_state_dict(torch.load(best_model_path))
+            checkpoint = torch.load("path_to_checkpoint.ckpt")
+            state_dict = checkpoint["state_dict"]
+            clean_state_dict = {k.replace("model.", "").replace(
+                "module.", ""): v for k, v in state_dict.items()}
+            self.model.load_state_dict(
+                torch.load(best_model_path), strict=False)
 
             # Save the model to the specified directory
             self.model.save_pretrained(pretrained_path)

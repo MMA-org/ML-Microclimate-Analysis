@@ -1,5 +1,6 @@
 # data/loader.py
 from torch.utils.data import DataLoader
+import cv2
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
 from albumentations.pytorch import ToTensorV2
@@ -47,8 +48,16 @@ class Loader:
             A.HorizontalFlip(p=0.5),
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
-            A.RandomBrightnessContrast(p=0.3),
-            ToTensorV2(),
+            A.OneOf([
+                A.RandomBrightnessContrast(),
+                A.RandomGamma(),
+            ], p=0.3),
+            A.OneOf([
+                A.ElasticTransform(),
+                A.GridDistortion(),
+                A.OpticalDistortion(),
+            ], p=0.3),
+            ToTensorV2()
         ])
 
     def get_dataloader(self, split, shuffle=False):
