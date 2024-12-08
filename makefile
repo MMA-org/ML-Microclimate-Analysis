@@ -3,7 +3,7 @@ PYTHON = python
 SRC_DIR = src
 CONFIG = config.yaml
 VERSION = version_0  # Default version folder
-
+RESUME =
 export NO_ALBUMENTATIONS_UPDATE=1
 # Default target
 .DEFAULT_GOAL := help
@@ -23,15 +23,11 @@ download_data:  ## Download data
 
 train:  ## Train the model
 	@echo "Training the model..."
-	$(PYTHON) $(SRC_DIR)/model/train.py --config $(CONFIG)
+	$(PYTHON) $(SRC_DIR)/model/train.py --config $(CONFIG) --resume $(RESUME)
 
 evaluate:  ## Evaluate the model
 	@echo "Evaluating the model..."
 	$(PYTHON) $(SRC_DIR)/model/evaluate.py --config $(CONFIG) --version $(VERSION)
-
-visualize:  ## Visualize results
-	@echo "Visualizing results..."
-	$(PYTHON) $(SRC_DIR)/model/visualize.py
 
 run_pipeline: download_data train evaluate  ## Run the entire pipeline
 	@echo "Running the full ML pipeline..."

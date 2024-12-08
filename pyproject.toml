@@ -21,6 +21,7 @@ dependencies = [
     "torchmetrics==1.4.2",
     "tqdm==4.66.5",
     "transformers==4.44.2",
+    "tensorboardX==2.6.2.2",
 ]
 
 [tool.setuptools]
