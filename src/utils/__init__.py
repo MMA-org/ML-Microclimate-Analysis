@@ -19,11 +19,13 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 class Config:
     """
     Encapsulates configuration data, enabling nested attribute-based access.
+    Automatically creates directories specified in the `project` section.
     """
 
     def __init__(self, config_path="config.yaml"):
         with open(config_path) as f:
             self._config = yaml.safe_load(f)
+        self._create_directories()
 
     def __getattr__(self, name):
         value = self._config.get(name)
@@ -39,6 +41,7 @@ class Config:
         config = Config.__new__(
             Config)  # Create a new instance without calling __init__
         config._config = config_dict
+        config._create_directories()
         return config
 
     def get(self, *keys, default=None):
@@ -52,6 +55,21 @@ class Config:
             return value
         except KeyError:
             return default
+
+    def _create_directories(self):
+        """
+        Automatically create directories specified in the `project` section.
+        """
+        project_config = self._config.get("project", {})
+        created_dirs = []  # Collect created directory paths
+
+        for key, dir_path in project_config.items():
+            dir_path = Path(dir_path)
+            dir_path.mkdir(parents=True, exist_ok=True)
+            created_dirs.append(str(dir_path))  # Add to list
+
+        if created_dirs:
+            print(f"Directories created: {' '.join(created_dirs)}")
 
 
 def find_checkpoint(config: Config, version: str) -> str:
@@ -68,7 +86,8 @@ def find_checkpoint(config: Config, version: str) -> str:
     Raises:
         FileNotFoundError: If no checkpoint file is found.
     """
-    checkpoint_dir = Path(config.project.log_dir) / version / "checkpoints"
+    checkpoint_dir = Path(config.project.logs_dir) / \
+        f"version_{version}" / "checkpoints"
     if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
         raise FileNotFoundError(
             f"Checkpoint directory not found: {checkpoint_dir}")

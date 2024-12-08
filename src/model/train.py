@@ -8,20 +8,23 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pathlib import Path
 
 
-def main():
+def parse_config():
+    """
+    Parse command-line arguments and load the configuration file.
+    """
     parser = argparse.ArgumentParser(description="Train SegFormer")
-    parser.add_argument(
-        "--config", type=str, default="config.yaml", help="Path to config file")
+    parser.add_argument("--config", type=str,
+                        default="config.yaml", help="Path to config file")
+    parser.add_argument("--resume", type=str, nargs='?', const=None,
+                        help="Path to checkpoint to resume training (optional)")
+
     args = parser.parse_args()
+    return Config(args.config), args.resume
 
-    # Load configuration
-    config = Config(args.config)
 
-    # Create necessary directories
-    models_dir = Path(config.project.models_dir)
-    pretrained_dir = Path(config.project.pretrained_dir)
-    models_dir.mkdir(parents=True, exist_ok=True)
-    pretrained_dir.mkdir(parents=True, exist_ok=True)
+def main():
+    # Load configuration and optional checkpoint path
+    config, resume_checkpoint = parse_config()
 
     # Prepare dataloaders
     loader = Loader(config)
@@ -30,17 +33,19 @@ def main():
 
     # Initialize model
     model = SegformerFinetuner(
-        id2label=lc_id2label, model_name=config.training.model_name)
+        id2label=lc_id2label,
+        model_name=config.training.model_name,
+    )
 
     # Define the logger
     logger = TensorBoardLogger(
-        save_dir=Path(config.project.logs_dir),  # Log directory
+        save_dir=config.project.logs_dir,
         default_hp_metric=False
     )
 
     # Set up callbacks
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"{logger.save_dir}/{logger.version}/checkpoints",
+        dirpath=f"{logger.save_dir}/version_{logger.version}/checkpoints",
         monitor="val_loss",
         save_top_k=1,
         mode="min"
@@ -56,14 +61,18 @@ def main():
         logger=logger,
         max_epochs=config.training.max_epochs,
         callbacks=[checkpoint_callback, early_stop_callback],
-        log_every_n_steps=10,
+        log_every_n_steps=config.training.log_every_n_steps,
     )
 
     # Train the model
+
     trainer.fit(model, train_loader, val_loader)
 
     # Save the trained model
-    model.save_pretrained_model(pretrained_dir, logger.version)
+    pretrained_dir = Path(config.project.pretrained_dir) / \
+        f"version_{logger.version}"
+    pretrained_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained_model(pretrained_dir)
 
 
 if __name__ == "__main__":

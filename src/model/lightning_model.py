@@ -9,31 +9,16 @@ from pathlib import Path
 class SegformerFinetuner(pl.LightningModule):
     """
     A PyTorch Lightning module for fine-tuning the Segformer model for semantic segmentation tasks.
-
-    Args:
-        id2label (dict): A dictionary mapping class IDs to class labels.
-        metrics_interval (int): Interval at which metrics are logged. Default is 100.
-        lr (float): Learning rate for the optimizer. Default is 2e-5.
-        eps (float): Epsilon value for the optimizer. Default is 1e-8.
-        step_size (int): Step size for the learning rate scheduler. Default is 10.
-        gamma (float): Multiplicative factor of learning rate decay. Default is 0.1.
-
-    Attributes:
-        id2label (dict): A dictionary mapping class IDs to class labels.
-        num_classes (int): The number of classes.
-        label2id (dict): A dictionary mapping class labels to class IDs.
-        ignore_index (int): The index to ignore during training.
-        model (SegformerForSemanticSegmentation): The Segformer model for semantic segmentation.
     """
 
     def __init__(self, id2label, model_name="b0", metrics_interval=100, lr=2e-5, eps=1e-8, step_size=10, gamma=0.1):
         super(SegformerFinetuner, self).__init__()
-        self.save_hyperparameters()
+        self.metrics_interval = metrics_interval
         self.id2label = id2label
         self.num_classes = len(id2label.keys())
         self.label2id = {v: k for k, v in self.id2label.items()}
 
-        # Model
+        # Initialize the model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
             f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
             return_dict=True,
@@ -43,89 +28,187 @@ class SegformerFinetuner(pl.LightningModule):
             ignore_mismatched_sizes=True
         )
 
-        # Initialize metrics
+        # Metrics
         self.iou = JaccardIndex(
             task='multiclass', num_classes=self.num_classes)
         self.dice = Dice(average='micro', num_classes=self.num_classes)
 
-        # Initialize lists to store predictions and ground truth labels during the test phase.
-        # These will be used for generating metrics like the confusion matrix after testing
+        # Store outputs for validation and testing
+        self.val_outputs = []
+        self.test_outputs = []
         self.test_predictions = []
-        self.test_ground_truths = []
+        self.test_ground_truths = []  # Added
+
+    def forward(self, images, masks=None):
+        """
+        Forward pass through the Segformer model.
+        """
+        outputs = self.model(pixel_values=images, labels=masks)
+        return outputs
 
     def forward_pass(self, images, masks):
-        outputs = self.model(pixel_values=images, labels=masks)
-        loss, logits = outputs['loss'], outputs['logits']
+        """
+        Perform a forward pass and process logits into predictions.
+        """
+        outputs = self(images, masks)
+        loss, logits = outputs.loss, outputs.logits
 
+        # Resize logits to match mask dimensions
         upsampled_logits = nn.functional.interpolate(
             logits,
-            size=masks.shape[-2:],  # Match ground truth size
+            size=masks.shape[-2:],
             mode="bilinear",
             align_corners=False
         )
         predicted = upsampled_logits.argmax(dim=1)
+
         return loss, predicted
 
-    def compute_and_log_metrics(self, predicted, masks, phase):
-        predicted, masks = predicted.view(-1), masks.view(-1)
-        mask_ignore = (masks == 255)
-        predicted, masks = predicted[~mask_ignore], masks[~mask_ignore]
+    def process_metrics(self, predicted, masks):
+        """
+        Process predictions and masks to ensure they are compatible with metrics.
+        """
+        predicted = predicted.view(-1)
+        masks = masks.view(-1)
 
-        iou, dice = self.iou(predicted, masks), self.dice(predicted, masks)
-        self.log(f"{phase}_iou", iou, on_epoch=True, prog_bar=True)
-        self.log(f"{phase}_dice", dice, on_epoch=True, prog_bar=True)
+        # Mask out ignored pixels (e.g., 255)
+        valid_mask = masks != 255
+        predicted = predicted[valid_mask]
+        masks = masks[valid_mask]
+
+        return predicted, masks
+
+    def on_train_start(self):
+        """
+        Ensure that all submodules are in train mode at the start of training.
+        """
+        self.model.train()
+
+    def on_test_start(self):
+        """
+        Ensure that all submodules are in eval mode at the start of test.
+        """
+        self.model.eval()
+
+    def on_validation_start(self):
+        """
+        Ensure that all submodules are in eval mode at the start of validation.
+        """
+        self.model.eval()
 
     def training_step(self, batch, batch_idx):
+        """
+        Execute one training step.
+        """
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self.forward_pass(images, masks)
-        self.compute_and_log_metrics(predicted, masks, phase="train")
+
+        # Process metrics
+        predicted, masks = self.process_metrics(predicted, masks)
+
+        # Update metrics
+        self.iou(predicted, masks)
+        self.dice(predicted, masks)
+
+        # Log training loss
         self.log("train_loss", loss, prog_bar=True)
-        return loss
+
+        # Log metrics at intervals
+        if batch_idx % self.metrics_interval == 0:
+            iou = self.iou.compute()
+            dice = self.dice.compute()
+            self.log("train_iou", iou, prog_bar=True)
+            self.log("train_dice", dice, prog_bar=True)
+            self.iou.reset()
+            self.dice.reset()
+
+        return {'loss': loss}
 
     def validation_step(self, batch, batch_idx):
+        """
+        Execute one validation step.
+        """
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self.forward_pass(images, masks)
-        self.compute_and_log_metrics(predicted, masks, phase="val")
+
+        # Process metrics
+        predicted, masks = self.process_metrics(predicted, masks)
+
+        # Update metrics
+        self.iou(predicted, masks)
+        self.dice(predicted, masks)
+
+        # Log validation loss
         self.log("val_loss", loss, prog_bar=True)
-        return loss
+        self.val_outputs.append({'val_loss': loss})
+        return {'val_loss': loss}
 
     def test_step(self, batch, batch_idx):
+        """
+        Execute one test step.
+        """
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self.forward_pass(images, masks)
-        self.compute_and_log_metrics(predicted, masks, phase="test")
+
+        # Process metrics
+        predicted, masks = self.process_metrics(predicted, masks)
+
+        # Update metrics
+        self.iou(predicted, masks)
+        self.dice(predicted, masks)
+
+        # Collect predictions and ground truths
+        self.test_predictions.extend(predicted.cpu().numpy())
+        self.test_ground_truths.extend(masks.cpu().numpy())
+
+        # Log test loss
         self.log("test_loss", loss, prog_bar=True)
+        return {'test_loss': loss}
 
-        # Store predictions and ground truths
-        self.test_predictions.extend(predicted.cpu().numpy().flatten())
-        self.test_ground_truths.extend(masks.cpu().numpy().flatten())
+    def on_validation_epoch_end(self):
+        """
+        Compute and log validation metrics at the end of an epoch.
+        """
+        iou = self.iou.compute()
+        dice = self.dice.compute()
+        avg_val_loss = torch.stack([x["val_loss"]
+                                   for x in self.val_outputs]).mean()
 
-        return loss
+        metrics = {"val_loss": avg_val_loss,
+                   "val_mean_iou": iou, "val_mean_dice": dice}
+        for k, v in metrics.items():
+            self.log(k, v, prog_bar=True)
+
+        self.iou.reset()
+        self.dice.reset()
+        self.val_outputs.clear()
+        return metrics
+
+    def on_test_epoch_end(self):
+        """
+        Compute and log test metrics at the end of the test epoch.
+        """
+        iou = self.iou.compute()
+        dice = self.dice.compute()
+        avg_test_loss = torch.stack([x["test_loss"]
+                                    for x in self.test_outputs]).mean()
+
+        metrics = {"test_loss": avg_test_loss,
+                   "test_mean_iou": iou, "test_mean_dice": dice}
+        for k, v in metrics.items():
+            self.log(k, v, prog_bar=True)
+
+        self.iou.reset()
+        self.dice.reset()
+        self.test_outputs.clear()
+        return metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            [p for p in self.parameters() if p.requires_grad], lr=self.hparams.lr, eps=self.hparams.eps
-        )
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma
-        )
-        return [optimizer], [scheduler]
+        return torch.optim.Adam([p for p in self.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
 
-
-def save_pretrained_model(self, path, version):
-    """
-    Save the pretrained model to the specified path within a versioned directory.
-
-    Args:
-        path (str or Path): Base directory where the model should be saved.
-        version (str): Version identifier to create a subdirectory.
-
-    Returns:
-        None
-    """
-    # Create the versioned directory
-    versioned_path = Path(path) / version
-    versioned_path.mkdir(parents=True, exist_ok=True)
-
-    # Save the model
-    self.model.save_pretrained(versioned_path)
-    print(f"Model saved to {versioned_path}")
+    def save_pretrained_model(self, pretrained_path):
+        """
+        Save the model to a versioned directory.
+        """
+        self.model.save_pretrained(pretrained_path)
+        print(f"Model saved to {pretrained_path}")
