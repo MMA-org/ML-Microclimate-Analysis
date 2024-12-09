@@ -27,7 +27,7 @@ class SegformerFinetuner(pl.LightningModule):
             label2id=self.label2id,
             ignore_mismatched_sizes=True
         )
-
+        self.model.train()
         # Metrics
         self.iou = JaccardIndex(
             task='multiclass', num_classes=self.num_classes)
@@ -64,10 +64,18 @@ class SegformerFinetuner(pl.LightningModule):
         self.update_metrics_and_log(predicted, masks, stage)
         return loss
 
+    def on_train_start(self):
+        super().on_train_start()
+        self.model.train()
+
     def training_step(self, batch, batch_idx):
+        assert self.training, "LightningModule is not in training mode."
+        assert self.model.training, "Model is not in training mode."
         return self.step(batch, "train")
 
     def validation_step(self, batch, batch_idx):
+        assert not self.training, "LightningModule is not in eval mode."
+        assert not self.model.training, "Model is not in eval mode."
         return self.step(batch, "val")
 
     def test_step(self, batch, batch_idx):
