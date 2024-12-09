@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset
 import numpy as np
+import torch
 
 
 class SemanticSegmentationDataset(Dataset):
@@ -54,5 +55,5 @@ class SemanticSegmentationDataset(Dataset):
             image, mask, return_tensors="pt")
         for k, v in encoded_inputs.items():
             encoded_inputs[k].squeeze_()  # Remove batch dimension
-        encoded_inputs['labels'][encoded_inputs['labels'] == 255] = 5
+
         return encoded_inputs

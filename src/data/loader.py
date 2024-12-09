@@ -34,7 +34,8 @@ class Loader:
         # Initialize feature extractor
         model_name = config.training.model_name
         self.feature_extractor = SegformerImageProcessor.from_pretrained(
-            f"nvidia/segformer-{model_name}-finetuned-ade-512-512"
+            f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
+            do_reduce_labels=False
         )
 
     def get_transforms(self):
