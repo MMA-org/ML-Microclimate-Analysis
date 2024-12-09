@@ -121,10 +121,8 @@ class SegformerFinetuner(pl.LightningModule):
                 checkpoint_path, id2label=self.id2label
             )
             model.model.save_pretrained(pretrained_path)
-            print(f"Loaded and saved best model from {checkpoint_path}")
         else:
             self.model.save_pretrained(pretrained_path)
-            print(f"Saved current model to {pretrained_path}")
 
     def reset_test_results(self):
         """
