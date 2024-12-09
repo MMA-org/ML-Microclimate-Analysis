@@ -8,9 +8,11 @@ def train(config, resume_checkpoint=None):
     from pytorch_lightning.loggers import TensorBoardLogger
     from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
     from pathlib import Path
+    from utils.save_pretrained_callback import SavePretrainedCallback
 
     # Prepare dataloaders
     loader = Loader(config)
+    pretrained_dir = Path(config.project.pretrained_dir)
     train_loader = loader.get_dataloader("train", shuffle=True)
     val_loader = loader.get_dataloader("validation")
 
@@ -26,9 +28,13 @@ def train(config, resume_checkpoint=None):
         default_hp_metric=False
     )
 
+    version = f"version_{logger.version}"
+    checkpoint_dir = f"{logger.save_dir}/version/checkpoints"
+    pretrained_dir = pretrained_dir/version
+
     # Set up callbacks
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"{logger.save_dir}/version_{logger.version}/checkpoints",
+        dirpath=checkpoint_dir,
         monitor="val_loss",
         save_top_k=1,
         mode="min"
@@ -39,11 +45,15 @@ def train(config, resume_checkpoint=None):
         mode="min"
     )
 
+    pretrained_callback = SavePretrainedCallback(
+        pretrained_dir, checkpoint_callback)
+
     # Initialize Trainer
     trainer = Trainer(
         logger=logger,
         max_epochs=config.training.max_epochs,
-        callbacks=[checkpoint_callback, early_stop_callback],
+        callbacks=[checkpoint_callback,
+                   pretrained_callback, early_stop_callback],
         log_every_n_steps=config.training.log_every_n_steps,
     )
 
@@ -52,7 +62,6 @@ def train(config, resume_checkpoint=None):
     trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)
 
     # Save the trained model
-    pretrained_dir = Path(config.project.pretrained_dir) / \
-        f"version_{logger.version}"
+
     pretrained_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained_model(pretrained_dir, checkpoint_callback)

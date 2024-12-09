@@ -26,14 +26,16 @@ def evaluate(config, version="0"):
     trainer = Trainer()
     trainer.test(model, test_loader)
 
-    # Collect predictions and ground truths
-    y_true = model.test_ground_truths
-    y_pred = model.test_predictions
+    test_results = model.get_test_results()
+    y_true = test_results["ground_truths"]
+    y_pred = test_results["predictions"]
 
-    # Plot and save the confusion matrix
+    # Save confusion matrix
     results_dir = Path(config.project.results_dir)
     cm_save_path = results_dir / f"version_{version}_confusion_matrix.png"
     labels = list(lc_id2label.values())
+
+    # Plot and save the confusion matrix
     plot_confusion_matrix(y_true, y_pred, labels, save_path=cm_save_path)
 
     print(f"Confusion matrix saved to {cm_save_path}")

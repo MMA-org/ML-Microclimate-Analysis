@@ -11,17 +11,17 @@ class SegformerFinetuner(pl.LightningModule):
     A PyTorch Lightning module for fine-tuning the Segformer model for semantic segmentation tasks.
     """
 
-    def __init__(self, id2label, model_name="b0", metrics_interval=100, lr=2e-5, eps=1e-8, step_size=10, gamma=0.1):
-        super(SegformerFinetuner, self).__init__()
-        self.metrics_interval = metrics_interval
+    def __init__(self, id2label, model_name="b0", metrics_interval=100, lr=2e-5, eps=1e-8):
+        super().__init__()
+        self.save_hyperparameters(ignore=['id2label'])
+
         self.id2label = id2label
-        self.num_classes = len(id2label.keys())
-        self.label2id = {v: k for k, v in self.id2label.items()}
+        self.label2id = {v: k for k, v in id2label.items()}
+        self.num_classes = len(id2label)
 
         # Initialize the model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
             f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
-            return_dict=False,
             num_labels=self.num_classes,
             id2label=self.id2label,
             label2id=self.label2id,
@@ -33,191 +33,99 @@ class SegformerFinetuner(pl.LightningModule):
             task='multiclass', num_classes=self.num_classes)
         self.dice = Dice(average='micro', num_classes=self.num_classes)
 
-        # Store outputs for validation and testing
-        self.val_outputs = []
-        self.test_outputs = []
-        self.test_predictions = []
-        self.test_ground_truths = []  # Added
+        # Store test results
+        self.test_results = {"predictions": [], "ground_truths": []}
 
     def forward(self, images, masks=None):
-        """
-        Forward pass through the Segformer model.
-        """
-        outputs = self.model(pixel_values=images, labels=masks)
-        return outputs
+        return self.model(pixel_values=images, labels=masks)
 
-    def forward_pass(self, images, masks):
-        """
-        Perform a forward pass and process logits into predictions.
-        """
+    def compute_loss_and_predictions(self, images, masks):
         outputs = self(images, masks)
-        loss, logits = outputs[0], outputs[1]
-
-        # Resize logits to match mask dimensions
         upsampled_logits = nn.functional.interpolate(
-            logits,
-            size=masks.shape[-2:],
-            mode="bilinear",
-            align_corners=False
+            outputs.logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
         )
-        predicted = upsampled_logits.argmax(dim=1)
+        return outputs.loss, upsampled_logits.argmax(dim=1)
 
-        return loss, predicted
+    def update_metrics_and_log(self, predicted, masks, stage):
+        predicted, masks = predicted.view(-1), masks.view(-1)
+        self.iou(predicted, masks)
+        self.dice(predicted, masks)
 
-    def process_metrics(self, predicted, masks):
-        """
-        Process predictions and masks to ensure they are compatible with metrics.
-        """
-        predicted = predicted.view(-1)
-        masks = masks.view(-1)
+        # Log metrics after loss
+        self.log(f"{stage}_mean_iou", self.iou.compute(), prog_bar=True)
+        self.log(f"{stage}_mean_dice", self.dice.compute(), prog_bar=True)
 
-        # Mask out ignored pixels (e.g., 255)
-        masks[masks == 255] = 5
-        predicted = predicted[masks]
-        masks = masks[masks]
+    def step(self, batch, stage):
+        images, masks = batch['pixel_values'], batch['labels']
+        loss, predicted = self.compute_loss_and_predictions(images, masks)
 
-        return predicted, masks
+        # Log loss before metrics
+        self.log(f"{stage}_loss", loss, prog_bar=True)
+        self.update_metrics_and_log(predicted, masks, stage)
+        return loss
 
     def training_step(self, batch, batch_idx):
-        """
-        Execute one training step.
-        """
-        images, masks = batch['pixel_values'], batch['labels']
-        loss, predicted = self.forward_pass(images, masks)
-
-        # Process metrics
-        predicted, masks = self.process_metrics(predicted, masks)
-
-        # Update metrics
-        self.iou(predicted, masks)
-        self.dice(predicted, masks)
-
-        # Log training loss
-        self.log("loss", loss, prog_bar=True)
-
-        # Log metrics at intervals
-        if batch_idx % self.metrics_interval == 0:
-            iou = self.iou.compute()
-            dice = self.dice.compute()
-            self.log("iou", iou, prog_bar=True)
-            self.log("dice", dice, prog_bar=True)
-
-            # Reset metrics after logging
-            self.iou.reset()
-            self.dice.reset()
-
-        return {'loss': loss}
+        return self.step(batch, "train")
 
     def validation_step(self, batch, batch_idx):
-        """
-        Execute one validation step.
-        """
-        images, masks = batch['pixel_values'], batch['labels']
-        print(torch.unique(masks))
-        loss, predicted = self.forward_pass(images, masks)
-
-        # Process metrics
-        predicted, masks = self.process_metrics(predicted, masks)
-
-        # Update metrics
-        self.iou(predicted, masks)
-        self.dice(predicted, masks)
-
-        # Log validation loss
-        self.log("val_loss", loss, prog_bar=True)
-        self.val_outputs.append({'val_loss': loss})
-        return {'val_loss': loss}
-
-    def on_validation_epoch_end(self):
-        """
-        Compute and log validation metrics at the end of an epoch.
-        """
-        iou = self.iou.compute()
-        dice = self.dice.compute()
-        avg_val_loss = torch.stack([x["val_loss"]
-                                   for x in self.val_outputs]).mean()
-
-        metrics = {"val_loss": avg_val_loss,
-                   "val_mean_iou": iou, "val_mean_dice": dice}
-        for k, v in metrics.items():
-            self.log(k, v, prog_bar=True)
-
-        # Reset metrics after logging
-        self.iou.reset()
-        self.dice.reset()
-        self.val_outputs.clear()
-        return metrics
+        return self.step(batch, "val")
 
     def test_step(self, batch, batch_idx):
-        """
-        Execute one test step.
-        """
         images, masks = batch['pixel_values'], batch['labels']
-        loss, predicted = self.forward_pass(images, masks)
+        loss, predicted = self.compute_loss_and_predictions(images, masks)
 
-        # Process metrics
-        predicted, masks = self.process_metrics(predicted, masks)
-
-        # Update metrics
-        self.iou(predicted, masks)
-        self.dice(predicted, masks)
-
-        # Collect predictions and ground truths
-        self.test_predictions.extend(predicted.cpu().numpy())
-        self.test_ground_truths.extend(masks.cpu().numpy())
-
-        # Log test loss
+        # Log loss before metrics
         self.log("test_loss", loss, prog_bar=True)
-        self.test_outputs.append({'test_loss': loss})
-        return {'test_loss': loss}
+        self.update_metrics_and_log(predicted, masks, "test")
 
-    def on_test_epoch_end(self):
-        """
-        Compute and log test metrics at the end of the test epoch.
-        """
-        iou = self.iou.compute()
-        dice = self.dice.compute()
-        avg_test_loss = torch.stack([x["test_loss"]
-                                    for x in self.test_outputs]).mean()
+        # Collect test predictions and ground truths
+        self.test_results["predictions"].extend(predicted.cpu().numpy())
+        self.test_results["ground_truths"].extend(masks.cpu().numpy())
 
-        metrics = {"test_loss": avg_test_loss,
-                   "test_mean_iou": iou, "test_mean_dice": dice}
-        for k, v in metrics.items():
-            self.log(k, v, prog_bar=True)
+        return loss
 
-        # Reset metrics after logging
+    def on_epoch_end(self, stage):
         self.iou.reset()
         self.dice.reset()
-        self.test_outputs.clear()
-        return metrics
+
+    def on_training_epoch_end(self):
+        self.on_epoch_end("train")
+
+    def on_validation_epoch_end(self):
+        self.on_epoch_end("val")
+
+    def on_test_epoch_end(self):
+        self.on_epoch_end("test")
 
     def configure_optimizers(self):
-        return torch.optim.Adam([p for p in self.parameters() if p.requires_grad], lr=2e-05, eps=1e-08)
+        return torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, eps=self.hparams.eps)
 
-    def save_pretrained_model(self, pretrained_path, checkpoint_callback=None):
+    def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
         """
-        Save the best model to a versioned directory.
+        Save the best model to a directory.
 
         Args:
             pretrained_path (str or Path): Directory where the model will be saved.
-            checkpoint_callback (ModelCheckpoint, optional): The ModelCheckpoint callback used during training.
+            checkpoint_path (str or Path, optional): Path to the checkpoint file.
         """
-        # If a checkpoint callback is provided, use it to find the best model checkpoint
-        if checkpoint_callback and checkpoint_callback.best_model_path:
-            # Load the best model weights
-            best_model_path = checkpoint_callback.best_model_path
-            # Load the best model weights
-            checkpoint = torch.load("path_to_checkpoint.ckpt")
-            state_dict = checkpoint["state_dict"]
-            clean_state_dict = {k.replace("model.", "").replace(
-                "module.", ""): v for k, v in state_dict.items()}
-            self.model.load_state_dict(
-                torch.load(best_model_path), strict=False)
-
-            # Save the model to the specified directory
-            self.model.save_pretrained(pretrained_path)
-            print(f"Best model saved to {pretrained_path}")
+        if checkpoint_path and Path(checkpoint_path).exists():
+            model = SegformerFinetuner.load_from_checkpoint(
+                checkpoint_path, id2label=self.id2label
+            )
+            model.model.save_pretrained(pretrained_path)
+            print(f"Loaded and saved best model from {checkpoint_path}")
         else:
-            # If no checkpoint callback or no best model path, just save the model
             self.model.save_pretrained(pretrained_path)
-            print(f"Model saved to {pretrained_path}")
+            print(f"Saved current model to {pretrained_path}")
+
+    def reset_test_results(self):
+        """
+        Clear test predictions and ground truths.
+        """
+        self.test_results = {"predictions": [], "ground_truths": []}
+
+    def get_test_results(self):
+        """
+        Retrieve test predictions and ground truths.
+        """
+        return self.test_results
