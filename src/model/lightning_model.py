@@ -4,6 +4,11 @@ import torch
 from torch import nn
 from pathlib import Path
 from utils.metrics import Metrics
+from transformers import logging
+import warnings
+
+if torch.cuda.is_available():
+    torch.set_float32_matmul_precision('medium')
 
 
 class SegformerFinetuner(pl.LightningModule):
@@ -48,7 +53,7 @@ class SegformerFinetuner(pl.LightningModule):
         self.model.train()
 
         # Metrics
-        self.metrics = Metrics(self.num_classes)
+        self.metrics = Metrics(self.num_classes, self.device)
 
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
@@ -90,18 +95,18 @@ class SegformerFinetuner(pl.LightningModule):
         loss, predicted = self(images, masks)
 
         # Log loss at the step level
-        self.log(f"{stage}_loss", loss, prog_bar=True,
-                 on_step=True, on_epoch=False)
+        self.log(f"{stage}_loss", loss, prog_bar=True)
 
         # Update metrics
         self.metrics.update(predicted, masks)
 
         # Log intermediate metrics at the step level
         step_metrics = self.metrics.compute()
-        self.log(f"{stage}_iou_step",
-                 step_metrics["mean_iou"], prog_bar=True, on_step=True, on_epoch=False)
-        self.log(f"{stage}_dice_step",
-                 step_metrics["mean_dice"], prog_bar=True, on_step=True, on_epoch=False)
+
+        self.log(f"{stage}_mean_iou",
+                 step_metrics["mean_iou"], prog_bar=True)
+        self.log(f"{stage}_mean_dice",
+                 step_metrics["mean_dice"], prog_bar=True)
 
         if stage == "test":
             # Collect test predictions and ground truths
@@ -160,11 +165,6 @@ class SegformerFinetuner(pl.LightningModule):
         """
         Compute and log metrics at the end of the epoch.
         """
-        metrics = self.metrics.compute()
-        self.log(f"{stage}_mean_iou",
-                 metrics["mean_iou"], prog_bar=True, on_epoch=True)
-        self.log(f"{stage}_mean_dice",
-                 metrics["mean_dice"], prog_bar=True, on_epoch=True)
         self.metrics.reset()
 
     def on_training_epoch_end(self):
@@ -203,10 +203,14 @@ class SegformerFinetuner(pl.LightningModule):
             checkpoint_path (str or Path, optional): Path to the checkpoint file.
         """
         if checkpoint_path and Path(checkpoint_path).exists():
-            model = SegformerFinetuner.load_from_checkpoint(
-                checkpoint_path, id2label=self.id2label
-            )
-            model.model.save_pretrained(pretrained_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")  # Ignore all warnings
+                logging.set_verbosity_error()  # Suppress Transformers logging
+                model = SegformerFinetuner.load_from_checkpoint(
+                    checkpoint_path, id2label=self.id2label
+                )
+                model.model.save_pretrained(pretrained_path)
+                logging.set_verbosity_warning()  # Restore Transformers logging level
         else:
             self.model.save_pretrained(pretrained_path)
 

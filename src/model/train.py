@@ -18,7 +18,7 @@ def train(config, resume_checkpoint=None):
     val_loader = loader.get_dataloader("validation")
 
     class_weights = (
-        compute_class_weights(train_loader, lc_id2label)
+        compute_class_weights(train_loader, len(lc_id2label))
         if config.training.do_class_weight
         else None
     )
@@ -36,7 +36,7 @@ def train(config, resume_checkpoint=None):
     )
 
     version = f"version_{logger.version}"
-    checkpoint_dir = f"{logger.save_dir}/version/checkpoints"
+    checkpoint_dir = f"{logger.save_dir}/{version}/checkpoints"
     pretrained_dir = pretrained_dir/version
 
     # Set up callbacks
@@ -65,5 +65,4 @@ def train(config, resume_checkpoint=None):
     )
 
     # Train the model
-
     trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)

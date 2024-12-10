@@ -1,5 +1,7 @@
 from pytorch_lightning.callbacks import Callback
 from pathlib import Path
+from transformers import logging
+logging.set_verbosity_error()
 
 
 class SavePretrainedCallback(Callback):
@@ -39,5 +41,3 @@ class SavePretrainedCallback(Callback):
             # Save the Hugging Face model
             pl_module.save_pretrained_model(
                 self.pretrained_dir, checkpoint_path)
-            print(
-                f"Saved pretrained model to {self.pretrained_dir} after new best checkpoint.")

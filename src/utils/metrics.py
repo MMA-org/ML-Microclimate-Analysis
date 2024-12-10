@@ -1,10 +1,8 @@
 # util/metric.py
-from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import torch
 from torchmetrics import JaccardIndex, Dice
 import numpy as np
-from collections import Counter
 
 
 class Metrics:
@@ -13,16 +11,18 @@ class Metrics:
     Provides functionality for IoU (Jaccard Index) and Dice coefficient calculation.
     """
 
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, device="cpu"):
         """
         Initialize metrics.
 
         Args:
             num_classes (int): Number of classes in the segmentation task.
         """
+        self.device = device
         self.num_classes = num_classes
-        self.iou = JaccardIndex(task='multiclass', num_classes=num_classes)
-        self.dice = Dice(average='micro', num_classes=num_classes)
+        self.iou = JaccardIndex(
+            task='multiclass', num_classes=num_classes).to(device)
+        self.dice = Dice(average='micro', num_classes=num_classes).to(device)
 
     def update(self, predicted, targets):
         """
@@ -32,6 +32,7 @@ class Metrics:
             predicted (torch.Tensor): Predicted labels (shape: [batch_size, height, width]).
             targets (torch.Tensor): Ground truth labels (shape: [batch_size, height, width]).
         """
+
         predicted, targets = predicted.view(-1), targets.view(-1)
         self.iou(predicted, targets)
         self.dice(predicted, targets)
