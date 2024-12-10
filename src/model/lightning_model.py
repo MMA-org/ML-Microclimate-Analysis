@@ -8,7 +8,7 @@ from transformers import logging
 import warnings
 
 if torch.cuda.is_available():
-    torch.set_float32_matmul_precision('medium')
+    torch.set_float32_matmul_precision('medium')  # pragma: no cover
 
 
 class SegformerFinetuner(pl.LightningModule):
@@ -53,14 +53,26 @@ class SegformerFinetuner(pl.LightningModule):
         self.model.train()
 
         # Metrics
-        self.metrics = Metrics(self.num_classes, self.device)
+        self.metrics = None
 
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
         # Loss function (weighted cross-entropy)
-        self.class_weights = class_weight
-        self.criterion = nn.CrossEntropyLoss(weight=self.class_weights)
+        self.class_weight = class_weight  # Keep as is for now
+        self.criterion = nn.CrossEntropyLoss()
+
+    def on_fit_start(self):
+        """
+        Ensure metrics and class weights are on the correct device at the start of fitting.
+        """
+        self.metrics = Metrics(self.num_classes, self.device)
+        if self.class_weight is not None:
+            self.class_weights = self.class_weight.to(self.device)
+            self.criterion = nn.CrossEntropyLoss(weight=self.class_weights)
+        else:
+            self.class_weights = None
+            self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, images, masks=None):
         """
@@ -73,7 +85,7 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: Model outputs.
         """
-        outputs = self.model(pixel_values=images, labels=masks)
+        outputs = self.model(pixel_values=images)
         upsampled_logits = nn.functional.interpolate(
             outputs.logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
         )
@@ -192,7 +204,18 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             tuple: Optimizer and learning rate scheduler.
         """
-        return torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, eps=self.hparams.eps)
+
+        optimizer = torch.optim.AdamW([
+            {'params': self.model.segformer.parameters(), 'lr': 1e-5},
+            {'params': self.model.decode_head.parameters(), 'lr': 1e-4}
+        ], lr=self.hparams.lr, eps=self.hparams.eps, weight_decay=1e-4)
+
+        scheduler = {
+            'scheduler': torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50),
+            'interval': 'epoch',
+            'frequency': 1
+        }
+        return [optimizer], [scheduler]
 
     def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
         """

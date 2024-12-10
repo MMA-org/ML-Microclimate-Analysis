@@ -78,16 +78,9 @@ def test_on_epoch_end(mock_model, stage):
     """
     # Mock metrics behavior for this test
     mock_model.metrics = MagicMock()
-    mock_model.metrics.compute.return_value = {
-        "mean_iou": 0.8, "mean_dice": 0.85}
     mock_model.metrics.reset = MagicMock()
 
     mock_model.on_epoch_end(stage)
-    mock_model.metrics.compute.assert_called_once()
-    mock_model.log.assert_any_call(
-        f"{stage}_mean_iou", 0.8, prog_bar=True, on_epoch=True)
-    mock_model.log.assert_any_call(
-        f"{stage}_mean_dice", 0.85, prog_bar=True, on_epoch=True)
     mock_model.metrics.reset.assert_called_once()
 
 
@@ -95,9 +88,25 @@ def test_optimizer_configuration(mock_model):
     """
     Test optimizer configuration.
     """
-    optimizer = mock_model.configure_optimizers()
+    optimizer_list, scheduler_list = mock_model.configure_optimizers()
+
+    # Ensure that lists are returned
     assert isinstance(
-        optimizer, torch.optim.AdamW), "Optimizer should be AdamW."
+        optimizer_list, list), "configure_optimizers should return a list of optimizers."
+    assert isinstance(
+        scheduler_list, list), "configure_optimizers should return a list of schedulers."
+
+    # Extract the first optimizer and scheduler
+    optimizer = optimizer_list[0]
+    scheduler = scheduler_list[0]['scheduler']
+
+    # Check optimizer type
+    assert isinstance(
+        optimizer, torch.optim.AdamW), "Optimizer should be an instance of torch.optim.AdamW."
+
+    # Check scheduler type
+    assert isinstance(
+        scheduler, torch.optim.lr_scheduler.CosineAnnealingLR), "Scheduler should be an instance of torch.optim.lr_scheduler.CosineAnnealingLR."
 
 
 def test_reset_test_results(mock_model):

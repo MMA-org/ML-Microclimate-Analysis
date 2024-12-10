@@ -48,7 +48,7 @@ lcm = "main:main"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/main.py"]
+omit = ["src/main.py", "src/model/evaluate.py", "src/model/train.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

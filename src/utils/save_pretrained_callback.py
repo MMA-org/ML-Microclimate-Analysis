@@ -1,7 +1,5 @@
 from pytorch_lightning.callbacks import Callback
 from pathlib import Path
-from transformers import logging
-logging.set_verbosity_error()
 
 
 class SavePretrainedCallback(Callback):
