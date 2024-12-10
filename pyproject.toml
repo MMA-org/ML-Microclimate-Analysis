@@ -32,7 +32,15 @@ where = ["src"]
 
 
 [project.optional-dependencies]
-dev = ["pre-commit", "black", "flake8", "pytest", "pytest-mock", "coverage"]
+dev = [
+    "pre-commit",
+    "black",
+    "flake8",
+    "pytest",
+    "pytest-mock",
+    "coverage",
+    "pytest-cov",
+]
 
 [project.scripts]
 landcover-model = "main:main"
