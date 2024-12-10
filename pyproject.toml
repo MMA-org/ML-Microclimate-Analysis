@@ -7,7 +7,7 @@ name = "ml_microclimate"
 version = "0.1.0"
 description = "Machine Learning Microclimate Prediction Project"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 
 dependencies = [
@@ -32,7 +32,7 @@ where = ["src"]
 
 
 [project.optional-dependencies]
-dev = ["pre-commit", "black", "flake8", "pytest", "pytest-mock"]
+dev = ["pre-commit", "black", "flake8", "pytest", "pytest-mock", "coverage"]
 
 [project.scripts]
 landcover-model = "main:main"
@@ -40,6 +40,7 @@ lcm = "main:main"
 
 [tool.coverage.run]
 source = ["src"]
+omit = ["src/main.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -47,5 +48,5 @@ testpaths = ["tests"]
 # Suppress all UserWarning messages
 filterwarnings = ["ignore::UserWarning"]
 
+addopts = "--cov=src --cov-report=term-missing --cov-report=xml"
 # Add coverage options and specify which module to measure coverage for
-addopts = "--cov=src --cov-report=term-missing"

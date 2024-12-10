@@ -17,3 +17,4 @@ training:
   model_name: b1
   patience: 10
   log_every_n_steps: 10
+  do_class_weight: True
