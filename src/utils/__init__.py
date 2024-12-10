@@ -22,10 +22,11 @@ class Config:
     Automatically creates directories specified in the `project` section.
     """
 
-    def __init__(self, config_path="config.yaml"):
+    def __init__(self, config_path="config.yaml", create_dirs=True):
         with open(config_path) as f:
             self._config = yaml.safe_load(f)
-        self._create_directories()
+        if create_dirs:
+            self._create_directories()
 
     def __getattr__(self, name):
         value = self._config.get(name)
@@ -36,12 +37,13 @@ class Config:
         raise AttributeError(f"Configuration key '{name}' not found.")
 
     @staticmethod
-    def from_dict(config_dict):
+    def from_dict(config_dict, create_dirs=True):
         """Create a Config object from a dictionary."""
         config = Config.__new__(
             Config)  # Create a new instance without calling __init__
         config._config = config_dict
-        config._create_directories()
+        if create_dirs:
+            config._create_directories()
         return config
 
     def get(self, *keys, default=None):

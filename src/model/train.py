@@ -9,6 +9,7 @@ def train(config, resume_checkpoint=None):
     from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
     from pathlib import Path
     from utils.save_pretrained_callback import SavePretrainedCallback
+    from utils.metrics import compute_class_weights
 
     # Prepare dataloaders
     loader = Loader(config)
@@ -16,10 +17,16 @@ def train(config, resume_checkpoint=None):
     train_loader = loader.get_dataloader("train", shuffle=True)
     val_loader = loader.get_dataloader("validation")
 
+    class_weights = (
+        compute_class_weights(train_loader, lc_id2label)
+        if config.training.do_class_weight
+        else None
+    )
     # Initialize model
     model = SegformerFinetuner(
         id2label=lc_id2label,
         model_name=config.training.model_name,
+        class_weight=class_weights,
     )
 
     # Define the logger
