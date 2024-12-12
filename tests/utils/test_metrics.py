@@ -1,6 +1,6 @@
 import pytest
 import torch
-from utils.metrics import Metrics, compute_class_weights
+from utils.metrics import SegMetrics, compute_class_weights
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -22,7 +22,7 @@ class MockDataset(Dataset):
 
 @pytest.fixture
 def metrics():
-    return Metrics(num_classes=3)
+    return SegMetrics(num_classes=3, device="cpu")  # Explicitly set device
 
 
 @pytest.fixture
@@ -43,9 +43,9 @@ def test_metrics_initialization(metrics):
     Test the initialization of the Metrics class.
     """
     assert isinstance(
-        metrics.iou, torch.nn.Module), "IoU metric not initialized correctly."
+        metrics.metrics["mean_iou"], torch.nn.Module), "IoU metric not initialized correctly."
     assert isinstance(
-        metrics.dice, torch.nn.Module), "Dice metric not initialized correctly."
+        metrics.metrics["mean_dice"], torch.nn.Module), "Dice metric not initialized correctly."
     assert metrics.num_classes == 3, "Number of classes should be 3."
 
 
@@ -99,6 +99,19 @@ def test_compute_class_weights(mock_dataloader):
         num_classes,), "Class weights should have length equal to num_classes."
     assert all(
         weight > 0 for weight in class_weights), "All class weights should be positive."
+
+    mask_array = torch.cat([batch["labels"].view(-1)
+                           for batch in mock_dataloader])
+    class_counts = torch.bincount(mask_array, minlength=num_classes)
+
+    # Compute expected class weights manually based on inverse frequency
+    total_samples = mask_array.numel()
+    expected_class_weights = total_samples / (class_counts.float() + 1e-6)
+    normalized_weights = expected_class_weights / expected_class_weights.sum()
+
+    # Check if computed weights match the expected ones (within a small tolerance)
+    assert torch.allclose(class_weights, normalized_weights, atol=1e-2), \
+        f"Class weights do not match. Expected: {normalized_weights}, but got: {class_weights}"
 
 
 def test_compute_class_weights_empty_dataset():

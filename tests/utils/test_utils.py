@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 from unittest.mock import patch
 from utils import Config, find_checkpoint, plot_confusion_matrix, apply_color_map, plot_image_and_mask
+import matplotlib
+matplotlib.use('Agg')
 
 
 @pytest.fixture

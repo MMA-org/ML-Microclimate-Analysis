@@ -2,7 +2,7 @@ import pytest
 import torch
 from unittest.mock import MagicMock
 from model.lightning_model import SegformerFinetuner
-from utils.metrics import Metrics
+from utils.metrics import SegMetrics, FocalLoss
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def mock_model(mock_id2label):
     Create a mock SegformerFinetuner instance.
     """
     model = SegformerFinetuner(id2label=mock_id2label, model_name="b0")
-    model.metrics = Metrics(num_classes=len(mock_id2label))
+    model.metrics = SegMetrics(num_classes=len(mock_id2label))
     model.log = MagicMock()
     return model
 
@@ -34,7 +34,10 @@ def test_initialization(mock_model):
     Test the initialization of the model.
     """
     assert isinstance(mock_model, SegformerFinetuner)
-    assert isinstance(mock_model.metrics, Metrics)
+    assert isinstance(mock_model.metrics, SegMetrics)
+    assert isinstance(mock_model.criterion, FocalLoss)
+    assert isinstance(mock_model.class_weights,
+                      torch.Tensor), "class_weights should be a torch.Tensor."
     assert mock_model.num_classes == 3, "Number of classes should match `id2label`."
     assert mock_model.training, "Model need to be in train mode on initialization."
 
@@ -71,16 +74,14 @@ def test_step_logic(mock_model, mock_batch):
     assert loss.item() > 0, "Test step loss should be positive."
 
 
-@ pytest.mark.parametrize("stage", ["train", "val", "test"])
-def test_on_epoch_end(mock_model, stage):
+def test_on_epoch_end(mock_model):
     """
     Test metric logging at the end of an epoch.
     """
-    # Mock metrics behavior for this test
-    mock_model.metrics = MagicMock()
     mock_model.metrics.reset = MagicMock()
 
-    mock_model.on_epoch_end(stage)
+    mock_model.on_epoch_end()
+
     mock_model.metrics.reset.assert_called_once()
 
 

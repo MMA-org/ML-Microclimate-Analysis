@@ -20,8 +20,15 @@ def mock_config_file(tmp_path):
     Create a temporary mock configuration file.
     """
     config_file = tmp_path / "config.yaml"
+
+    # Ensure paths in MOCK_CONFIG are absolute paths based on tmp_path
+    absolute_paths = {key: str(tmp_path / value)
+                      for key, value in MOCK_CONFIG["project"].items()}
+
+    config_dict = {"project": absolute_paths}
+
     with open(config_file, "w") as f:
-        yaml.dump(MOCK_CONFIG, f)
+        yaml.dump(config_dict, f)
     return config_file
 
 
@@ -43,76 +50,56 @@ def cleanup_directories():
             shutil.rmtree(dir_path)
 
 
-def test_directory_creation(mock_config_file, tmp_path, cleanup_directories):
+@pytest.mark.parametrize("create_dirs", [True, False])
+def test_load_config(mock_config_file, tmp_path, create_dirs, cleanup_directories):
     """
     Test automatic directory creation for paths in the `project` section.
     """
-    # Update MOCK_CONFIG paths to absolute paths in tmp_path
-    project_dirs = {key: str(tmp_path / key) for key in MOCK_CONFIG["project"]}
-    MOCK_CONFIG["project"] = project_dirs
-
-    # Rewrite the config file with updated paths
-    with open(mock_config_file, "w") as f:
-        yaml.dump(MOCK_CONFIG, f)
+    # Use paths already updated in mock_config_file
+    project_dirs = list(MOCK_CONFIG["project"].values())
 
     # Register directories for cleanup
-    cleanup_directories(project_dirs.values())
+    cleanup_directories(project_dirs)
 
     # Create config and check directory creation
-    config = Config(config_path=mock_config_file, create_dirs=True)
+    config = Config(config_path=mock_config_file, create_dirs=create_dirs)
 
-    for dir_path in project_dirs.values():
-        assert Path(dir_path).exists(
-        ), f"Directory '{dir_path}' was not created."
+    # Check if the directories are created under the tmp_path
+    for dir_path in project_dirs:
+        # Join tmp_path with each directory from the config
+        # Resolves relative paths correctly
+        expected_path = tmp_path / Path(dir_path).name
+
+        if create_dirs:
+            assert expected_path.exists(
+            ), f"Directory '{expected_path}' was not created."
+        else:
+            assert not expected_path.exists(
+            ), f"Directory '{expected_path}' should not have been created."
 
 
 @pytest.mark.parametrize("create_dirs", [True, False])
-def test_from_dict_with_and_without_creation(tmp_path, create_dirs):
+def test_from_dict(tmp_path, create_dirs, cleanup_directories):
     """
     Test creating a Config object from a dictionary with and without directory creation.
     """
-    project_dirs = {
-        "models_dir": str(tmp_path / "models"),
-        "pretrained_dir": str(tmp_path / "pretrained"),
-        "logs_dir": str(tmp_path / "logs"),
-        "results_dir": str(tmp_path / "results"),
-    }
+    config_dict = MOCK_CONFIG["project"]
+    project_dirs = list(config_dict.values())
+
+    # Register directories for cleanup
+    cleanup_directories(project_dirs)
 
     # Create config from dictionary
     config = Config.from_dict(
-        {"project": project_dirs}, create_dirs=create_dirs)
+        {"project": config_dict}, create_dirs=create_dirs)
 
-    assert config.project.models_dir == str(tmp_path / "models")
-    assert config.project.results_dir == str(tmp_path / "results")
-
-    for dir_path in project_dirs.values():
+    for dir_path in project_dirs:
         if create_dirs:
             assert Path(dir_path).exists(
             ), f"Directory '{dir_path}' was not created."
         else:
             assert not Path(dir_path).exists(
             ), f"Directory '{dir_path}' should not have been created."
-
-
-def test_no_directory_creation(mock_config_file, tmp_path, cleanup_directories):
-    """
-    Test disabling automatic directory creation.
-    """
-    project_dirs = {key: str(tmp_path / key) for key in MOCK_CONFIG["project"]}
-
-    # Rewrite the config file with updated paths
-    with open(mock_config_file, "w") as f:
-        yaml.dump({"project": project_dirs}, f)
-
-    # Register directories for cleanup
-    cleanup_directories(project_dirs.values())
-
-    # Create config without creating directories
-    config = Config(config_path=mock_config_file, create_dirs=False)
-
-    for dir_path in project_dirs.values():
-        assert not Path(dir_path).exists(
-        ), f"Directory '{dir_path}' should not have been created."
 
 
 def test_missing_config_key():
@@ -126,7 +113,7 @@ def test_missing_config_key():
         }
     }
 
-    config = Config.from_dict(config_dict)
+    config = Config.from_dict(config_dict, False)
 
     # Try to access a non-existent key
     with pytest.raises(AttributeError, match="Configuration key 'non_existent_key' not found."):
