@@ -2,8 +2,10 @@ import pytest
 import numpy as np
 from PIL import Image
 from unittest.mock import patch
-from utils import Config, find_checkpoint, plot_confusion_matrix, apply_color_map, plot_image_and_mask
+from utils import Config, find_checkpoint,  save_confusion_matrix_plot, apply_color_map, plot_image_and_mask, save_class_weights, load_class_weights
+import json
 import matplotlib
+import torch
 matplotlib.use('Agg')
 
 
@@ -48,20 +50,15 @@ def test_find_checkpoint(mock_config, tmp_path):
         find_checkpoint(mock_config, "empty")
 
 
-def test_plot_confusion_matrix(tmp_path):
-    """
-    Test the `plot_confusion_matrix` function.
-    """
-    y_true = [0, 1, 2, 2, 1]
-    y_pred = [0, 1, 2, 1, 1]
-    labels = ["background", "building", "road"]
+def test_save_confusion_matrix_plot(tmp_path):
+    """Test saving a confusion matrix plot to a file."""
+    cm = np.array([[5, 2], [1, 7]])
+    labels = ["Class 0", "Class 1"]
     save_path = tmp_path / "confusion_matrix.png"
 
-    # Mock plt.show() to avoid rendering during tests
-    with patch("matplotlib.pyplot.show") as mock_show:
-        plot_confusion_matrix(y_true, y_pred, labels, save_path=save_path)
-        mock_show.assert_called_once()
+    save_confusion_matrix_plot(cm, labels, save_path)
 
+    # Check if the file is created
     assert save_path.exists(), "Confusion matrix plot was not saved."
 
 
@@ -107,3 +104,33 @@ def test_plot_image_and_mask(tmp_path):
     with patch("matplotlib.pyplot.show") as mock_show:
         plot_image_and_mask(str(image_path), mask)
         mock_show.assert_called_once()
+
+
+def test_load_class_weights(tmp_path):
+    """Test loading class weights from a file."""
+    # Prepare test file
+    weights_file = tmp_path / "class_weights.json"
+    class_weights = torch.tensor([1.0, 2.0, 3.0])
+    with weights_file.open("w") as f:
+        json.dump(class_weights.tolist(), f)
+
+    # Load weights and assert correctness
+    loaded_weights = torch.tensor(load_class_weights(weights_file))
+    assert torch.equal(
+        loaded_weights, class_weights), "Loaded weights do not match the expected values."
+
+
+def test_save_class_weights(tmp_path):
+    """Test saving class weights to a file."""
+    # Prepare test weights and file
+    weights_file = tmp_path / "class_weights.json"
+    class_weights = torch.tensor([1.0, 2.0, 3.0])
+
+    # Save weights
+    save_class_weights(weights_file, class_weights)
+
+    # Verify file content
+    with weights_file.open("r") as f:
+        saved_weights = torch.tensor(json.load(f))
+    assert torch.equal(
+        saved_weights, class_weights), "Saved weights do not match the expected values."

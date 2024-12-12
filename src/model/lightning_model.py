@@ -57,17 +57,18 @@ class SegformerFinetuner(pl.LightningModule):
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
-        # Loss function (weighted cross-entropy)
+        # Initialize class weights and loss function
         if class_weight is not None:
-            # Ensure it's on the correct device and dtype
-            self.class_weights = self.class_weight.to(self.device).float()
-        else:
-            self.class_weights = torch.ones(
-                len(self.id2label), device=self.device).float()
+            # Ensure class weights are on the correct device and dtype
+            class_weight = class_weight.to(self.device, dtype=torch.float)
 
         # Initialize the loss function (FocalLoss)
         self.criterion = FocalLoss(
-            alpha=self.class_weights, gamma=2, reduction='mean')
+            num_class=len(id2label),
+            alpha=class_weight,
+            gamma=2,
+            reduction='mean'
+        )
 
     def on_fit_start(self):
         """

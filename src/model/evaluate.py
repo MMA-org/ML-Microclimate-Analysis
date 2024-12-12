@@ -3,7 +3,7 @@
 def evaluate(config, version="0"):
     from model.lightning_model import SegformerFinetuner
     from data.loader import Loader
-    from utils import lc_id2label, find_checkpoint, plot_confusion_matrix
+    from utils import lc_id2label, find_checkpoint, save_confusion_matrix_plot
     from pytorch_lightning import Trainer
     from pathlib import Path
     print(f"Evaluating model version: version_{version}")
@@ -36,6 +36,6 @@ def evaluate(config, version="0"):
     labels = list(lc_id2label.values())
 
     # Plot and save the confusion matrix
-    plot_confusion_matrix(y_true, y_pred, labels, save_path=cm_save_path)
+    save_confusion_matrix_plot(y_true, y_pred, labels, save_path=cm_save_path)
 
     print(f"Confusion matrix saved to {cm_save_path}")

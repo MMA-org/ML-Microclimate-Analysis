@@ -1,11 +1,3 @@
-"""
-Utilities for Configuration Management, Visualization, and Land Cover Classification.
-
-Modules:
-    - Configuration loading and management.
-    - Confusion matrix generation and visualization.
-    - Land cover label and color mapping.
-"""
 
 from pathlib import Path
 import yaml
@@ -14,6 +6,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import json
+import torch
+
+# Define land cover class labels with associated colors
+LandCoverClass = namedtuple('LandCoverClass', ['label', 'id', 'color'])
+lc_classes = [
+    LandCoverClass('background', 0, (255, 255, 255)),  # White
+    LandCoverClass('building', 1, (255, 0, 0)),       # Red
+    LandCoverClass('road', 2, (255, 255, 0)),         # Yellow
+    LandCoverClass('water', 3, (0, 0, 255)),          # Blue
+    LandCoverClass('barren', 4, (139, 69, 19)),       # Brown
+    LandCoverClass('woodland', 5, (0, 255, 0)),       # Green
+    LandCoverClass('agriculture', 6, (50, 143, 168)),  # Purple
+]
+
+# Create mappings for label-to-id and id-to-color
+lc_id2label = {cls.id: cls.label for cls in lc_classes}
+lc_id2color = {cls.id: cls.color for cls in lc_classes}
 
 
 class Config:
@@ -102,41 +112,51 @@ def find_checkpoint(config: Config, version: str) -> str:
     return str(checkpoint_files[0])
 
 
-def plot_confusion_matrix(y_true, y_pred, labels, save_path=None):
+def save_confusion_matrix_plot(y_true, y_pred, labels, save_path):
     """
-    Generate and save a confusion matrix plot.
+    Save a confusion matrix plot to a file.
 
     Args:
         y_true (array-like): Ground truth labels.
         y_pred (array-like): Predicted labels.
         labels (list): List of class labels.
-        save_path (str or Path, optional): Path to save the confusion matrix plot.
+        save_path (str or Path): Path to save the confusion matrix plot.
     """
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
     disp.plot(cmap=plt.cm.Blues, xticks_rotation="vertical")
-
     plt.title("Confusion Matrix")
-    if save_path:
-        plt.savefig(save_path)
-        print(f"Confusion matrix saved to {save_path}")
-    plt.show()
+    plt.savefig(save_path)
+    plt.close()
+    print(f"Confusion matrix saved to {save_path}")
 
 
-# Define land cover class labels with associated colors
-LandCoverClass = namedtuple('LandCoverClass', ['label', 'id', 'color'])
-lc_classes = [
-    LandCoverClass('background', 0, (255, 255, 255)),  # White
-    LandCoverClass('building', 1, (255, 0, 0)),       # Red
-    LandCoverClass('road', 2, (255, 255, 0)),         # Yellow
-    LandCoverClass('water', 3, (0, 0, 255)),          # Blue
-    LandCoverClass('barren', 4, (139, 69, 19)),       # Brown
-    LandCoverClass('woodland', 5, (0, 255, 0)),       # Green
-]
+def load_class_weights(weights_file):
+    """
+    Load precomputed class weights from a file and return as a torch tensor.
 
-# Create mappings for label-to-id and id-to-color
-lc_id2label = {cls.id: cls.label for cls in lc_classes}
-lc_id2color = {cls.id: cls.color for cls in lc_classes}
+    Args:
+        weights_file (Path): Path to the weights file.
+
+    Returns:
+        torch.Tensor: Loaded class weights as a tensor.
+    """
+    print("Loading precomputed class weights from file.")
+    with weights_file.open("r") as f:
+        return torch.tensor(json.load(f), dtype=torch.float)
+
+
+def save_class_weights(weights_file, class_weights):
+    """
+    Save computed class weights to a file.
+
+    Args:
+        weights_file (Path): Path to the weights file.
+        class_weights (list): Class weights to save.
+    """
+    print("Saving class weights to file.")
+    with weights_file.open("w") as f:
+        json.dump(class_weights.tolist(), f)
 
 
 def apply_color_map(mask: np.ndarray) -> np.ndarray:

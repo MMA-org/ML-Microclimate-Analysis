@@ -12,7 +12,7 @@ class FocalLoss(torch.nn.Module):
     Focal Loss for static datasets with fixed class weights.
     """
 
-    def __init__(self, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean'):
+    def __init__(self, num_class, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean'):
         """
         Args:
             alpha (Tensor, optional): Per-class weights (shape: [num_classes]).
@@ -21,9 +21,11 @@ class FocalLoss(torch.nn.Module):
             reduction (str): Reduction method for the loss ('none', 'mean', 'sum').
         """
         super(FocalLoss, self).__init__()
-        self.alpha = alpha  # Precomputed class weights
+        self.alpha = alpha if alpha is not None else torch.ones(
+            self.num_class).float()  # Precomputed class weights
         self.gamma = gamma
         self.reduction = reduction
+        self.num_class = num_class
 
     def forward(self, inputs, targets):
         """
@@ -36,19 +38,18 @@ class FocalLoss(torch.nn.Module):
         Returns:
             Tensor: Computed focal loss.
         """
-        # Ensure alpha is on the correct device
-        if self.alpha is not None:
-            self.alpha = self.alpha.to(inputs.device)
 
         # Compute Cross-Entropy Loss
-        ce_loss = F.cross_entropy(
-            inputs, targets, reduction='none', weight=self.alpha)
+        self.alpha = self.alpha.to(inputs.device)
+
+        # Compute Cross-Entropy Loss
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
 
         # Compute Probabilities
         pt = torch.exp(-ce_loss)
 
         # Apply Focal Loss Dynamics
-        focal_loss = (1 - pt) ** self.gamma * ce_loss
+        focal_loss = self.alpha[targets] * (1 - pt) ** self.gamma * ce_loss
 
         # Apply Reduction
         if self.reduction == 'mean':
