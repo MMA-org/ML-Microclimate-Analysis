@@ -33,7 +33,7 @@ def evaluate(config, version="0"):
     # Save confusion matrix
     results_dir = Path(config.project.results_dir)
     cm_save_path = results_dir / f"version_{version}_confusion_matrix.png"
-    labels = list(lc_id2label.values())
+    labels = list(lc_id2label.keys())
 
     # Plot and save the confusion matrix
     save_confusion_matrix_plot(y_true, y_pred, labels, save_path=cm_save_path)

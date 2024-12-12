@@ -99,7 +99,7 @@ def find_checkpoint(config: Config, version: str) -> str:
         FileNotFoundError: If no checkpoint file is found.
     """
     checkpoint_dir = Path(config.project.logs_dir) / \
-        f"version_{version}" / "checkpoints"
+        "checkpoints" / f"version_{version}"
     if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
         raise FileNotFoundError(
             f"Checkpoint directory not found: {checkpoint_dir}")
@@ -122,6 +122,16 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path):
         labels (list): List of class labels.
         save_path (str or Path): Path to save the confusion matrix plot.
     """
+    if isinstance(y_true, list):
+        y_true = np.concatenate(y_true).flatten()
+    else:
+        y_true = np.array(y_true).flatten()
+
+    if isinstance(y_pred, list):
+        y_pred = np.concatenate(y_pred).flatten()
+    else:
+        y_pred = np.array(y_pred).flatten()
+
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
     disp.plot(cmap=plt.cm.Blues, xticks_rotation="vertical")
