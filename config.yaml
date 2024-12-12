@@ -1,5 +1,5 @@
 # DATA
-dataset_path: "erikpinhasov/landcover_urban_climate"
+dataset_path: "erikpinhasov/landcover_dataset"
 
 # VISUALIZATION
 figuredirectory: reports/figures/

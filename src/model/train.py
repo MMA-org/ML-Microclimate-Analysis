@@ -7,6 +7,7 @@ from data.loader import Loader
 from utils import lc_id2label
 from utils.metrics import compute_class_weights
 from utils.save_pretrained_callback import SavePretrainedCallback
+import torch
 
 
 def train(config, resume_checkpoint=None):
@@ -64,7 +65,11 @@ def train(config, resume_checkpoint=None):
         pretrained_dir, checkpoint_callback)
 
     # Initialize Trainer
+    accelerator = "gpu" if torch.cuda.is_available() else "cpu"
+    devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
     trainer = Trainer(
+        accelerator=accelerator,
+        devices=devices,
         logger=logger,
         max_epochs=config.training.max_epochs,
         callbacks=[checkpoint_callback,

@@ -1,11 +1,65 @@
 # util/metric.py
 from tqdm import tqdm
-import torch
-from torchmetrics import JaccardIndex, Dice
+from torchmetrics import MetricCollection, JaccardIndex, Dice
 import numpy as np
+import torch
+import torch.nn.functional as F
+from typing import Optional
 
 
-class Metrics:
+class FocalLoss(torch.nn.Module):
+    """
+    Focal Loss for static datasets with fixed class weights.
+    """
+
+    def __init__(self, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean'):
+        """
+        Args:
+            alpha (Tensor, optional): Per-class weights (shape: [num_classes]).
+                                      If None, no per-class weighting is applied.
+            gamma (float): Focusing parameter for the focal loss (default: 2).
+            reduction (str): Reduction method for the loss ('none', 'mean', 'sum').
+        """
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha  # Precomputed class weights
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        """
+        Compute the Focal Loss.
+
+        Args:
+            inputs (Tensor): Logits predicted by the model (shape: [batch, classes, height, width]).
+            targets (Tensor): Ground truth labels (shape: [batch, height, width]).
+
+        Returns:
+            Tensor: Computed focal loss.
+        """
+        # Ensure alpha is on the correct device
+        if self.alpha is not None:
+            self.alpha = self.alpha.to(inputs.device)
+
+        # Compute Cross-Entropy Loss
+        ce_loss = F.cross_entropy(
+            inputs, targets, reduction='none', weight=self.alpha)
+
+        # Compute Probabilities
+        pt = torch.exp(-ce_loss)
+
+        # Apply Focal Loss Dynamics
+        focal_loss = (1 - pt) ** self.gamma * ce_loss
+
+        # Apply Reduction
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
+
+class SegMetrics(MetricCollection):
     """
     A utility class to handle metrics for segmentation tasks.
     Provides functionality for IoU (Jaccard Index) and Dice coefficient calculation.
@@ -18,46 +72,28 @@ class Metrics:
         Args:
             num_classes (int): Number of classes in the segmentation task.
         """
-        self.device = device
         self.num_classes = num_classes
-        self.iou = JaccardIndex(
-            task='multiclass', num_classes=num_classes).to(device)
-        self.dice = Dice(average='micro', num_classes=num_classes).to(device)
+        self.metrics = {
+            "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes).to(device),
+            "mean_dice": Dice(average='micro', num_classes=num_classes).to(device)
+        }
+        super().__init__(self.metrics)
 
-    def update(self, predicted, targets):
+    def update(self, predicted: torch.Tensor, targets: torch.Tensor) -> None:
         """
-        Update the metrics with predictions and ground truths.
+        Update metrics with reshaped predictions and ground truths.
 
         Args:
             predicted (torch.Tensor): Predicted labels (shape: [batch_size, height, width]).
             targets (torch.Tensor): Ground truth labels (shape: [batch_size, height, width]).
         """
+        predicted = predicted.view(-1)
+        targets = targets.view(-1)
 
-        predicted, targets = predicted.view(-1), targets.view(-1)
-        self.iou(predicted, targets)
-        self.dice(predicted, targets)
-
-    def compute(self):
-        """
-        Compute the current metric values.
-
-        Returns:
-            dict: A dictionary containing IoU and Dice scores.
-        """
-        return {
-            "mean_iou": self.iou.compute(),
-            "mean_dice": self.dice.compute(),
-        }
-
-    def reset(self):
-        """
-        Reset all metrics.
-        """
-        self.iou.reset()
-        self.dice.reset()
+        super().update(predicted, targets)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels"):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True):
     """
     Compute class weights for imbalanced datasets using a DataLoader.
 
@@ -96,4 +132,7 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels"):
     # Compute class weights
     class_weights = total_samples / \
         (class_counts + 1e-6)  # Avoid division by zero
+    if normalize:
+        class_weights = class_weights / class_weights.sum()
+
     return torch.tensor(class_weights, dtype=torch.float)

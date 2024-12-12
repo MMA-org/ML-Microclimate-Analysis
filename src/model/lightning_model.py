@@ -3,7 +3,7 @@ from transformers import SegformerForSemanticSegmentation
 import torch
 from torch import nn
 from pathlib import Path
-from utils.metrics import Metrics
+from utils.metrics import SegMetrics, FocalLoss
 from transformers import logging
 import warnings
 
@@ -50,29 +50,31 @@ class SegformerFinetuner(pl.LightningModule):
             label2id=self.label2id,
             ignore_mismatched_sizes=True
         )
-        self.model.train()
 
-        # Metrics
-        self.metrics = None
+        # Initialize metrics and move to the correct device
+        self.metrics = SegMetrics(self.num_classes, self.device)
 
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
         # Loss function (weighted cross-entropy)
-        self.class_weight = class_weight  # Keep as is for now
-        self.criterion = nn.CrossEntropyLoss()
+        if class_weight is not None:
+            # Ensure it's on the correct device and dtype
+            self.class_weights = self.class_weight.to(self.device).float()
+        else:
+            self.class_weights = torch.ones(
+                len(self.id2label), device=self.device).float()
+
+        # Initialize the loss function (FocalLoss)
+        self.criterion = FocalLoss(
+            alpha=self.class_weights, gamma=2, reduction='mean')
 
     def on_fit_start(self):
         """
-        Ensure metrics and class weights are on the correct device at the start of fitting.
+        set model in training mode.
         """
-        self.metrics = Metrics(self.num_classes, self.device)
-        if self.class_weight is not None:
-            self.class_weights = self.class_weight.to(self.device)
-            self.criterion = nn.CrossEntropyLoss(weight=self.class_weights)
-        else:
-            self.class_weights = None
-            self.criterion = nn.CrossEntropyLoss()
+        self.train()
+        self.model.train()
 
     def forward(self, images, masks=None):
         """
@@ -83,13 +85,16 @@ class SegformerFinetuner(pl.LightningModule):
             masks (torch.Tensor, optional): Ground truth masks. Default is None.
 
         Returns:
-            torch.Tensor: Model outputs.
+            loss (torch.Tensor or None): Computed loss if masks are provided, else None.
+            predictions (torch.Tensor): Predicted labels.
         """
         outputs = self.model(pixel_values=images)
         upsampled_logits = nn.functional.interpolate(
-            outputs.logits, size=masks.shape[-2:], mode="bilinear", align_corners=False
+            outputs.logits, size=masks.shape[-2:] if masks is not None else outputs.logits.shape[-2:],
+            mode="bilinear", align_corners=False
         )
-        loss = self.criterion(upsampled_logits, masks)
+        loss = self.criterion(
+            upsampled_logits, masks) if masks is not None else None
         return loss, upsampled_logits.argmax(dim=1)
 
     def step(self, batch, stage):
@@ -173,29 +178,11 @@ class SegformerFinetuner(pl.LightningModule):
         """
         return self.step(batch, "test")
 
-    def on_epoch_end(self, stage):
+    def on_epoch_end(self):
         """
         Compute and log metrics at the end of the epoch.
         """
         self.metrics.reset()
-
-    def on_training_epoch_end(self):
-        """
-        Compute and log metrics at the end of the training epoch.
-        """
-        self.on_epoch_end("train")  # pragma: no cover
-
-    def on_validation_epoch_end(self):
-        """
-        Compute and log metrics at the end of the validation epoch.
-        """
-        self.on_epoch_end("val")  # pragma: no cover
-
-    def on_test_epoch_end(self):
-        """
-        Compute and log metrics at the end of the test epoch.
-        """
-        self.on_epoch_end("test")  # pragma: no cover
 
     def configure_optimizers(self):
         """

@@ -1,6 +1,5 @@
 # data/loader.py
 from torch.utils.data import DataLoader
-import cv2
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
 from albumentations.pytorch import ToTensorV2
