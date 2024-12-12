@@ -21,6 +21,7 @@ class FocalLoss(torch.nn.Module):
             reduction (str): Reduction method for the loss ('none', 'mean', 'sum').
         """
         super(FocalLoss, self).__init__()
+        self.num_class = num_class
         self.alpha = alpha if alpha is not None else torch.ones(
             self.num_class).float()  # Precomputed class weights
         self.gamma = gamma
@@ -94,7 +95,7 @@ class SegMetrics(MetricCollection):
         super().update(predicted, targets)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=False):
     """
     Compute class weights for imbalanced datasets using a DataLoader.
 
