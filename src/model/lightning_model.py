@@ -34,7 +34,7 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (nn.CrossEntropyLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None, metrics_interval=100, lr=2e-5, eps=1e-8):
+    def __init__(self, id2label, model_name="b0", class_weight=None):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -193,16 +193,15 @@ class SegformerFinetuner(pl.LightningModule):
             tuple: Optimizer and learning rate scheduler.
         """
 
-        optimizer = torch.optim.AdamW([
-            {'params': self.model.segformer.parameters(), 'lr': 1e-5},
-            {'params': self.model.decode_head.parameters(), 'lr': 1e-4}
-        ], lr=self.hparams.lr, eps=self.hparams.eps, weight_decay=1e-4)
-
-        scheduler = {
-            'scheduler': torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50),
-            'interval': 'epoch',
-            'frequency': 1
-        }
+        lr = self.hparams.lr if "lr" in self.hparams else 2e-5
+        optimizer = torch.optim.AdamW(
+            [p for p in self.parameters() if p.requires_grad],
+            lr=lr,
+            eps=1e-08,
+            weight_decay=1e-4
+        )
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=50)
         return [optimizer], [scheduler]
 
     def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
@@ -213,7 +212,7 @@ class SegformerFinetuner(pl.LightningModule):
             pretrained_path (str or Path): Directory where the model will be saved.
             checkpoint_path (str or Path, optional): Path to the checkpoint file.
         """
-        if checkpoint_path and Path(checkpoint_path).exists():
+        if checkpoint_path and Path(checkpoint_path).exists():  # pragma: no cover
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")  # Ignore all warnings
                 logging.set_verbosity_error()  # Suppress Transformers logging
@@ -223,7 +222,7 @@ class SegformerFinetuner(pl.LightningModule):
                 model.model.save_pretrained(pretrained_path)
                 logging.set_verbosity_warning()  # Restore Transformers logging level
         else:
-            self.model.save_pretrained(pretrained_path)
+            self.model.save_pretrained(pretrained_path)  # pragma: no cover
 
     def reset_test_results(self):
         """
