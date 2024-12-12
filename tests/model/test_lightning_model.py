@@ -40,6 +40,12 @@ def test_initialization(mock_model):
     assert mock_model.training, "Model need to be in train mode on initialization."
 
 
+def test_on_fit_start(mock_model):
+    # Check that the LightningModule is set to training mode
+    mock_model.on_fit_start()
+    assert mock_model.training, "The model should be in training mode after on_fit_start is called."
+
+
 def test_forward_pass(mock_model, mock_batch):
     """
     Test the forward pass.
@@ -87,6 +93,7 @@ def test_optimizer_configuration(mock_model):
     """
     Test optimizer configuration.
     """
+    # Call the configure_optimizers method
     optimizer_list, scheduler_list = mock_model.configure_optimizers()
 
     # Ensure that lists are returned
@@ -95,9 +102,14 @@ def test_optimizer_configuration(mock_model):
     assert isinstance(
         scheduler_list, list), "configure_optimizers should return a list of schedulers."
 
+    # Ensure the optimizer list is not empty
+    assert len(optimizer_list) > 0, "Optimizer list should not be empty."
+    # Ensure the scheduler list is not empty
+    assert len(scheduler_list) > 0, "Scheduler list should not be empty."
+
     # Extract the first optimizer and scheduler
     optimizer = optimizer_list[0]
-    scheduler = scheduler_list[0]['scheduler']
+    scheduler = scheduler_list[0]
 
     # Check optimizer type
     assert isinstance(
@@ -106,6 +118,16 @@ def test_optimizer_configuration(mock_model):
     # Check scheduler type
     assert isinstance(
         scheduler, torch.optim.lr_scheduler.CosineAnnealingLR), "Scheduler should be an instance of torch.optim.lr_scheduler.CosineAnnealingLR."
+
+    # Additional checks on optimizer parameters
+    lr = optimizer.param_groups[0]['lr']
+    weight_decay = optimizer.param_groups[0]['weight_decay']
+
+    assert lr == 2e-05, f"Expected learning rate 2e-05, but got {lr}."
+    assert weight_decay == 1e-4, f"Expected weight decay 1e-4, but got {weight_decay}."
+
+    # Additional checks on scheduler parameters
+    assert scheduler.T_max == 50, f"Expected T_max 50, but got {scheduler.T_max}."
 
 
 def test_reset_test_results(mock_model):

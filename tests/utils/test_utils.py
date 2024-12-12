@@ -27,7 +27,7 @@ def test_find_checkpoint(mock_config, tmp_path):
     Test the `find_checkpoint` function.
     """
     version = "0"
-    checkpoint_dir = tmp_path / "logs" / f"version_{version}" / "checkpoints"
+    checkpoint_dir = tmp_path / "logs" / "checkpoints" / f"version_{version}"
     checkpoint_dir.mkdir(parents=True)
 
     # Create a mock checkpoint file
@@ -44,7 +44,7 @@ def test_find_checkpoint(mock_config, tmp_path):
         find_checkpoint(mock_config, "999")
 
     # Test when no checkpoint files exist in the directory
-    empty_dir = tmp_path / "logs" / "version_empty" / "checkpoints"
+    empty_dir = tmp_path / "logs" / "checkpoints" / "version_empty"
     empty_dir.mkdir(parents=True)
     with pytest.raises(FileNotFoundError, match="No checkpoint files found"):
         find_checkpoint(mock_config, "empty")
@@ -52,11 +52,13 @@ def test_find_checkpoint(mock_config, tmp_path):
 
 def test_save_confusion_matrix_plot(tmp_path):
     """Test saving a confusion matrix plot to a file."""
-    y_true = [0, 1, 2, 1, 0, 2, 1]
-    y_pred = [0, 1, 2, 0, 0, 1, 2]
+    # Simulate batch-like input (list of arrays)
+    y_true = [np.array([0, 1, 2]), np.array([1, 0, 2, 1])]
+    y_pred = [np.array([0, 1, 2]), np.array([0, 0, 1, 2])]
     labels = ["Class 0", "Class 1", "Class 2"]
     save_path = tmp_path / "confusion_matrix.png"
 
+    # Call the function
     save_confusion_matrix_plot(y_true, y_pred, labels, save_path)
 
     # Check if the file is created
