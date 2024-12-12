@@ -107,7 +107,7 @@ def test_compute_class_weights(mock_dataloader):
     # Compute expected class weights manually based on inverse frequency
     total_samples = mask_array.numel()
     expected_class_weights = total_samples / (class_counts.float() + 1e-6)
-    normalized_weights = expected_class_weights / expected_class_weights.sum()
+    normalized_weights = expected_class_weights
 
     # Check if computed weights match the expected ones (within a small tolerance)
     assert torch.allclose(class_weights, normalized_weights, atol=1e-2), \

@@ -52,11 +52,12 @@ def test_find_checkpoint(mock_config, tmp_path):
 
 def test_save_confusion_matrix_plot(tmp_path):
     """Test saving a confusion matrix plot to a file."""
-    cm = np.array([[5, 2], [1, 7]])
-    labels = ["Class 0", "Class 1"]
+    y_true = [0, 1, 2, 1, 0, 2, 1]
+    y_pred = [0, 1, 2, 0, 0, 1, 2]
+    labels = ["Class 0", "Class 1", "Class 2"]
     save_path = tmp_path / "confusion_matrix.png"
 
-    save_confusion_matrix_plot(cm, labels, save_path)
+    save_confusion_matrix_plot(y_true, y_pred, labels, save_path)
 
     # Check if the file is created
     assert save_path.exists(), "Confusion matrix plot was not saved."

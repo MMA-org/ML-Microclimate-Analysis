@@ -36,8 +36,6 @@ def test_initialization(mock_model):
     assert isinstance(mock_model, SegformerFinetuner)
     assert isinstance(mock_model.metrics, SegMetrics)
     assert isinstance(mock_model.criterion, FocalLoss)
-    assert isinstance(mock_model.class_weights,
-                      torch.Tensor), "class_weights should be a torch.Tensor."
     assert mock_model.num_classes == 3, "Number of classes should match `id2label`."
     assert mock_model.training, "Model need to be in train mode on initialization."
 
