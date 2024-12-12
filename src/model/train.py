@@ -5,11 +5,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from model.lightning_model import SegformerFinetuner
 from data.loader import Loader
 from utils import lc_id2label, load_class_weights, save_class_weights
-
 from utils.metrics import compute_class_weights
 from utils.save_pretrained_callback import SavePretrainedCallback
 import torch
-import json
 
 
 def prepare_paths(config):
@@ -52,7 +50,7 @@ def prepare_class_weights(config, train_loader):
         class_weights = compute_class_weights(train_loader, len(lc_id2label))
         save_class_weights(weights_file, class_weights)
 
-    return torch.tensor(class_weights, dtype=torch.float)
+    return class_weights
 
 
 def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
