@@ -22,22 +22,32 @@ def parse_args():
     train_parser = subparsers.add_parser(
         "train", help="Train the SegFormer model", usage="mc train [--help|-h] [options]"
     )
+
     train_parser.add_argument(
-        "--config", type=str, default="config.yaml", help="Path to config yaml file. (default: config.yaml)"
+        "--no-class-weight",
+        action="store_false",
+        dest="compute_class_weight",
+        default=True,
+        help="Disable computing and using class weights for training (default: enabled)."
     )
+
     train_parser.add_argument(
-        "--resume", type=str, help="Path to a checkpoint (ckpt) file to resume training."
+        "-c", "--config", type=str, default="config.yaml", help="Path to config yaml file. (default: config.yaml)", metavar=""
+    )
+
+    train_parser.add_argument(
+        "-r", "--resume", type=str, help="Path to a checkpoint (ckpt) file to resume training.", metavar=""
     )
 
     # Define the 'eval' command
     eval_parser = subparsers.add_parser(
-        "eval", help="Evaluate the SegFormer model", usage="mc eval [--help|-h] [options]"
+        "evaluate", help="Evaluate the SegFormer model", usage="mc eval [--help|-h] [options]"
     )
     eval_parser.add_argument(
-        "--config", type=str, default="config.yaml", help="Path to config yaml file. (default: config.yaml)"
+        "-c", "--config", type=str, default="config.yaml", help="Path to config yaml file. (default: config.yaml)", metavar=""
     )
     eval_parser.add_argument(
-        "--version", type=str, default="0", help="Model version to evaluate. Default is '0'. Specify the version folder if using a specific checkpoint."
+        "-v", "--version", type=str, default="0", help="Model version to evaluate. Default is '0'. Specify the version folder if using a specific checkpoint.", metavar=""
     )
 
     return parser
@@ -51,7 +61,8 @@ def main():
 
     if args.command == "train":
         from model.train import train
-        train(config, resume_checkpoint=args.resume)
+        train(config, do_class_weight=args.compute_class_weight,
+              resume_checkpoint=args.resume)
     elif args.command == "eval":
         from model.evaluate import evaluate
         evaluate(config, version=args.version)

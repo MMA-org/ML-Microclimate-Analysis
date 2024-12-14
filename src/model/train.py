@@ -28,7 +28,7 @@ def prepare_dataloaders(config):
     return train_loader, val_loader
 
 
-def prepare_class_weights(config, train_loader):
+def prepare_class_weights(logs_dir: Path, do_class_weight, train_loader):
     """
     Compute or load precomputed class weights based on the configuration.
 
@@ -39,9 +39,9 @@ def prepare_class_weights(config, train_loader):
     Returns:
         torch.Tensor: Tensor of class weights.
     """
-    weights_file = Path(config.project.logs_dir) / "class_weights.json"
+    weights_file = logs_dir / "class_weights.json"
 
-    if not config.training.do_class_weight:
+    if not do_class_weight:
         return None  # Return None if class weighting is disabled
 
     if weights_file.exists():
@@ -93,7 +93,7 @@ def resolve_checkpoint_path(checkpoint_dir, resume_checkpoint):
     return None
 
 
-def train(config, resume_checkpoint=None):
+def train(config, do_class_weight, resume_checkpoint=None):
     """
     Train the Segformer model with the provided configuration.
 
@@ -108,7 +108,9 @@ def train(config, resume_checkpoint=None):
     train_loader, val_loader = prepare_dataloaders(config)
 
     # Compute class weights
-    class_weights = prepare_class_weights(config, train_loader)
+
+    class_weights = prepare_class_weights(
+        logs_dir, do_class_weight, train_loader)
 
     # Initialize the model
     model = SegformerFinetuner(
