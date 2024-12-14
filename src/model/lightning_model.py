@@ -34,13 +34,14 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (nn.CrossEntropyLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None):
+    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
         self.id2label = id2label
         self.label2id = {v: k for k, v in id2label.items()}
         self.num_classes = len(id2label)
+        self.learning_rate = lr
 
         # Initialize the model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
@@ -50,6 +51,7 @@ class SegformerFinetuner(pl.LightningModule):
             label2id=self.label2id,
             ignore_mismatched_sizes=True
         )
+        self.model.train()
 
         # Initialize metrics and move to the correct device
         self.metrics = SegMetrics(self.num_classes, self.device)
@@ -113,7 +115,7 @@ class SegformerFinetuner(pl.LightningModule):
         loss, predicted = self(images, masks)
 
         # Log loss at the step level
-        self.log(f"{stage}_loss", loss, prog_bar=True)
+        self.log(f"{stage}_loss", loss, prog_bar=True, on_epoch=True)
 
         # Update metrics
         self.metrics.update(predicted, masks)
@@ -122,11 +124,19 @@ class SegformerFinetuner(pl.LightningModule):
         step_metrics = self.metrics.compute()
 
         self.log(f"{stage}_mean_iou",
-                 step_metrics["mean_iou"], prog_bar=True)
+                 step_metrics["mean_iou"], prog_bar=True, on_epoch=True)
         self.log(f"{stage}_mean_dice",
-                 step_metrics["mean_dice"], prog_bar=True)
+                 step_metrics["mean_dice"], prog_bar=True, on_epoch=True)
 
         if stage == "test":
+            # log additional metrics
+            self.log(f"{stage}_accuracy",
+                     step_metrics["accuracy"], prog_bar=True, on_epoch=True)
+            self.log(f"{stage}_precision",
+                     step_metrics["precision"], prog_bar=True, on_epoch=True)
+            self.log(f"{stage}_recall",
+                     step_metrics["recall"], prog_bar=True, on_epoch=True)
+
             # Collect test predictions and ground truths
             self.test_results["predictions"].extend(predicted.cpu().numpy())
             self.test_results["ground_truths"].extend(masks.cpu().numpy())
@@ -139,6 +149,13 @@ class SegformerFinetuner(pl.LightningModule):
         """
         super().on_train_start()
         self.model.train()
+
+    def on_test_start(self):
+        """
+        Add test-specific metrics at the start of the test phase.
+        """
+        super().on_test_start()
+        self.metrics.add_tests_metrics()
 
     def training_step(self, batch, batch_idx):
         """
@@ -192,17 +209,7 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             tuple: Optimizer and learning rate scheduler.
         """
-
-        lr = self.hparams.lr if "lr" in self.hparams else 2e-5
-        optimizer = torch.optim.AdamW(
-            [p for p in self.parameters() if p.requires_grad],
-            lr=lr,
-            eps=1e-08,
-            weight_decay=1e-4
-        )
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=50)
-        return [optimizer], [scheduler]
+        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
     def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
         """

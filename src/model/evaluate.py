@@ -24,7 +24,8 @@ def evaluate(config, version="0"):
 
     # Evaluate the model
     trainer = Trainer()
-    trainer.test(model, test_loader)
+    tests = trainer.test(model, test_loader)
+    tests_metrics_results = tests[0]
 
     test_results = model.get_test_results()
     y_true = test_results["ground_truths"]
@@ -36,6 +37,7 @@ def evaluate(config, version="0"):
     labels = list(lc_id2label.keys())
 
     # Plot and save the confusion matrix
-    save_confusion_matrix_plot(y_true, y_pred, labels, save_path=cm_save_path)
+    save_confusion_matrix_plot(
+        y_true, y_pred, labels, save_path=cm_save_path, metrics=tests_metrics_results)
 
     print(f"Confusion matrix saved to {cm_save_path}")

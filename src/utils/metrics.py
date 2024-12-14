@@ -1,6 +1,6 @@
 # util/metric.py
 from tqdm import tqdm
-from torchmetrics import MetricCollection, JaccardIndex, Dice
+from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -75,6 +75,7 @@ class SegMetrics(MetricCollection):
             num_classes (int): Number of classes in the segmentation task.
         """
         self.num_classes = num_classes
+        self.device = device
         self.metrics = {
             "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes).to(device),
             "mean_dice": Dice(average='micro', num_classes=num_classes).to(device)
@@ -93,6 +94,17 @@ class SegMetrics(MetricCollection):
         targets = targets.view(-1)
 
         super().update(predicted, targets)
+
+    def add_tests_metrics(self):
+        """
+        Add additional test-specific metrics such as accuracy, precision, and recall.
+        """
+        test_metrics = {
+            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
+            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
+            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
+        }
+        self.add_metrics(test_metrics)
 
 
 def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=False):

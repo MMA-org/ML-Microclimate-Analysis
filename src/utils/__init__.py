@@ -112,7 +112,7 @@ def find_checkpoint(config: Config, version: str) -> str:
     return str(checkpoint_files[0])
 
 
-def save_confusion_matrix_plot(y_true, y_pred, labels, save_path):
+def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None):
     """
     Save a confusion matrix plot to a file.
 
@@ -121,6 +121,7 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path):
         y_pred (array-like): Predicted labels.
         labels (list): List of class labels.
         save_path (str or Path): Path to save the confusion matrix plot.
+        metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
     """
     if isinstance(y_true, list):
         y_true = np.concatenate(y_true).flatten()
@@ -134,11 +135,34 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path):
 
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
-    disp.plot(cmap=plt.cm.Blues, xticks_rotation="vertical")
+
+    # Plot confusion matrix
+    fig, ax = plt.subplots(figsize=(8, 8))
+    disp.plot(ax=ax, cmap=plt.cm.Blues, colorbar=True)
     plt.title("Confusion Matrix")
+
+    # Add text annotation for metrics below the confusion matrix
+    if metrics:
+        metric_items = list(metrics.items())
+        rows = [
+            "    " +
+            "    ".join([f"{key}: {value:.3f}" for key,
+                        value in metric_items[i:i + 3]])
+            for i in range(0, len(metric_items), 3)
+        ]
+        metrics_text = "\n".join(rows)
+        plt.text(
+            0.5, -0.1,  # Adjusted position for better alignment
+            metrics_text,
+            ha='center', va='top', fontsize=12, transform=ax.transAxes,
+            bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray',
+                      facecolor='white', alpha=0.5)
+        )
+
+    # Save the plot
+    plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
-    print(f"Confusion matrix saved to {save_path}")
 
 
 def load_class_weights(weights_file):
