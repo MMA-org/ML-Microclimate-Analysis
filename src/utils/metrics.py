@@ -75,7 +75,6 @@ class SegMetrics(MetricCollection):
             num_classes (int): Number of classes in the segmentation task.
         """
         self.num_classes = num_classes
-        self.device = device
         self.metrics = {
             "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes).to(device),
             "mean_dice": Dice(average='micro', num_classes=num_classes).to(device)
@@ -95,14 +94,14 @@ class SegMetrics(MetricCollection):
 
         super().update(predicted, targets)
 
-    def add_tests_metrics(self):
+    def add_tests_metrics(self, device):
         """
         Add additional test-specific metrics such as accuracy, precision, and recall.
         """
         test_metrics = {
-            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
-            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
-            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro").to(self.device),
+            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
+            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
+            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
         }
         self.add_metrics(test_metrics)
 

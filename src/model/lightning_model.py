@@ -34,7 +34,7 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (nn.CrossEntropyLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5):
+    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -68,7 +68,7 @@ class SegformerFinetuner(pl.LightningModule):
         self.criterion = FocalLoss(
             num_class=len(id2label),
             alpha=class_weight,
-            gamma=2,
+            gamma=gamma,
             reduction='mean'
         )
 
@@ -155,7 +155,7 @@ class SegformerFinetuner(pl.LightningModule):
         Add test-specific metrics at the start of the test phase.
         """
         super().on_test_start()
-        self.metrics.add_tests_metrics()
+        self.metrics.add_tests_metrics(self.device)
 
     def training_step(self, batch, batch_idx):
         """

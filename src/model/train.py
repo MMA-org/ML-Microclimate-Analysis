@@ -117,6 +117,7 @@ def train(config, do_class_weight, resume_checkpoint=None):
         id2label=lc_id2label,
         model_name=config.training.model_name,
         class_weight=class_weights,
+        lr=7.0e-5,
     )
 
     # Initialize logger

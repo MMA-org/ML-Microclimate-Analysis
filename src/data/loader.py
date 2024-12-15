@@ -76,4 +76,4 @@ class Loader:
             feature_extractor=self.feature_extractor,
             transform=self.get_transforms() if split == "train" else None,
         )
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle, num_workers=self.num_workers, persistent_workers=(self.num_workers > 0))
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle, num_workers=self.num_workers, persistent_workers=(self.num_workers > 0), pin_memory=True)
