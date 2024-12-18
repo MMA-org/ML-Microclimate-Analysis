@@ -25,6 +25,7 @@ def evaluate(config, version="0"):
     # Evaluate the model
     trainer = Trainer()
     tests = trainer.test(model, test_loader)
+    print("Create Confusion matrix")
     tests_metrics_results = tests[0]
 
     test_results = model.get_test_results()

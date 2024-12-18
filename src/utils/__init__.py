@@ -1,24 +1,26 @@
 
 from pathlib import Path
-import yaml
 from collections import namedtuple
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import json
-import torch
+from .config import Config
 
 # Define land cover class labels with associated colors
 LandCoverClass = namedtuple('LandCoverClass', ['label', 'id', 'color'])
 lc_classes = [
-    LandCoverClass('background', 0, (255, 255, 255)),  # White
-    LandCoverClass('building', 1, (255, 0, 0)),       # Red
-    LandCoverClass('road', 2, (255, 255, 0)),         # Yellow
-    LandCoverClass('water', 3, (0, 0, 255)),          # Blue
-    LandCoverClass('barren', 4, (139, 69, 19)),       # Brown
-    LandCoverClass('woodland', 5, (0, 255, 0)),       # Green
-    LandCoverClass('agriculture', 6, (50, 143, 168)),  # Purple
+    LandCoverClass('background', 0, (0, 0, 0)),                  # Black
+    LandCoverClass('forest', 1, (44, 160, 44)),                 # Green
+    LandCoverClass('water', 2, (31, 119, 180)),                 # Blue
+    LandCoverClass('agricultural', 3, (140, 86, 75)),           # Brown
+    LandCoverClass('residential,commercial,industrial',
+                   4, (127, 127, 127)),  # Gray
+    LandCoverClass('grassland,swamp,shrubbery', 5, (188, 189, 34)),   # Olive
+    LandCoverClass('railway,trainstation', 6, (255, 127, 14)),        # Orange
+    LandCoverClass('railway,highway,squares', 7, (148, 103, 189)),    # Purple
+    LandCoverClass('airport,shipyard', 8, (23, 190, 207)),            # Cyan
+    LandCoverClass('roads', 9, (214, 39, 40)),                       # Red
+    LandCoverClass('buildings', 10, (227, 119, 194))                 # Pink
 ]
 
 # Create mappings for label-to-id and id-to-color
@@ -26,93 +28,70 @@ lc_id2label = {cls.id: cls.label for cls in lc_classes}
 lc_id2color = {cls.id: cls.color for cls in lc_classes}
 
 
-class Config:
+def get_next_version(logs_dir: Path) -> str:
     """
-    Encapsulates configuration data, enabling nested attribute-based access.
-    Automatically creates directories specified in the `project` section.
+    Get the next version number for the logs directory containing only 'version_*' folders.
+
+    Args:
+        logs_dir (Path): The base directory where 'lightning_logs' are stored.
+
+    Returns:
+        str: The next version number in the format 'version_{n}'.
     """
+    lightning_logs_dir = logs_dir / "lightning_logs"
 
-    def __init__(self, config_path="config.yaml", create_dirs=True):
-        with open(config_path) as f:
-            self._config = yaml.safe_load(f)
-        if create_dirs:
-            self._create_directories()
+    # Ensure the 'lightning_logs' directory exists
+    if not lightning_logs_dir.exists():
+        return "version_0"
 
-    def __getattr__(self, name):
-        value = self._config.get(name)
-        if isinstance(value, dict):
-            return Config.from_dict(value)
-        elif value is not None:
-            return value
-        raise AttributeError(f"Configuration key '{name}' not found.")
+    # Extract version numbers from folder names
+    version_numbers = [
+        int(d.name.split("_")[1])
+        for d in lightning_logs_dir.iterdir()
+        if d.is_dir() and d.name.startswith("version_")
+    ]
 
-    @staticmethod
-    def from_dict(config_dict, create_dirs=True):
-        """Create a Config object from a dictionary."""
-        config = Config.__new__(
-            Config)  # Create a new instance without calling __init__
-        config._config = config_dict
-        if create_dirs:
-            config._create_directories()
-        return config
-
-    def get(self, *keys, default=None):
-        """
-        Get nested configuration values with a fallback default.
-        """
-        value = self._config
-        try:
-            for key in keys:
-                value = value[key]
-            return value
-        except KeyError:
-            return default
-
-    def _create_directories(self):
-        """
-        Automatically create directories specified in the `project` section.
-        """
-        project_config = self._config.get("project", {})
-        created_dirs = []  # Collect created directory paths
-
-        for key, dir_path in project_config.items():
-            dir_path = Path(dir_path)
-            dir_path.mkdir(parents=True, exist_ok=True)
-            created_dirs.append(str(dir_path))  # Add to list
-
-        if created_dirs:
-            print(f"Directories created: {' '.join(created_dirs)}")
+    # Determine the next version number
+    next_version = max(version_numbers, default=-1) + 1
+    return f"version_{next_version}"
 
 
-def find_checkpoint(config: Config, version: str) -> str:
+def find_checkpoint(config, version: str) -> Path:
     """
     Locate the single checkpoint file in the specified versioned directory.
 
     Args:
-        config (Config): Configuration object.
+        config: Configuration object.
         version (str): The version folder name (e.g., "version_0").
 
     Returns:
-        str: Path to the checkpoint file.
+        Path: Absolute path to the checkpoint file.
 
     Raises:
-        FileNotFoundError: If no checkpoint file is found.
+        CheckpointDirectoryError: If the checkpoint directory is missing or invalid.
+        CheckpointNotFoundError: If no checkpoint file is found.
+        MultipleCheckpointsError: If multiple checkpoint files are found.
     """
+    from .errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
     checkpoint_dir = Path(config.project.logs_dir) / \
         "checkpoints" / f"version_{version}"
-    if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
-        raise FileNotFoundError(
-            f"Checkpoint directory not found: {checkpoint_dir}")
 
+    # Check if the checkpoint directory exists
+    if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
+        raise CheckpointDirectoryError(checkpoint_dir)
+
+    # Locate checkpoint files
     checkpoint_files = list(checkpoint_dir.glob("*.ckpt"))
     if not checkpoint_files:
-        raise FileNotFoundError(
-            f"No checkpoint files found in directory: {checkpoint_dir}")
+        raise CheckpointNotFoundError(checkpoint_dir)
 
-    return str(checkpoint_files[0])
+    if len(checkpoint_files) > 1:
+        raise MultipleCheckpointsError(checkpoint_dir)
+
+    return checkpoint_files[0].resolve()
 
 
-def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None):
+def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, title="Confusion Matrix"):
     """
     Save a confusion matrix plot to a file.
 
@@ -122,24 +101,27 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None):
         labels (list): List of class labels.
         save_path (str or Path): Path to save the confusion matrix plot.
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
+        title (str, optional): Title for the confusion matrix plot.
     """
-    if isinstance(y_true, list):
-        y_true = np.concatenate(y_true).flatten()
-    else:
-        y_true = np.array(y_true).flatten()
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+    import seaborn as sns
+    # Flatten inputs
+    y_true = np.concatenate(y_true).flatten() if isinstance(
+        y_true, list) else np.array(y_true).flatten()
+    y_pred = np.concatenate(y_pred).flatten() if isinstance(
+        y_pred, list) else np.array(y_pred).flatten()
 
-    if isinstance(y_pred, list):
-        y_pred = np.concatenate(y_pred).flatten()
-    else:
-        y_pred = np.array(y_pred).flatten()
-
+    # Generate confusion matrix
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
 
-    # Plot confusion matrix
+    # Plot confusion matrix using seaborn
     fig, ax = plt.subplots(figsize=(8, 8))
-    disp.plot(ax=ax, cmap=plt.cm.Blues, colorbar=True)
-    plt.title("Confusion Matrix")
+    sns.heatmap(cm, annot=True, fmt='d', cmap="Blues",
+                xticklabels=labels, yticklabels=labels, cbar=True, ax=ax)
+
+    plt.title(title)
+    plt.ylabel("True label")
+    plt.xlabel("Predicted label")
 
     # Add text annotation for metrics below the confusion matrix
     if metrics:
@@ -152,7 +134,7 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None):
         ]
         metrics_text = "\n".join(rows)
         plt.text(
-            0.5, -0.1,  # Adjusted position for better alignment
+            0.5, -0.15,  # Adjust position
             metrics_text,
             ha='center', va='top', fontsize=12, transform=ax.transAxes,
             bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray',
@@ -175,6 +157,7 @@ def load_class_weights(weights_file):
     Returns:
         torch.Tensor: Loaded class weights as a tensor.
     """
+    import torch
     print("Loading precomputed class weights from file.")
     with weights_file.open("r") as f:
         return torch.tensor(json.load(f), dtype=torch.float)
@@ -193,26 +176,30 @@ def save_class_weights(weights_file, class_weights):
         json.dump(class_weights.tolist(), f)
 
 
-def apply_color_map(mask: np.ndarray) -> np.ndarray:
+def apply_color_map(mask, id2color) -> np.ndarray:
     """
     Map class indices to RGB values for visualization.
 
     Args:
-        mask (np.ndarray): 2D array of class indices.
+        mask (Image.Image): 2D image with class indices (PIL Image).
+        id2color (dict): Dictionary mapping class IDs to RGB color tuples.
 
     Returns:
         np.ndarray: 3D array of RGB values.
     """
+    # Convert PIL Image to NumPy array
+    mask = np.array(mask)
+
     height, width = mask.shape
     color_mask = np.zeros((height, width, 3), dtype=np.uint8)
 
-    for class_id, color in lc_id2color.items():
+    for class_id, color in id2color.items():
         color_mask[mask == class_id] = color
 
     return color_mask
 
 
-def plot_image_and_mask(image_path: str, mask: np.ndarray):
+def plot_image_and_mask(image, mask: np.ndarray, id2color):
     """
     Display an image and its corresponding mask side by side.
 
@@ -223,8 +210,10 @@ def plot_image_and_mask(image_path: str, mask: np.ndarray):
     Returns:
         None
     """
-    image = Image.open(image_path)
-    color_mask = apply_color_map(mask)
+    from PIL import Image
+    if not isinstance(image, Image.Image):
+        image = Image.open(image)
+    color_mask = apply_color_map(mask, id2color)
 
     _, ax = plt.subplots(1, 2, figsize=(12, 6))
     ax[0].imshow(image)

@@ -4,17 +4,18 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from model.lightning_model import SegformerFinetuner
 from data.loader import Loader
-from utils import lc_id2label, load_class_weights, save_class_weights
+from utils import lc_id2label, load_class_weights, save_class_weights, get_next_version, find_checkpoint
 from utils.metrics import compute_class_weights
 from utils.save_pretrained_callback import SavePretrainedCallback
 import torch
 
 
-def prepare_paths(config):
+def prepare_paths(config, resume_version=None):
     """Prepare directory paths for logging and checkpoints."""
     pretrained_dir = Path(config.project.pretrained_dir)
     logs_dir = Path(config.project.logs_dir)
-    version = f"version_{len(list(logs_dir.iterdir()))}"  # fetch version
+    version = f"version_{resume_version}" if resume_version else get_next_version(
+        logs_dir)
     checkpoint_dir = logs_dir / "checkpoints" / version
     pretrained_dir = pretrained_dir / version
     return pretrained_dir, logs_dir, checkpoint_dir
@@ -28,7 +29,7 @@ def prepare_dataloaders(config):
     return train_loader, val_loader
 
 
-def prepare_class_weights(logs_dir: Path, do_class_weight, train_loader):
+def prepare_class_weights(config, train_loader):
     """
     Compute or load precomputed class weights based on the configuration.
 
@@ -39,9 +40,9 @@ def prepare_class_weights(logs_dir: Path, do_class_weight, train_loader):
     Returns:
         torch.Tensor: Tensor of class weights.
     """
-    weights_file = logs_dir / "class_weights.json"
+    weights_file = Path(config.project.logs_dir) / "class_weights.json"
 
-    if not do_class_weight:
+    if not config.training.focal_loss.do_class_weight:
         return None  # Return None if class weighting is disabled
 
     if weights_file.exists():
@@ -57,9 +58,10 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
     """Initialize callbacks for model training."""
     checkpoint_callback = ModelCheckpoint(
         dirpath=checkpoint_dir,
-        monitor="val_loss",
+        filename='epoch={epoch}-loss={val_loss:.2f}-mean-iou={val_mean_iou:.2f}',
+        monitor="val_mean_iou",
         save_top_k=1,
-        mode="min",
+        mode="max",
     )
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
@@ -85,15 +87,23 @@ def initialize_trainer(config, callbacks, logger):
     )
 
 
-def resolve_checkpoint_path(checkpoint_dir, resume_checkpoint):
-    """Resolve the path for resuming training from a checkpoint."""
-    if resume_checkpoint:
-        checkpoint_path = checkpoint_dir / resume_checkpoint
-        return checkpoint_path.resolve() if not checkpoint_path.is_absolute() else checkpoint_path
+def resolve_checkpoint_path(config, resume_version: str) -> Path:
+    """
+    Resolve the path for resuming training from a checkpoint.
+
+    Args:
+        config: Configuration object.
+        resume_version (str): The version folder name (e.g., "version_0").
+
+    Returns:
+        Path: Absolute path to the checkpoint file or None if no resume version is provided.
+    """
+    if resume_version:
+        return find_checkpoint(config, f"version_{resume_version}")
     return None
 
 
-def train(config, do_class_weight, resume_checkpoint=None):
+def train(config, resume_version=None):
     """
     Train the Segformer model with the provided configuration.
 
@@ -102,39 +112,42 @@ def train(config, do_class_weight, resume_checkpoint=None):
         resume_checkpoint: Optional checkpoint file to resume training from.
     """
     # Prepare paths
-    pretrained_dir, logs_dir, checkpoint_dir = prepare_paths(config)
+    pretrained_dir, logs_dir, checkpoint_dir = prepare_paths(
+        config, resume_version)
+
+    # Initialize logger
+    logger = TensorBoardLogger(
+        save_dir=logs_dir,
+        version=f"version_{resume_version}" if resume_version else None,
+        default_hp_metric=False
+    )
 
     # Prepare dataloaders
     train_loader, val_loader = prepare_dataloaders(config)
 
     # Compute class weights
 
-    class_weights = prepare_class_weights(
-        logs_dir, do_class_weight, train_loader)
+    class_weights = prepare_class_weights(config, train_loader)
 
     # Initialize the model
     model = SegformerFinetuner(
         id2label=lc_id2label,
         model_name=config.training.model_name,
         class_weight=class_weights,
-        lr=7.0e-5,
-    )
-
-    # Initialize logger
-    logger = TensorBoardLogger(
-        save_dir=logs_dir, default_hp_metric=False
+        lr=config.training.learning_rate,
+        gamma=config.training.focal_loss.gamma
     )
 
     # Initialize callbacks
     callbacks = initialize_callbacks(
-        pretrained_dir, checkpoint_dir, config.training.patience)
+        pretrained_dir, checkpoint_dir, config.training.early_stop.patience)
 
     # Initialize trainer
     trainer = initialize_trainer(config, callbacks, logger)
 
     # Resolve checkpoint path
     resume_checkpoint = resolve_checkpoint_path(
-        checkpoint_dir, resume_checkpoint)
+        config, resume_version)
 
     # Train the model
     trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)

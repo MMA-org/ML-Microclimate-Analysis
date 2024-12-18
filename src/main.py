@@ -20,15 +20,7 @@ def parse_args():
 
     # Define the 'train' command
     train_parser = subparsers.add_parser(
-        "train", help="Train the SegFormer model", usage="mc train [--help|-h] [options]"
-    )
-
-    train_parser.add_argument(
-        "--no-class-weight",
-        action="store_false",
-        dest="compute_class_weight",
-        default=True,
-        help="Disable computing and using class weights for training (default: enabled)."
+        "train", formatter_class=argparse.RawTextHelpFormatter, help="Train the SegFormer model", usage="mc train [--help|-h] [options]"
     )
 
     train_parser.add_argument(
@@ -36,7 +28,12 @@ def parse_args():
     )
 
     train_parser.add_argument(
-        "-r", "--resume", type=str, help="Path to a checkpoint (ckpt) file to resume training.", metavar=""
+        "-r", "--resume", type=str,
+        help=(
+            "Specify the model version number to resume training from.\n"
+            "For example '3' will look for checkpoints in the directory corresponding to version_3.\n"
+            "Ensure that a valid checkpoint exists in the specified version directory."
+        ), metavar=""
     )
 
     # Define the 'eval' command
@@ -61,9 +58,9 @@ def main():
 
     if args.command == "train":
         from model.train import train
-        train(config, do_class_weight=args.compute_class_weight,
-              resume_checkpoint=args.resume)
-    elif args.command == "eval":
+        train(config,
+              resume_version=args.resume)
+    elif args.command == "evaluate":
         from model.evaluate import evaluate
         evaluate(config, version=args.version)
 

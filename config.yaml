@@ -1,8 +1,6 @@
 # DATA
-dataset_path: "erikpinhasov/landcover_dataset"
+dataset_path: "nave1616/landcover_dataset"
 
-# VISUALIZATION
-figuredirectory: reports/figures/
 project:
   models_dir: models
   pretrained_dir: models/pretrained_models
@@ -12,9 +10,14 @@ project:
 training:
   batch_size: 32
   max_epochs: 50
-  learning_rate: 2e-5
   num_workers: 4
-  model_name: b1
-  patience: 10
   log_every_n_steps: 10
-  do_class_weight: True
+  learning_rate: 2e-5
+  model_name: b1
+
+  early_stop:
+    patience: 10
+
+  focal_loss:
+    gamma: 2
+    do_class_weight: True

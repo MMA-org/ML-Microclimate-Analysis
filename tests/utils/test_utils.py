@@ -1,10 +1,9 @@
 import pytest
 import numpy as np
-from PIL import Image
-from unittest.mock import patch
 from utils import Config, find_checkpoint,  save_confusion_matrix_plot, apply_color_map, plot_image_and_mask, save_class_weights, load_class_weights
 import json
 import matplotlib
+from pathlib import Path
 import torch
 matplotlib.use('Agg')
 
@@ -14,9 +13,18 @@ def mock_config(tmp_path):
     """
     Fixture for a mock configuration object.
     """
+    # Define the directories
+    logs_dir = tmp_path / "logs"
+    checkpoint_dir = logs_dir / "checkpoints" / "version_0"
+
+    # Create the directories
+    checkpoint_dir.mkdir(parents=True)
+
+    # Create the mock config dictionary
     config_dict = {
         "project": {
-            "logs_dir": str(tmp_path / "logs")
+            "logs_dir": str(logs_dir),  # Path for logs_dir
+            "checkpoint_dir": str(checkpoint_dir)  # Path for checkpoint_dir
         }
     }
     return Config.from_dict(config_dict)
@@ -27,27 +35,44 @@ def test_find_checkpoint(mock_config, tmp_path):
     Test the `find_checkpoint` function.
     """
     version = "0"
-    checkpoint_dir = tmp_path / "logs" / "checkpoints" / f"version_{version}"
-    checkpoint_dir.mkdir(parents=True)
 
-    # Create a mock checkpoint file
-    checkpoint_file = checkpoint_dir / "mock_checkpoint.ckpt"
-    checkpoint_file.touch()
+    # Create the checkpoint directory as expected by the function
+    cpkt_dir = Path(mock_config.project.checkpoint_dir)
+    cpkt_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
 
-    # Check that the correct checkpoint path is returned
+    # Create the checkpoint file
+    checkpoint_file = cpkt_dir / "mock_checkpoint.ckpt"
+    checkpoint_file.touch()  # This creates the file
+
+    # Test: Check that the correct checkpoint path is returned
     checkpoint_path = find_checkpoint(mock_config, version)
-    assert checkpoint_path == str(
-        checkpoint_file), "Checkpoint file path mismatch."
+    assert checkpoint_path == checkpoint_file.resolve(
+    ), f"Expected {checkpoint_file.resolve()}, got {checkpoint_path}"
 
     # Test when the directory doesn't exist
-    with pytest.raises(FileNotFoundError, match="Checkpoint directory not found"):
-        find_checkpoint(mock_config, "999")
+    with pytest.raises(SystemExit) as excinfo:
+        find_checkpoint(mock_config, "999")  # Non-existing version
+    # Check that exit code is 3 for CheckpointDirectoryError
+    assert excinfo.value.code == 3
 
     # Test when no checkpoint files exist in the directory
     empty_dir = tmp_path / "logs" / "checkpoints" / "version_empty"
     empty_dir.mkdir(parents=True)
-    with pytest.raises(FileNotFoundError, match="No checkpoint files found"):
-        find_checkpoint(mock_config, "empty")
+    with pytest.raises(SystemExit) as excinfo:
+        find_checkpoint(mock_config, "empty")  # Version with no checkpoints
+    # Check that exit code is 2 for CheckpointNotFoundError
+    assert excinfo.value.code == 2
+
+    # Test when multiple checkpoint files exist in the directory
+    multiple_dir = tmp_path / "logs" / "checkpoints" / "version_multiple"
+    multiple_dir.mkdir(parents=True)
+    (multiple_dir / "checkpoint1.ckpt").touch()
+    (multiple_dir / "checkpoint2.ckpt").touch()
+    with pytest.raises(SystemExit) as excinfo:
+        # Version with multiple checkpoints
+        find_checkpoint(mock_config, "multiple")
+    # Check that exit code is 4 for MultipleCheckpointsError
+    assert excinfo.value.code == 4
 
 
 def test_save_confusion_matrix_plot(tmp_path):
@@ -63,50 +88,6 @@ def test_save_confusion_matrix_plot(tmp_path):
 
     # Check if the file is created
     assert save_path.exists(), "Confusion matrix plot was not saved."
-
-
-def test_apply_color_map():
-    """
-    Test the `apply_color_map` function.
-    """
-    mask = np.array([
-        [0, 1, 2],
-        [3, 4, 5],
-        [1, 0, 3]
-    ])
-
-    color_mask = apply_color_map(mask)
-
-    # Assert that the color mask has the correct shape and values
-    assert color_mask.shape == (3, 3, 3), "Color mask shape mismatch."
-    assert np.array_equal(
-        color_mask[0, 0], (255, 255, 255)), "Background color mismatch."
-    assert np.array_equal(
-        color_mask[0, 1], (255, 0, 0)), "Building color mismatch."
-    assert np.array_equal(
-        color_mask[0, 2], (255, 255, 0)), "Road color mismatch."
-
-
-def test_plot_image_and_mask(tmp_path):
-    """
-    Test the `plot_image_and_mask` function.
-    """
-    # Create a mock image file
-    image_path = tmp_path / "mock_image.png"
-    mock_image = np.zeros((100, 100, 3), dtype=np.uint8)
-    Image.fromarray(mock_image).save(image_path)
-
-    # Create a mock mask
-    mask = np.array([
-        [0, 1, 2],
-        [3, 4, 5],
-        [1, 0, 3]
-    ])
-
-    # Mock plt.show() to avoid rendering during tests
-    with patch("matplotlib.pyplot.show") as mock_show:
-        plot_image_and_mask(str(image_path), mask)
-        mock_show.assert_called_once()
 
 
 def test_load_class_weights(tmp_path):

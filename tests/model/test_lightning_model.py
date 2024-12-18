@@ -80,13 +80,36 @@ def test_step_logic(mock_model, mock_batch):
     assert loss.item() > 0, "Test step loss should be positive."
 
 
-def test_on_epoch_end(mock_model):
+def test_on_test_epoch_end(mock_model):
+    """
+    Test metric logging at the end of an epoch.
+    """
+    mock_model.on_test_start()
+    mock_model.metrics.reset = MagicMock()
+
+    mock_model.on_test_epoch_end()
+
+    mock_model.metrics.reset.assert_called_once()
+
+
+def test_on_train_epoch_end(mock_model):
     """
     Test metric logging at the end of an epoch.
     """
     mock_model.metrics.reset = MagicMock()
 
-    mock_model.on_epoch_end()
+    mock_model.on_train_epoch_end()
+
+    mock_model.metrics.reset.assert_called_once()
+
+
+def test_on_validation_epoch_end(mock_model):
+    """
+    Test metric logging at the end of an epoch.
+    """
+    mock_model.metrics.reset = MagicMock()
+
+    mock_model.on_validation_epoch_end()
 
     mock_model.metrics.reset.assert_called_once()
 

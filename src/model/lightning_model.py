@@ -114,29 +114,11 @@ class SegformerFinetuner(pl.LightningModule):
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self(images, masks)
 
+        self.log(f"{stage}_loss", loss, prog_bar=True,
+                 on_step=False, on_epoch=True)
+
         # Log loss at the step level
-        self.log(f"{stage}_loss", loss, prog_bar=True, on_epoch=True)
-
-        # Update metrics
-        self.metrics.update(predicted, masks)
-
-        # Log intermediate metrics at the step level
-        step_metrics = self.metrics.compute()
-
-        self.log(f"{stage}_mean_iou",
-                 step_metrics["mean_iou"], prog_bar=True, on_epoch=True)
-        self.log(f"{stage}_mean_dice",
-                 step_metrics["mean_dice"], prog_bar=True, on_epoch=True)
-
         if stage == "test":
-            # log additional metrics
-            self.log(f"{stage}_accuracy",
-                     step_metrics["accuracy"], prog_bar=True, on_epoch=True)
-            self.log(f"{stage}_precision",
-                     step_metrics["precision"], prog_bar=True, on_epoch=True)
-            self.log(f"{stage}_recall",
-                     step_metrics["recall"], prog_bar=True, on_epoch=True)
-
             # Collect test predictions and ground truths
             self.test_results["predictions"].extend(predicted.cpu().numpy())
             self.test_results["ground_truths"].extend(masks.cpu().numpy())
@@ -196,10 +178,34 @@ class SegformerFinetuner(pl.LightningModule):
         """
         return self.step(batch, "test")
 
-    def on_epoch_end(self):
+    def on_train_epoch_end(self):
         """
-        Compute and log metrics at the end of the epoch.
+        Compute and log training metrics at the end of the epoch.
         """
+        metrics = self.metrics.compute()
+        self.log("train_mean_iou", metrics["mean_iou"], prog_bar=True)
+        self.log("train_mean_dice", metrics["mean_dice"], prog_bar=True)
+        self.metrics.reset()
+
+    def on_validation_epoch_end(self):
+        """
+        Compute and log validation metrics at the end of the epoch.
+        """
+        metrics = self.metrics.compute()
+        self.log("val_mean_iou", metrics["mean_iou"], prog_bar=True)
+        self.log("val_mean_dice", metrics["mean_dice"], prog_bar=True)
+        self.metrics.reset()
+
+    def on_test_epoch_end(self):
+        """
+        Compute and log test metrics at the end of the epoch.
+        """
+        metrics = self.metrics.compute()
+        self.log("test_mean_iou", metrics["mean_iou"], prog_bar=True)
+        self.log("test_mean_dice", metrics["mean_dice"], prog_bar=True)
+        self.log("test_accuracy", metrics["accuracy"], prog_bar=True)
+        self.log("test_precision", metrics["precision"], prog_bar=True)
+        self.log("test_recall", metrics["recall"], prog_bar=True)
         self.metrics.reset()
 
     def configure_optimizers(self):
