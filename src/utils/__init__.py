@@ -74,7 +74,7 @@ def find_checkpoint(config, version: str) -> Path:
     """
     from .errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
     checkpoint_dir = Path(config.project.logs_dir) / \
-        "checkpoints" / f"version_{version}"
+        "checkpoints" / version
 
     # Check if the checkpoint directory exists
     if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():

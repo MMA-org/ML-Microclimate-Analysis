@@ -3,7 +3,7 @@ from tqdm import tqdm
 from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
 import numpy as np
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 from typing import Optional
 
 
@@ -12,7 +12,7 @@ class FocalLoss(torch.nn.Module):
     Focal Loss for static datasets with fixed class weights.
     """
 
-    def __init__(self, num_class, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean'):
+    def __init__(self, num_class, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean', ignore_index=None):
         """
         Args:
             alpha (Tensor, optional): Per-class weights (shape: [num_classes]).
@@ -27,6 +27,13 @@ class FocalLoss(torch.nn.Module):
         self.gamma = gamma
         self.reduction = reduction
         self.num_class = num_class
+        self.ignore_index = ignore_index if ignore_index is not None else -100
+
+        if self.ignore_index >= 0 and self.ignore_index < self.num_class:
+            self.alpha[self.ignore_index] = 0
+
+        self.ce_loss = nn.CrossEntropyLoss(
+            reduction='none', ignore_index=self.ignore_index, weight=self.alpha)
 
     def forward(self, inputs, targets):
         """
@@ -44,7 +51,7 @@ class FocalLoss(torch.nn.Module):
         self.alpha = self.alpha.to(inputs.device)
 
         # Compute Cross-Entropy Loss
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        ce_loss = self.ce_loss(inputs, targets)
 
         # Compute Probabilities
         pt = torch.exp(-ce_loss)
@@ -67,7 +74,7 @@ class SegMetrics(MetricCollection):
     Provides functionality for IoU (Jaccard Index) and Dice coefficient calculation.
     """
 
-    def __init__(self, num_classes, device="cpu"):
+    def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
         """
         Initialize metrics.
 
@@ -75,9 +82,10 @@ class SegMetrics(MetricCollection):
             num_classes (int): Number of classes in the segmentation task.
         """
         self.num_classes = num_classes
+        self.ignore_index = ignore_index
         self.metrics = {
-            "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes).to(device),
-            "mean_dice": Dice(average='micro', num_classes=num_classes).to(device)
+            "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes, ignore_index=self.ignore_index).to(device),
+            "mean_dice": Dice(average='micro', num_classes=num_classes, ignore_index=self.ignore_index).to(device)
         }
         super().__init__(self.metrics)
 
@@ -99,9 +107,9 @@ class SegMetrics(MetricCollection):
         Add additional test-specific metrics such as accuracy, precision, and recall.
         """
         test_metrics = {
-            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
-            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
-            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro").to(device),
+            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
+            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
+            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
         }
         self.add_metrics(test_metrics)
 

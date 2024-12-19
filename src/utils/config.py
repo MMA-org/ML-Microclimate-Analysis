@@ -98,7 +98,9 @@ default_config = {
         },
         "focal_loss": {
             "gamma": 2,
-            "do_class_weight": True
+            "do_class_weight": True,
+            "normalize_weights": False,
+            "ignore_index": None
         }
     }
 }

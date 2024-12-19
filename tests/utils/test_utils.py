@@ -45,13 +45,13 @@ def test_find_checkpoint(mock_config, tmp_path):
     checkpoint_file.touch()  # This creates the file
 
     # Test: Check that the correct checkpoint path is returned
-    checkpoint_path = find_checkpoint(mock_config, version)
+    checkpoint_path = find_checkpoint(mock_config, f"version_{version}")
     assert checkpoint_path == checkpoint_file.resolve(
     ), f"Expected {checkpoint_file.resolve()}, got {checkpoint_path}"
 
     # Test when the directory doesn't exist
     with pytest.raises(SystemExit) as excinfo:
-        find_checkpoint(mock_config, "999")  # Non-existing version
+        find_checkpoint(mock_config, f"version_999")  # Non-existing version
     # Check that exit code is 3 for CheckpointDirectoryError
     assert excinfo.value.code == 3
 
@@ -59,7 +59,8 @@ def test_find_checkpoint(mock_config, tmp_path):
     empty_dir = tmp_path / "logs" / "checkpoints" / "version_empty"
     empty_dir.mkdir(parents=True)
     with pytest.raises(SystemExit) as excinfo:
-        find_checkpoint(mock_config, "empty")  # Version with no checkpoints
+        # Version with no checkpoints
+        find_checkpoint(mock_config, "version_empty")
     # Check that exit code is 2 for CheckpointNotFoundError
     assert excinfo.value.code == 2
 
@@ -70,7 +71,7 @@ def test_find_checkpoint(mock_config, tmp_path):
     (multiple_dir / "checkpoint2.ckpt").touch()
     with pytest.raises(SystemExit) as excinfo:
         # Version with multiple checkpoints
-        find_checkpoint(mock_config, "multiple")
+        find_checkpoint(mock_config, "version_multiple")
     # Check that exit code is 4 for MultipleCheckpointsError
     assert excinfo.value.code == 4
 

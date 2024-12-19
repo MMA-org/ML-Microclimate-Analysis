@@ -21,3 +21,5 @@ training:
   focal_loss:
     gamma: 2
     do_class_weight: True
+    normalize_weight: True
+    ignore_index: None

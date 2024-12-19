@@ -42,13 +42,15 @@ def prepare_class_weights(config, train_loader):
     """
     weights_file = Path(config.project.logs_dir) / "class_weights.json"
 
+    normalize_weights = config.training.focal_loss.normalize_weights
     if not config.training.focal_loss.do_class_weight:
         return None  # Return None if class weighting is disabled
 
     if weights_file.exists():
         class_weights = load_class_weights(weights_file)
     else:
-        class_weights = compute_class_weights(train_loader, len(lc_id2label))
+        class_weights = compute_class_weights(
+            train_loader, len(lc_id2label), normalize=normalize_weights)
         save_class_weights(weights_file, class_weights)
 
     return class_weights
@@ -134,8 +136,9 @@ def train(config, resume_version=None):
         id2label=lc_id2label,
         model_name=config.training.model_name,
         class_weight=class_weights,
-        lr=config.training.learning_rate,
-        gamma=config.training.focal_loss.gamma
+        lr=float(config.training.learning_rate),
+        gamma=float(config.training.focal_loss.gamma),
+        ignore_index=config.training.focal_loss.ignore_index
     )
 
     # Initialize callbacks

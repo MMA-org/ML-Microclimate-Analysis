@@ -34,7 +34,7 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (nn.CrossEntropyLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0):
+    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0, ignore_index=-100):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -42,6 +42,7 @@ class SegformerFinetuner(pl.LightningModule):
         self.label2id = {v: k for k, v in id2label.items()}
         self.num_classes = len(id2label)
         self.learning_rate = lr
+        self.ignore_index = ignore_index
 
         # Initialize the model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
@@ -54,7 +55,8 @@ class SegformerFinetuner(pl.LightningModule):
         self.model.train()
 
         # Initialize metrics and move to the correct device
-        self.metrics = SegMetrics(self.num_classes, self.device)
+        self.metrics = SegMetrics(
+            self.num_classes, self.device, ignore_index=self.ignore_index)
 
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
@@ -69,7 +71,8 @@ class SegformerFinetuner(pl.LightningModule):
             num_class=len(id2label),
             alpha=class_weight,
             gamma=gamma,
-            reduction='mean'
+            reduction='mean',
+            ignore_index=self.ignore_index
         )
 
     def on_fit_start(self):
@@ -114,14 +117,25 @@ class SegformerFinetuner(pl.LightningModule):
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self(images, masks)
 
+        self.metrics.update(predicted, masks)
+        metrics = self.metrics.compute()
+
+        # Logging metrics
         self.log(f"{stage}_loss", loss, prog_bar=True,
                  on_step=False, on_epoch=True)
+        self.log(f"{stage}_mean_iou", metrics["mean_iou"],
+                 prog_bar=True, on_step=False, on_epoch=True)
+        self.log(f"{stage}_mean_dice", metrics["mean_dice"],
+                 prog_bar=True, on_step=False, on_epoch=True)
 
         # Log loss at the step level
         if stage == "test":
             # Collect test predictions and ground truths
             self.test_results["predictions"].extend(predicted.cpu().numpy())
             self.test_results["ground_truths"].extend(masks.cpu().numpy())
+            self.log(f"{stage}_accuracy", metrics["accuracy"], prog_bar=True)
+            self.log(f"{stage}_precision", metrics["precision"], prog_bar=True)
+            self.log(f"{stage}_recall", metrics["recall"], prog_bar=True)
 
         return loss
 
@@ -163,6 +177,7 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: The computed loss.
         """
+
         return self.step(batch, "val")
 
     def test_step(self, batch, batch_idx):
@@ -178,35 +193,17 @@ class SegformerFinetuner(pl.LightningModule):
         """
         return self.step(batch, "test")
 
-    def on_train_epoch_end(self):
-        """
-        Compute and log training metrics at the end of the epoch.
-        """
-        metrics = self.metrics.compute()
-        self.log("train_mean_iou", metrics["mean_iou"], prog_bar=True)
-        self.log("train_mean_dice", metrics["mean_dice"], prog_bar=True)
-        self.metrics.reset()
-
     def on_validation_epoch_end(self):
-        """
-        Compute and log validation metrics at the end of the epoch.
-        """
-        metrics = self.metrics.compute()
-        self.log("val_mean_iou", metrics["mean_iou"], prog_bar=True)
-        self.log("val_mean_dice", metrics["mean_dice"], prog_bar=True)
         self.metrics.reset()
+        return super().on_validation_epoch_end()
+
+    def on_train_epoch_end(self):
+        self.metrics.reset()
+        return super().on_train_epoch_end()
 
     def on_test_epoch_end(self):
-        """
-        Compute and log test metrics at the end of the epoch.
-        """
-        metrics = self.metrics.compute()
-        self.log("test_mean_iou", metrics["mean_iou"], prog_bar=True)
-        self.log("test_mean_dice", metrics["mean_dice"], prog_bar=True)
-        self.log("test_accuracy", metrics["accuracy"], prog_bar=True)
-        self.log("test_precision", metrics["precision"], prog_bar=True)
-        self.log("test_recall", metrics["recall"], prog_bar=True)
         self.metrics.reset()
+        return super().on_test_epoch_end()
 
     def configure_optimizers(self):
         """
