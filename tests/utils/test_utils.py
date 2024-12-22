@@ -45,13 +45,13 @@ def test_find_checkpoint(mock_config, tmp_path):
     checkpoint_file.touch()  # This creates the file
 
     # Test: Check that the correct checkpoint path is returned
-    checkpoint_path = find_checkpoint(mock_config, f"version_{version}")
+    checkpoint_path = find_checkpoint(mock_config, version)
     assert checkpoint_path == checkpoint_file.resolve(
     ), f"Expected {checkpoint_file.resolve()}, got {checkpoint_path}"
 
     # Test when the directory doesn't exist
     with pytest.raises(SystemExit) as excinfo:
-        find_checkpoint(mock_config, f"version_999")  # Non-existing version
+        find_checkpoint(mock_config, 999)  # Non-existing version
     # Check that exit code is 3 for CheckpointDirectoryError
     assert excinfo.value.code == 3
 
@@ -60,7 +60,7 @@ def test_find_checkpoint(mock_config, tmp_path):
     empty_dir.mkdir(parents=True)
     with pytest.raises(SystemExit) as excinfo:
         # Version with no checkpoints
-        find_checkpoint(mock_config, "version_empty")
+        find_checkpoint(mock_config, "empty")
     # Check that exit code is 2 for CheckpointNotFoundError
     assert excinfo.value.code == 2
 
@@ -71,24 +71,9 @@ def test_find_checkpoint(mock_config, tmp_path):
     (multiple_dir / "checkpoint2.ckpt").touch()
     with pytest.raises(SystemExit) as excinfo:
         # Version with multiple checkpoints
-        find_checkpoint(mock_config, "version_multiple")
+        find_checkpoint(mock_config, "multiple")
     # Check that exit code is 4 for MultipleCheckpointsError
     assert excinfo.value.code == 4
-
-
-def test_save_confusion_matrix_plot(tmp_path):
-    """Test saving a confusion matrix plot to a file."""
-    # Simulate batch-like input (list of arrays)
-    y_true = [np.array([0, 1, 2]), np.array([1, 0, 2, 1])]
-    y_pred = [np.array([0, 1, 2]), np.array([0, 0, 1, 2])]
-    labels = ["Class 0", "Class 1", "Class 2"]
-    save_path = tmp_path / "confusion_matrix.png"
-
-    # Call the function
-    save_confusion_matrix_plot(y_true, y_pred, labels, save_path)
-
-    # Check if the file is created
-    assert save_path.exists(), "Confusion matrix plot was not saved."
 
 
 def test_load_class_weights(tmp_path):

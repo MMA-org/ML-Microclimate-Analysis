@@ -114,7 +114,7 @@ class SegMetrics(MetricCollection):
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=False):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True):
     """
     Compute class weights for imbalanced datasets using a DataLoader.
 
@@ -148,11 +148,14 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
         # Update class counts
         class_counts += np.bincount(masks, minlength=num_classes)
 
-    total_samples = class_counts.sum()
+    # Calculate the total number of pixels in the dataset (total samples)
+    total_pixels = class_counts.sum()
 
-    # Compute class weights
-    class_weights = total_samples / \
-        (class_counts + 1e-6)  # Avoid division by zero
+    # Compute class weights based on the total number of pixels and the class frequencies
+    class_weights = total_pixels / \
+        (num_classes * class_counts + 1e-6)  # Avoid division by zero
+
+    # Normalize class weights if needed
     if normalize:
         class_weights = class_weights / class_weights.sum()
 

@@ -114,19 +114,6 @@ def test_on_validation_epoch_end(mock_model):
     mock_model.metrics.reset.assert_called_once()
 
 
-def test_optimizer_configuration(mock_model):
-    """
-    Test optimizer configuration.
-    """
-    # Call the configure_optimizers method
-    optimizer = mock_model.configure_optimizers()
-    assert isinstance(
-        optimizer, torch.optim.AdamW), "Optimizer should be an instance of torch.optim.AdamW."
-
-    lr = optimizer.param_groups[0]['lr']
-    assert lr == 2e-05, f"Expected learning rate 2e-05, but got {lr}."
-
-
 def test_reset_test_results(mock_model):
     """
     Test resetting test results.

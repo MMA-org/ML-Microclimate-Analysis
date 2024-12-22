@@ -23,6 +23,8 @@ class Config:
 
     def __getattr__(self, name):
         value = self._config.get(name)
+        if value == "None":
+            return None
         if isinstance(value, dict):
             return Config.from_dict(value)
         elif value is not None:
@@ -99,7 +101,7 @@ default_config = {
         "focal_loss": {
             "gamma": 2,
             "do_class_weight": True,
-            "normalize_weights": False,
+            "normalize_weights": True,
             "ignore_index": None
         }
     }

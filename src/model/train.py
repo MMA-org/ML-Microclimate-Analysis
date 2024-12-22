@@ -60,7 +60,7 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
     """Initialize callbacks for model training."""
     checkpoint_callback = ModelCheckpoint(
         dirpath=checkpoint_dir,
-        filename='epoch={epoch}-loss={val_loss:.2f}-mean-iou={val_mean_iou:.2f}',
+        filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
         monitor="val_mean_iou",
         save_top_k=1,
         mode="max",
@@ -101,7 +101,7 @@ def resolve_checkpoint_path(config, resume_version: str) -> Path:
         Path: Absolute path to the checkpoint file or None if no resume version is provided.
     """
     if resume_version:
-        return find_checkpoint(config, f"version_{resume_version}")
+        return find_checkpoint(config, resume_version)
     return None
 
 

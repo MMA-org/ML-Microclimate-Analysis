@@ -1,4 +1,6 @@
 
+import matplotlib.colors as mcolors
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from pathlib import Path
 from collections import namedtuple
 import matplotlib.pyplot as plt
@@ -74,7 +76,7 @@ def find_checkpoint(config, version: str) -> Path:
     """
     from .errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
     checkpoint_dir = Path(config.project.logs_dir) / \
-        "checkpoints" / version
+        "checkpoints" / f"version_{version}"
 
     # Check if the checkpoint directory exists
     if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
@@ -103,25 +105,41 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, 
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
         title (str, optional): Title for the confusion matrix plot.
     """
-    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-    import seaborn as sns
-    # Flatten inputs
-    y_true = np.concatenate(y_true).flatten() if isinstance(
-        y_true, list) else np.array(y_true).flatten()
-    y_pred = np.concatenate(y_pred).flatten() if isinstance(
-        y_pred, list) else np.array(y_pred).flatten()
+    # Ensure inputs are numpy arrays and flatten them
+    y_true = np.array(y_true).flatten()
+    y_pred = np.array(y_pred).flatten()
 
     # Generate confusion matrix
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
 
-    # Plot confusion matrix using seaborn
-    fig, ax = plt.subplots(figsize=(8, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap="Blues",
-                xticklabels=labels, yticklabels=labels, cbar=True, ax=ax)
+    # Plot confusion matrix using ConfusionMatrixDisplay and apply LogNorm normalization
+    fig, ax = plt.subplots(figsize=(12, 12))
+    norm = mcolors.LogNorm(vmin=cm.min(), vmax=cm.max(), clip=False)
 
-    plt.title(title)
-    plt.ylabel("True label")
-    plt.xlabel("Predicted label")
+    # Plot the confusion matrix manually using `imshow` and LogNorm
+    cax = ax.imshow(cm, cmap=plt.cm.Blues, interpolation="nearest", norm=norm)
+
+    # Add color bar with label indicating the use of log scale
+    cbar = fig.colorbar(cax, ax=ax)
+    cbar.set_label('Log Scale Values', rotation=270, labelpad=15)
+
+    # Add title and labels
+    ax.set_title(title)
+    ax.set_ylabel("True label")
+    ax.set_xlabel("Predicted label")
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_yticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, rotation=90)
+    ax.set_yticklabels(labels)
+
+    # Annotate each cell with the numeric value, displayed in log scale
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            value = cm[i, j]
+            # Apply log transform (skip log(0))
+            log_value = np.log10(value) if value > 0 else 0
+            ax.text(j, i, f'{log_value:.2f}', ha="center",
+                    va="center", color="white", fontsize=12)
 
     # Add text annotation for metrics below the confusion matrix
     if metrics:
@@ -133,7 +151,7 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, 
             for i in range(0, len(metric_items), 3)
         ]
         metrics_text = "\n".join(rows)
-        plt.text(
+        ax.text(
             0.5, -0.15,  # Adjust position
             metrics_text,
             ha='center', va='top', fontsize=12, transform=ax.transAxes,

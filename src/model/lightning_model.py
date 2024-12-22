@@ -3,6 +3,7 @@ from transformers import SegformerForSemanticSegmentation
 import torch
 from torch import nn
 from pathlib import Path
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from utils.metrics import SegMetrics, FocalLoss
 from transformers import logging
 import warnings
@@ -19,9 +20,9 @@ class SegformerFinetuner(pl.LightningModule):
         id2label (dict): A dictionary mapping class IDs to class labels.
         model_name (str): The name of the Segformer model variant to use. Default is "b0".
         class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
-        metrics_interval (int): Interval at which metrics are logged. Default is 100.
         lr (float): Learning rate for the optimizer. Default is 2e-5.
-        eps (float): Epsilon value for the optimizer. Default is 1e-8.
+        gamma (float): Gamma value for the Focal Loss function. Default is 2.0.
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
 
     Attributes:
         id2label (dict): A dictionary mapping class IDs to class labels.
@@ -34,7 +35,7 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (nn.CrossEntropyLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0, ignore_index=-100):
+    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0, ignore_index=None):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -206,13 +207,16 @@ class SegformerFinetuner(pl.LightningModule):
         return super().on_test_epoch_end()
 
     def configure_optimizers(self):
-        """
-        Configure the optimizer and learning rate scheduler.
+        # Set up the optimizer
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
-        Returns:
-            tuple: Optimizer and learning rate scheduler.
-        """
-        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        # Set up the learning rate scheduler
+        scheduler = {
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5, min_lr=2e-5),
+            'monitor': 'val_loss'  # The metric to monitor for plateau
+        }
+
+        return [optimizer], [scheduler]
 
     def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
         """
