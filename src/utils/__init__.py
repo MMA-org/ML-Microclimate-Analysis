@@ -2,32 +2,10 @@
 import matplotlib.colors as mcolors
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from pathlib import Path
-from collections import namedtuple
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 from .config import Config
-
-# Define land cover class labels with associated colors
-LandCoverClass = namedtuple('LandCoverClass', ['label', 'id', 'color'])
-lc_classes = [
-    LandCoverClass('background', 0, (0, 0, 0)),                  # Black
-    LandCoverClass('forest', 1, (44, 160, 44)),                 # Green
-    LandCoverClass('water', 2, (31, 119, 180)),                 # Blue
-    LandCoverClass('agricultural', 3, (140, 86, 75)),           # Brown
-    LandCoverClass('residential,commercial,industrial',
-                   4, (127, 127, 127)),  # Gray
-    LandCoverClass('grassland,swamp,shrubbery', 5, (188, 189, 34)),   # Olive
-    LandCoverClass('railway,trainstation', 6, (255, 127, 14)),        # Orange
-    LandCoverClass('railway,highway,squares', 7, (148, 103, 189)),    # Purple
-    LandCoverClass('airport,shipyard', 8, (23, 190, 207)),            # Cyan
-    LandCoverClass('roads', 9, (214, 39, 40)),                       # Red
-    LandCoverClass('buildings', 10, (227, 119, 194))                 # Pink
-]
-
-# Create mappings for label-to-id and id-to-color
-lc_id2label = {cls.id: cls.label for cls in lc_classes}
-lc_id2color = {cls.id: cls.color for cls in lc_classes}
 
 
 def get_next_version(logs_dir: Path) -> str:
@@ -93,9 +71,26 @@ def find_checkpoint(config, version: str) -> Path:
     return checkpoint_files[0].resolve()
 
 
+def flatten(arr):
+    """Flatten the array if it is multi-dimensional."""
+    arr = np.array(arr)
+    return arr.flatten() if arr.ndim > 1 else arr
+
+
+def format_metrics(metrics):
+    """Format metrics for display below the confusion matrix."""
+    metric_items = list(metrics.items())
+    rows = [
+        "    ".join([f"{key}: {value:.3f}" for key,
+                    value in metric_items[i:i + 3]])
+        for i in range(0, len(metric_items), 3)
+    ]
+    return "\n".join(rows)
+
+
 def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, title="Confusion Matrix"):
     """
-    Save a confusion matrix plot to a file.
+    Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
 
     Args:
         y_true (array-like): Ground truth labels.
@@ -105,59 +100,28 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, 
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
         title (str, optional): Title for the confusion matrix plot.
     """
-    # Ensure inputs are numpy arrays and flatten them
-    y_true = np.array(y_true).flatten()
-    y_pred = np.array(y_pred).flatten()
-
     # Generate confusion matrix
+    y_true = flatten(y_true)
+    y_pred = flatten(y_pred)
+
     cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
 
-    # Plot confusion matrix using ConfusionMatrixDisplay and apply LogNorm normalization
+    # Create confusion matrix display
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+    # Plot the confusion matrix
     fig, ax = plt.subplots(figsize=(12, 12))
-    norm = mcolors.LogNorm(vmin=cm.min(), vmax=cm.max(), clip=False)
+    # 'd' for integer display
+    disp.plot(cmap='Blues', ax=ax, values_format='d')
 
-    # Plot the confusion matrix manually using `imshow` and LogNorm
-    cax = ax.imshow(cm, cmap=plt.cm.Blues, interpolation="nearest", norm=norm)
-
-    # Add color bar with label indicating the use of log scale
-    cbar = fig.colorbar(cax, ax=ax)
-    cbar.set_label('Log Scale Values', rotation=270, labelpad=15)
-
-    # Add title and labels
+    # Add title
     ax.set_title(title)
-    ax.set_ylabel("True label")
-    ax.set_xlabel("Predicted label")
-    ax.set_xticks(np.arange(len(labels)))
-    ax.set_yticks(np.arange(len(labels)))
-    ax.set_xticklabels(labels, rotation=90)
-    ax.set_yticklabels(labels)
-
-    # Annotate each cell with the numeric value, displayed in log scale
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            value = cm[i, j]
-            # Apply log transform (skip log(0))
-            log_value = np.log10(value) if value > 0 else 0
-            ax.text(j, i, f'{log_value:.2f}', ha="center",
-                    va="center", color="white", fontsize=12)
 
     # Add text annotation for metrics below the confusion matrix
     if metrics:
-        metric_items = list(metrics.items())
-        rows = [
-            "    " +
-            "    ".join([f"{key}: {value:.3f}" for key,
-                        value in metric_items[i:i + 3]])
-            for i in range(0, len(metric_items), 3)
-        ]
-        metrics_text = "\n".join(rows)
-        ax.text(
-            0.5, -0.15,  # Adjust position
-            metrics_text,
-            ha='center', va='top', fontsize=12, transform=ax.transAxes,
-            bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray',
-                      facecolor='white', alpha=0.5)
-        )
+        metrics_text = format_metrics(metrics)
+        ax.text(0.5, -0.15, metrics_text, ha='center', va='top', fontsize=12, transform=ax.transAxes,
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray', facecolor='white', alpha=0.5))
 
     # Save the plot
     plt.tight_layout()

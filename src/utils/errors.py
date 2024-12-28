@@ -34,3 +34,9 @@ class MultipleCheckpointsError(BaseError):
     """Raised when multiple checkpoint files are found."""
     exit_code = 4
     message = "Multiple checkpoint files found in directory: {}. Expected exactly one."
+
+
+class ConfigId2LabelError(BaseError):
+    """Raised when the 'id2label' mapping is missing from the configuration or dataset."""
+    exit_code = 5
+    message = "'id2label' mapping is missing in config. Please provide it to ensure correct label mapping."

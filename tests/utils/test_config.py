@@ -5,6 +5,12 @@ import yaml
 import shutil
 
 MOCK_CONFIG = {
+    "dataset": {
+        "id2label": {
+            0: "example1",
+            1: "example2"
+        }
+    },
     "project": {
         "models_dir": "models",
         "pretrained_dir": "pretrained_models",
@@ -25,7 +31,10 @@ def mock_config_file(tmp_path):
     absolute_paths = {key: str(tmp_path / value)
                       for key, value in MOCK_CONFIG["project"].items()}
 
-    config_dict = {"project": absolute_paths}
+    config_dict = {
+        "project": absolute_paths,
+        "dataset": MOCK_CONFIG["dataset"]
+    }
 
     with open(config_file, "w") as f:
         yaml.dump(config_dict, f)

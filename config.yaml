@@ -1,5 +1,16 @@
 # DATA
-dataset_path: "nave1616/landcover_dataset"
+dataset:
+  dataset_path: "erikpinhasov/landcover_dataset"
+  id2label:
+    0: "background"
+    1: "bareland"
+    2: "rangeland"
+    3: "developed space"
+    4: "road"
+    5: "tree"
+    6: "water"
+    7: "agriculture land"
+    8: "buildings"
 
 project:
   models_dir: models
@@ -8,18 +19,19 @@ project:
   results_dir: results
 
 training:
-  batch_size: 32
+  batch_size: 16
   max_epochs: 50
-  num_workers: 4
+  num_workers: 8
   log_every_n_steps: 10
-  learning_rate: 2e-5
-  model_name: b1
-
+  learning_rate: 1e-3
+  model_name: b4
   early_stop:
     patience: 10
 
   focal_loss:
-    gamma: 2
-    do_class_weight: True
-    normalize_weight: True
-    ignore_index: None
+    weights:
+      do_class_weight: True # bool (default True)
+      normalize_weight: True # bool (default True)
+    gamma: 2.0 # float
+    alpha: None # None | float
+    ignore_index: 0 # None | int

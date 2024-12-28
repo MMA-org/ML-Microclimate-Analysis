@@ -1,5 +1,6 @@
 import yaml
 from pathlib import Path
+from utils.errors import ConfigId2LabelError
 
 
 class Config:
@@ -18,6 +19,7 @@ class Config:
                 user_config = yaml.safe_load(f) or {}
             self._merge_dicts(self._config, user_config)
 
+        self._ensure_id2label()
         if create_dirs:
             self._create_directories()
 
@@ -78,9 +80,18 @@ class Config:
             else:
                 base[key] = value
 
+    def _ensure_id2label(self):
+        """
+        Ensures that 'id2label' is present in the 'dataset' section of the config.
+        Raises an error if 'id2label' is missing.
+        """
+        if 'id2label' not in self._config.get('dataset', {}):
+            raise ConfigId2LabelError(
+                "'id2label' is missing in the configuration file.")
+
 
 default_config = {
-    "DATA": {
+    "dataset": {
         "dataset_path": "erikpinhasov/landcover_dataset"
     },
     "project": {
@@ -100,9 +111,12 @@ default_config = {
         },
         "focal_loss": {
             "gamma": 2,
-            "do_class_weight": True,
-            "normalize_weights": True,
-            "ignore_index": None
+            "alpha": None,
+            "ignore_index": None,
+            "weights": {
+                "do_class_weight": True,
+                "normalize_weights": True,
+            },
         }
     }
 }
