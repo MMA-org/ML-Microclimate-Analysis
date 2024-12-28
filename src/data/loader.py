@@ -23,7 +23,7 @@ class Loader:
 
     def __init__(self, config):
         # Initialize paths and settings from the config
-        self.dataset_path = config.dataset_path
+        self.dataset_path = config.dataset.dataset_path
         self.batch_size = config.training.batch_size
         self.num_workers = config.training.num_workers
 
