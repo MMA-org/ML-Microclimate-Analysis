@@ -33,7 +33,7 @@ class FocalLoss(torch.nn.Module):
             self.alpha[self.ignore_index] = 0
 
         self.ce_loss = nn.CrossEntropyLoss(
-            reduction='none', ignore_index=self.ignore_index, weight=self.alpha)
+            reduction='none', ignore_index=self.ignore_index)
 
     def forward(self, inputs, targets):
         """
@@ -55,9 +55,12 @@ class FocalLoss(torch.nn.Module):
 
         # Compute Probabilities
         pt = torch.exp(-ce_loss)
+        alpha = self.alpha[targets]  # Shape: [batch_size, height, width]
 
+        # Add extra dimension to alpha for broadcasting
+        alpha = alpha.unsqueeze(1)  # Shape: [batch_size, 1, height, width]
         # Apply Focal Loss Dynamics
-        focal_loss = (1 - pt) ** self.gamma * ce_loss
+        focal_loss = alpha * (1 - pt) ** self.gamma * ce_loss
 
         # Apply Reduction
         if self.reduction == 'mean':
@@ -114,7 +117,7 @@ class SegMetrics(MetricCollection):
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True, ignore_index=None):
     """
     Compute class weights for imbalanced datasets using a DataLoader.
 
@@ -122,41 +125,39 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
         train_dataloader: A PyTorch DataLoader that yields batches of data.
         num_classes (int): Number of classes in the dataset.
         mask_key (str): Key for the segmentation masks in the dataset.
+        ignore_index (int, optional): The index of the class to ignore during weight computation.
 
     Returns:
         torch.Tensor: Class weights for each class.
-
-    Raises:
-        ValueError: If the dataset is empty.
-        KeyError: If mask_key on invalid key.
     """
 
-    # Check if the dataset is empty
-    if len(train_dataloader.dataset) == 0:
-        raise ValueError("The dataset is empty. Cannot compute class weights.")
-
-    # Initialize a numpy array for counting occurrences
-    class_counts = np.zeros(num_classes, dtype=np.int64)
+    # Initialize class counts (excluding ignore_index if specified)
+    class_counts = np.zeros(num_classes, dtype=np.float64)
 
     # Iterate through the DataLoader
     for batch in tqdm(train_dataloader, desc="Compute class weights"):
-        masks = batch[mask_key]  # Assuming batch is a dictionary-like object
+        masks = batch[mask_key].view(-1).cpu().numpy()
 
-        # Convert masks to numpy arrays if needed
-        masks = masks.view(-1).cpu().numpy()
+        # If ignore_index is specified, exclude it from class counts
+        if ignore_index is not None:
+            masks = masks[masks != ignore_index]
 
         # Update class counts
         class_counts += np.bincount(masks, minlength=num_classes)
 
-    # Calculate the total number of pixels in the dataset (total samples)
-    total_pixels = class_counts.sum()
+    # Compute class weights (inverse of class frequencies)
+    class_weights = 1 / (class_counts + 1e-6)
 
-    # Compute class weights based on the total number of pixels and the class frequencies
-    class_weights = total_pixels / \
-        (num_classes * class_counts + 1e-6)  # Avoid division by zero
+    # Set weight for ignore_index class to 0
+    if ignore_index is not None:
+        class_weights[ignore_index] = 0
 
-    # Normalize class weights if needed
+    # Normalize class weights, excluding ignore_index class from normalization
     if normalize:
-        class_weights = class_weights / class_weights.sum()
+        # Normalize only over the valid classes (excluding ignore_index)
+        # Filter out zero weights
+        valid_class_weights = class_weights[class_weights > 0]
+        class_weights[class_weights > 0] = valid_class_weights / \
+            valid_class_weights.sum()
 
     return torch.tensor(class_weights, dtype=torch.float)

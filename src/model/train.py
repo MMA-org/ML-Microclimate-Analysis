@@ -61,13 +61,14 @@ def prepare_class_weights(config, train_loader):
     # Define the path for class weights file
     weights_file = Path(config.project.logs_dir) / "class_weights.json"
     normalize_weights = config.training.focal_loss.weights.normalize_weights
+    ignore_index = config.training.focal_loss.ignore_index
 
     # Load or compute class weights
     if weights_file.exists():
         class_weights = load_class_weights(weights_file)
     else:
         class_weights = compute_class_weights(
-            train_loader, num_classes, normalize=normalize_weights)
+            train_loader, num_classes, normalize=normalize_weights, ignore_index=ignore_index)
         save_class_weights(weights_file, class_weights)
 
     return class_weights

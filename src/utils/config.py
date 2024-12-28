@@ -27,6 +27,8 @@ class Config:
         value = self._config.get(name)
         if value == "None":
             return None
+        if name == "id2label":
+            return value
         if isinstance(value, dict):
             return Config.from_dict(value)
         elif value is not None:
