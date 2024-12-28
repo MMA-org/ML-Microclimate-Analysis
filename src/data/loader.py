@@ -65,7 +65,7 @@ class Loader:
         Creates a data loader for the specified dataset split.
 
         Args:
-            split (str): The dataset split to load (e.g., 'train', 'val', 'test').
+            split (str): The dataset split to load (e.g., 'train', 'validation', 'test').
             shuffle (bool): Whether to shuffle the data. Default is False.
 
         Returns:

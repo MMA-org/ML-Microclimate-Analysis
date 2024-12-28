@@ -30,8 +30,8 @@ training:
 
   focal_loss:
     weights:
-      do_class_weight: True # bool (default True)
-      normalize_weight: True # bool (default True)
+      do_class_weights: True # bool (default True)
+      normalize_weights: True # bool (default True)
     gamma: 2.0 # float
     alpha: None # None | float
     ignore_index: 0 # None | int

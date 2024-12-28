@@ -48,11 +48,11 @@ def prepare_class_weights(config, train_loader):
         torch.Tensor: Tensor of class weights.
     """
     # Check if class weighting is enabled
-    do_class_weight = config.training.focal_loss.weights.do_class_weigh
+    do_class_weights = config.training.focal_loss.weights.do_class_weights
     alpha = config.training.focal_loss.alpha
     num_classes = len(config.dataset.id2label)
 
-    if not do_class_weight and not alpha:
+    if not do_class_weights and not alpha:
         return None  # Return None if class weighting is disabled
 
     if alpha is not None:

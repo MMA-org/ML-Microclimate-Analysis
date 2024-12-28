@@ -114,7 +114,7 @@ default_config = {
             "alpha": None,
             "ignore_index": None,
             "weights": {
-                "do_class_weight": True,
+                "do_class_weights": True,
                 "normalize_weights": True,
             },
         }
