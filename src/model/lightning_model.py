@@ -132,8 +132,10 @@ class SegformerFinetuner(pl.LightningModule):
         # Log loss at the step level
         if stage == "test":
             # Collect test predictions and ground truths
-            self.test_results["predictions"].extend(predicted.cpu().numpy())
-            self.test_results["ground_truths"].extend(masks.cpu().numpy())
+            self.test_results["predictions"].extend(
+                predicted.view(-1).cpu().numpy())
+            self.test_results["ground_truths"].extend(
+                masks.view(-1).cpu().numpy())
             self.log(f"{stage}_accuracy", metrics["accuracy"], prog_bar=True)
             self.log(f"{stage}_precision", metrics["precision"], prog_bar=True)
             self.log(f"{stage}_recall", metrics["recall"], prog_bar=True)
