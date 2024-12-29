@@ -1,0 +1,37 @@
+# DATA
+dataset:
+  dataset_path: "erikpinhasov/landcover_dataset"
+  id2label:
+    0: "background"
+    1: "bareland"
+    2: "rangeland"
+    3: "developed space"
+    4: "road"
+    5: "tree"
+    6: "water"
+    7: "agriculture land"
+    8: "buildings"
+
+project:
+  models_dir: models
+  pretrained_dir: models/pretrained_models
+  logs_dir: models/logs
+  results_dir: results
+
+training:
+  batch_size: 16
+  max_epochs: 50
+  num_workers: 8
+  log_every_n_steps: 10
+  learning_rate: 1e-3
+  model_name: b4
+  early_stop:
+    patience: 10
+
+  focal_loss:
+    weights:
+      do_class_weights: True # bool (default True)
+      normalize: "balanced" # max | sum | balanced (default 'balanced')
+    gamma: 2.0 # float
+    alpha: None # None | float
+    ignore_index: 0 # None | int
