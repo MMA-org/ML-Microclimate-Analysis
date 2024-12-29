@@ -62,14 +62,9 @@ class SegformerFinetuner(pl.LightningModule):
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
-        # Initialize class weights and loss function
-        if class_weight is not None:
-            # Ensure class weights are on the correct device and dtype
-            class_weight = class_weight.to(self.device, dtype=torch.float)
-
         # Initialize the loss function (FocalLoss)
         self.criterion = FocalLoss(
-            num_class=len(id2label),
+            num_classes=self.num_classes,
             alpha=class_weight,
             gamma=gamma,
             reduction='mean',
@@ -97,7 +92,7 @@ class SegformerFinetuner(pl.LightningModule):
         """
         outputs = self.model(pixel_values=images)
         upsampled_logits = nn.functional.interpolate(
-            outputs.logits, size=masks.shape[-2:] if masks is not None else outputs.logits.shape[-2:],
+            outputs.logits, size=(images.shape[-2], images.shape[-1]),
             mode="bilinear", align_corners=False
         )
         loss = self.criterion(

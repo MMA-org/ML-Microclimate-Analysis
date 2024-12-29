@@ -117,7 +117,7 @@ default_config = {
             "ignore_index": None,
             "weights": {
                 "do_class_weights": True,
-                "normalize_weights": True,
+                "normalize": "balanced",
             },
         }
     }

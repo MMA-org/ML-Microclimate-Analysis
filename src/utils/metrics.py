@@ -1,74 +1,49 @@
 # util/metric.py
 from tqdm import tqdm
 from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
-import numpy as np
 import torch
 import torch.nn as nn
 from typing import Optional
+import numpy as np
 
 
-class FocalLoss(torch.nn.Module):
-    """
-    Focal Loss for static datasets with fixed class weights.
-    """
-
-    def __init__(self, num_class, alpha: Optional[torch.Tensor] = None, gamma=2, reduction='mean', ignore_index=None):
-        """
-        Args:
-            alpha (Tensor, optional): Per-class weights (shape: [num_classes]).
-                                      If None, no per-class weighting is applied.
-            gamma (float): Focusing parameter for the focal loss (default: 2).
-            reduction (str): Reduction method for the loss ('none', 'mean', 'sum').
-        """
-        super(FocalLoss, self).__init__()
-        self.num_class = num_class
-        self.alpha = alpha if alpha is not None else torch.ones(
-            self.num_class).float()  # Precomputed class weights
+class FocalLoss(nn.CrossEntropyLoss):
+    def __init__(self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction='mean'):
+        self.ignore_index = ignore_index if ignore_index is not None else -100
+        super().__init__(ignore_index=self.ignore_index, reduction='none')
         self.gamma = gamma
         self.reduction = reduction
-        self.num_class = num_class
-        self.ignore_index = ignore_index if ignore_index is not None else -100
+        self.num_classes = num_classes
+        self.init_alpha(alpha)
 
-        if self.ignore_index >= 0 and self.ignore_index < self.num_class:
-            self.alpha[self.ignore_index] = 0
+    def forward(self, input_, target):
+        self.alpha = self.alpha.to(input_.device)
+        cross_entropy = super().forward(input_, target)
+        pt = torch.exp(-cross_entropy)
+        at = self.alpha[target]
 
-        self.ce_loss = nn.CrossEntropyLoss(
-            reduction='none', ignore_index=self.ignore_index)
+        loss = at * ((1-pt)**self.gamma) * cross_entropy
 
-    def forward(self, inputs, targets):
-        """
-        Compute the Focal Loss.
+        valid_mask = (target != self.ignore_index)
+        valid_loss = loss[valid_mask]
 
-        Args:
-            inputs (Tensor): Logits predicted by the model (shape: [batch, classes, height, width]).
-            targets (Tensor): Ground truth labels (shape: [batch, height, width]).
-
-        Returns:
-            Tensor: Computed focal loss.
-        """
-
-        # Compute Cross-Entropy Loss
-        self.alpha = self.alpha.to(inputs.device)
-
-        # Compute Cross-Entropy Loss
-        ce_loss = self.ce_loss(inputs, targets)
-
-        # Compute Probabilities
-        pt = torch.exp(-ce_loss)
-        alpha = self.alpha[targets]  # Shape: [batch_size, height, width]
-
-        # Add extra dimension to alpha for broadcasting
-        alpha = alpha.unsqueeze(1)  # Shape: [batch_size, 1, height, width]
-        # Apply Focal Loss Dynamics
-        focal_loss = alpha * (1 - pt) ** self.gamma * ce_loss
-
-        # Apply Reduction
         if self.reduction == 'mean':
-            return focal_loss.mean()
+            return valid_loss.mean()
         elif self.reduction == 'sum':
-            return focal_loss.sum()
+            return valid_loss.sum()
         else:
-            return focal_loss
+            return loss
+
+    def init_alpha(self, alpha):
+        if alpha is None:
+            self.alpha = torch.ones(self.num_classes, dtype=torch.float)
+        if isinstance(alpha, (float, int)):
+            self.alpha = torch.ones(
+                self.num_classes, dtype=torch.float) * alpha
+        if isinstance(alpha, (np.ndarray, list)):
+            self.alpha = torch.tensor(alpha, dtype=torch.float)
+        if isinstance(alpha, torch.Tensor):
+            self.alpha = alpha
 
 
 class SegMetrics(MetricCollection):
@@ -110,54 +85,61 @@ class SegMetrics(MetricCollection):
         Add additional test-specific metrics such as accuracy, precision, and recall.
         """
         test_metrics = {
-            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
-            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
-            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="micro", ignore_index=self.ignore_index).to(device),
+            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
+            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
+            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
         }
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize=True, ignore_index=None):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize="balanced", ignore_index=None):
     """
-    Compute class weights for imbalanced datasets using a DataLoader.
+    Compute class weights based on the frequencies of each class in the dataset.
 
     Args:
-        train_dataloader: A PyTorch DataLoader that yields batches of data.
-        num_classes (int): Number of classes in the dataset.
-        mask_key (str): Key for the segmentation masks in the dataset.
-        ignore_index (int, optional): The index of the class to ignore during weight computation.
+        train_dataloader: PyTorch DataLoader containing the dataset.
+        num_classes (int): Total number of classes.
+        mask_key (str): Key to access masks/labels in the dataloader's batch.
+        normalize (str): "max" | "sum" | "balanced" Whether to normalize the weights.
+        ignore_index (int, optional): Class index to ignore in weight computation.
 
     Returns:
-        torch.Tensor: Class weights for each class.
+        torch.Tensor: Computed class weights of shape (num_classes,).
     """
+    class_counts = torch.zeros(num_classes, dtype=torch.int64)
 
-    # Initialize class counts (excluding ignore_index if specified)
-    class_counts = np.zeros(num_classes, dtype=np.float64)
-
-    # Iterate through the DataLoader
     for batch in tqdm(train_dataloader, desc="Compute class weights"):
-        masks = batch[mask_key].view(-1).cpu().numpy()
+        masks = batch[mask_key]
+        masks = masks.view(-1)
 
-        # If ignore_index is specified, exclude it from class counts
         if ignore_index is not None:
             masks = masks[masks != ignore_index]
 
-        # Update class counts
-        class_counts += np.bincount(masks, minlength=num_classes)
+        counts = torch.bincount(masks, minlength=num_classes)
+        class_counts += counts
 
-    # Compute class weights (inverse of class frequencies)
-    class_weights = 1 / (class_counts + 1e-6)
+    total_pixels = class_counts.sum().item()
+    class_weights = total_pixels / (class_counts.float() + 1e-6)
+    valid_weights = class_weights.clone()
+    if normalize == "sum":
+        if ignore_index is not None:
+            # Exclude ignore_index from normalization
+            valid_weights[ignore_index] = 0
+        class_weights = valid_weights / valid_weights.sum()
+    elif normalize == "max":
+        if ignore_index is not None:
+            # Exclude ignore_index from normalization
+            valid_weights[ignore_index] = 0
+        class_weights = valid_weights / valid_weights.max()
+    elif normalize == "balanced":
 
-    # Set weight for ignore_index class to 0
+        if ignore_index is not None:
+            # Exclude ignore_index from normalization
+            valid_weights[ignore_index] = 0
+        class_weights = (valid_weights / valid_weights.sum()
+                         ) * (num_classes - 1)
+
+    # Ensure the weight for ignore_index is explicitly set to 0
     if ignore_index is not None:
         class_weights[ignore_index] = 0
-
-    # Normalize class weights, excluding ignore_index class from normalization
-    if normalize:
-        # Normalize only over the valid classes (excluding ignore_index)
-        # Filter out zero weights
-        valid_class_weights = class_weights[class_weights > 0]
-        class_weights[class_weights > 0] = valid_class_weights / \
-            valid_class_weights.sum()
-
-    return torch.tensor(class_weights, dtype=torch.float)
+    return class_weights.to(torch.float32)
