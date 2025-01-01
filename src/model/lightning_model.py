@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from utils.metrics import SegMetrics, FocalLoss
+from utils.metrics import SegMetrics, FocalLoss, TestMetrics
 from transformers import logging
 import warnings
 
@@ -131,10 +131,6 @@ class SegformerFinetuner(pl.LightningModule):
                 predicted.view(-1).cpu().numpy())
             self.test_results["ground_truths"].extend(
                 masks.view(-1).cpu().numpy())
-            self.log(f"{stage}_accuracy", metrics["accuracy"], prog_bar=True)
-            self.log(f"{stage}_precision", metrics["precision"], prog_bar=True)
-            self.log(f"{stage}_recall", metrics["recall"], prog_bar=True)
-
         return loss
 
     def on_train_start(self):
@@ -149,7 +145,8 @@ class SegformerFinetuner(pl.LightningModule):
         Add test-specific metrics at the start of the test phase.
         """
         super().on_test_start()
-        self.metrics.add_tests_metrics(self.device)
+        self.metrics = TestMetrics(
+            self.num_classes, self.device, self.ignore_index)
 
     def training_step(self, batch, batch_idx):
         """
@@ -189,7 +186,11 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: The computed loss.
         """
-        return self.step(batch, "test")
+        loss = self.step(batch, "test")
+        self.log("test_accuracy", self.metrics["accuracy"], prog_bar=True)
+        self.log("test_precision", self.metrics["precision"], prog_bar=True)
+        self.log("test_recall", self.metrics["recall"], prog_bar=True)
+        return loss
 
     def on_validation_epoch_end(self):
         self.metrics.reset()

@@ -5,16 +5,39 @@ import torch
 import torch.nn as nn
 from typing import Optional
 import numpy as np
+from .errors import FocalAlphaSizeError, FocalAlphaTypeError, NormalizeError
 
 
 class FocalLoss(nn.CrossEntropyLoss):
+    """
+    Focal Loss for addressing class imbalance in classification tasks.
+
+    Args:
+        num_classes (int): Number of classes.
+        gamma (float, optional): Focusing parameter. Default is 2.0.
+        alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class. Default is None.
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+        reduction (str, optional): Specifies the reduction to apply to the output. Default is 'mean'.
+
+    Attributes:
+        ignore_index (int): The index to ignore in the target.
+        gamma (float): The focusing parameter.
+        reduction (str): The reduction method to apply to the output.
+        num_classes (int): The number of classes.
+        alpha (torch.Tensor): The weighting factor for each class.
+
+    Raises:
+        FocalAlphaTypeError: If the alpha type is unsupported.
+        FocalAlphaSizeError: alpha does not match num_classes.
+    """
+
     def __init__(self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction='mean'):
         self.ignore_index = ignore_index if ignore_index is not None else -100
         super().__init__(ignore_index=self.ignore_index, reduction='none')
         self.gamma = gamma
         self.reduction = reduction
         self.num_classes = num_classes
-        self.init_alpha(alpha)
+        self.alpha = self.__set_alpha__(alpha)
 
     def forward(self, input_, target):
         self.alpha = self.alpha.to(input_.device)
@@ -34,31 +57,58 @@ class FocalLoss(nn.CrossEntropyLoss):
         else:
             return loss
 
-    def init_alpha(self, alpha):
+    def __set_alpha__(self, alpha):
+        """
+        Set the alpha value for class weighting.
+
+        Args:
+            alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class.
+
+        Returns:
+            torch.Tensor: The alpha tensor.
+
+        Raises:
+            FocalAlphaTypeError: If the alpha type is unsupported.
+            FocalAlphaSizeError: alpha does not match num_classes.
+        """
         if alpha is None:
-            self.alpha = torch.ones(self.num_classes, dtype=torch.float)
-        if isinstance(alpha, (float, int)):
-            self.alpha = torch.ones(
-                self.num_classes, dtype=torch.float) * alpha
-        if isinstance(alpha, (np.ndarray, list)):
-            self.alpha = torch.tensor(alpha, dtype=torch.float)
-        if isinstance(alpha, torch.Tensor):
-            self.alpha = alpha
+            alpha_tensor = torch.ones(self.num_classes, dtype=torch.float)
+        elif isinstance(alpha, (float, int)):
+            alpha_tensor = torch.full(
+                (self.num_classes,), alpha, dtype=torch.float)
+        elif isinstance(alpha, (np.ndarray, list)):
+            alpha_tensor = torch.tensor(alpha, dtype=torch.float)
+        elif isinstance(alpha, torch.Tensor):
+            alpha_tensor = alpha
+        else:
+            raise FocalAlphaTypeError(f"Unsupported alpha type: {type(alpha)}")
+
+        if alpha_tensor.size(0) != self.num_classes:
+            raise FocalAlphaSizeError(alpha_tensor.size(0), self.num_classes)
+
+        return alpha_tensor
 
 
 class SegMetrics(MetricCollection):
     """
     A utility class to handle metrics for segmentation tasks.
     Provides functionality for IoU (Jaccard Index) and Dice coefficient calculation.
+
+    Args:
+        num_classes (int): Number of classes in the segmentation task.
+        device (str, optional): Device to run the metrics on. Default is "cpu".
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+
+    Attributes:
+        num_classes (int): The number of classes.
+        ignore_index (int): The index to ignore in the target.
+        metrics (dict): Dictionary of metrics to compute.
+
+    Methods:
+        update(predicted, targets): Update metrics with reshaped predictions and ground truths.
     """
 
     def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
-        """
-        Initialize metrics.
-
-        Args:
-            num_classes (int): Number of classes in the segmentation task.
-        """
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.metrics = {
@@ -80,10 +130,24 @@ class SegMetrics(MetricCollection):
 
         super().update(predicted, targets)
 
-    def add_tests_metrics(self, device):
-        """
-        Add additional test-specific metrics such as accuracy, precision, and recall.
-        """
+
+class TestMetrics(SegMetrics):
+    """
+    A utility class to handle metrics for segmentation tasks, including additional test-specific metrics.
+
+    Args:
+        num_classes (int): Number of classes in the segmentation task.
+        device (str, optional): Device to run the metrics on. Default is "cpu".
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+
+    Attributes:
+        num_classes (int): The number of classes.
+        ignore_index (int): The index to ignore in the target.
+        metrics (dict): Dictionary of metrics to compute, including test-specific metrics.
+    """
+
+    def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
+        super().__init__(num_classes, device, ignore_index)
         test_metrics = {
             "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
             "precision": Precision(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
@@ -105,6 +169,9 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
 
     Returns:
         torch.Tensor: Computed class weights of shape (num_classes,).
+
+    Raises:
+        ValueError: If the normalization method is unsupported.
     """
     class_counts = torch.zeros(num_classes, dtype=torch.int64)
 
@@ -120,26 +187,18 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
 
     total_pixels = class_counts.sum().item()
     class_weights = total_pixels / (class_counts.float() + 1e-6)
-    valid_weights = class_weights.clone()
-    if normalize == "sum":
-        if ignore_index is not None:
-            # Exclude ignore_index from normalization
-            valid_weights[ignore_index] = 0
-        class_weights = valid_weights / valid_weights.sum()
-    elif normalize == "max":
-        if ignore_index is not None:
-            # Exclude ignore_index from normalization
-            valid_weights[ignore_index] = 0
-        class_weights = valid_weights / valid_weights.max()
-    elif normalize == "balanced":
 
-        if ignore_index is not None:
-            # Exclude ignore_index from normalization
-            valid_weights[ignore_index] = 0
-        class_weights = (valid_weights / valid_weights.sum()
-                         ) * (num_classes - 1)
-
-    # Ensure the weight for ignore_index is explicitly set to 0
     if ignore_index is not None:
         class_weights[ignore_index] = 0
+
+    if normalize == "sum":
+        class_weights /= class_weights.sum()
+    elif normalize == "max":
+        class_weights /= class_weights.max()
+    elif normalize == "balanced":
+        class_weights = (class_weights / class_weights.sum()
+                         ) * (num_classes - 1)
+    else:
+        raise NormalizeError(normalize)
+
     return class_weights.to(torch.float32)

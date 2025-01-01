@@ -40,3 +40,21 @@ class ConfigId2LabelError(BaseError):
     """Raised when the 'id2label' mapping is missing from the configuration or dataset."""
     exit_code = 5
     message = "'id2label' mapping is missing in config. Please provide it to ensure correct label mapping."
+
+
+class FocalAlphaTypeError(BaseError):
+    """Exception raised if 'alpha' got wrong type."""
+    exit_code = 6
+    message = "'alpha' need to be type int|float|list|tensor got {}."
+
+
+class FocalAlphaSizeError(BaseError):
+    """Exception raised if alpha size is not equal to num class."""
+    exit_code = 7
+    message = "'alpha' size {}. != num_classes {}."
+
+
+class NormalizeError(BaseError):
+
+    exit_code = 8
+    message = "'normalize' must be 'max' | 'balance' | 'sum' got {}"
