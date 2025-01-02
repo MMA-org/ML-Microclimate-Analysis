@@ -55,6 +55,6 @@ class FocalAlphaSizeError(BaseError):
 
 
 class NormalizeError(BaseError):
-
+    """Exception raised if normalize is not from valid options."""
     exit_code = 8
     message = "'normalize' must be 'max' | 'balance' | 'sum' got {}"

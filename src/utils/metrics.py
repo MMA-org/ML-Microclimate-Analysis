@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from typing import Optional
 import numpy as np
-from .errors import FocalAlphaSizeError, FocalAlphaTypeError, NormalizeError
+from core.errors import FocalAlphaSizeError, FocalAlphaTypeError, NormalizeError
 
 
 class FocalLoss(nn.CrossEntropyLoss):

@@ -1,37 +1,65 @@
 import yaml
 from pathlib import Path
-from utils.errors import ConfigId2LabelError
+
+from typing import Any, Dict
+
+
+import copy
 
 
 class Config:
     """
-    Encapsulates configuration data, enabling nested attribute-based access.
-    Automatically creates directories specified in the `project` section.
+    ConfigLoader class to load configurations from a default YAML file,
+    a custom YAML file, or argparse arguments.
     """
 
-    def __init__(self, config_path="config.yaml", create_dirs=True):
-        # Load defaults
-        self._config = default_config or {}
+    def __init__(self, config_path="config.yaml"):
+        """
+        """
+        self.config = default_config
+        self.__merge_yaml__(config_path)
 
-        # Load user-defined YAML, merging with defaults
-        if config_path and Path(config_path).exists():
-            with open(config_path) as f:
-                user_config = yaml.safe_load(f) or {}
-            self._merge_dicts(self._config, user_config)
+    def __load_yaml__(self, yaml_file: str) -> dict:
+        """Helper function to load a YAML file."""
+        with open(yaml_file, 'r') as file:
+            return yaml.safe_load(file)
 
-        self._ensure_id2label()
-        if create_dirs:
-            self._create_directories()
+    def __merge_yaml__(self, yaml_path: str):
+        """
+        Merge custom YAML configurations with the default configurations.
+        :param custom_yaml: Path to the custom YAML file.
+        """
+        if not Path(yaml_path).exists():
+            print("Config is not provided use default configurations.")
+            return self.config
+        custom_config = self.__load_yaml__(yaml_path)
+        self.config = self.__merge_dicts__(self.config, custom_config)
+
+    @staticmethod
+    def __merge_dicts__(base: dict, override: dict) -> dict:
+        """
+        Recursively merge two dictionaries.
+        :param base: The base dictionary.
+        :param override: The dictionary with override values.
+        :return: A merged dictionary.
+        """
+        merged = copy.deepcopy(base)
+        for key, value in override.items():
+            if isinstance(value, dict) and key in merged:
+                merged[key] = Config.__merge_dicts__(merged[key], value)
+            else:
+                merged[key] = value
+        return merged
 
     def __getattr__(self, name):
-        value = self._config.get(name)
-        if value == "None":
-            return None
-        if name == "id2label":
-            return value
-        if isinstance(value, dict):
-            return Config.from_dict(value)
-        elif value is not None:
+        if name in self.config:
+            value = self.config.get(name)
+            if value == "None":
+                return None
+            if name == "id2label":
+                return value
+            if isinstance(value, dict):
+                return Config.from_dict(value, False)
             return value
         raise AttributeError(f"Configuration key '{name}' not found.")
 
@@ -40,16 +68,28 @@ class Config:
         """Create a Config object from a dictionary."""
         config = Config.__new__(
             Config)  # Create a new instance without calling __init__
-        config._config = config_dict
+        config.config = config_dict
         if create_dirs:
-            config._create_directories()
+            config.__create_directories__()
         return config
+
+    def load_from_args(self, args_dict: dict):
+        """
+        Update the configuration with command-line arguments.
+        """
+        for arg_name, val in args_dict.items():
+            if val is not None and arg_name in arg_to_key_map:
+                keys = arg_to_key_map[arg_name]
+                sub_config = self.config
+                for key in keys[:-1]:
+                    sub_config = sub_config.setdefault(key, {})
+                sub_config[keys[-1]] = val
 
     def get(self, *keys, default=None):
         """
         Get nested configuration values with a fallback default.
         """
-        value = self._config
+        value = self.config
         try:
             for key in keys:
                 value = value[key]
@@ -57,39 +97,23 @@ class Config:
         except KeyError:
             return default
 
-    def _create_directories(self):
+    def to_dict(self):
         """
-        Automatically create directories specified in the `project` section.
+        Get the entire configuration as a dictionary.
         """
-        project_config = self._config.get("project", {})
-        created_dirs = []  # Collect created directory paths
+        return self.config
 
-        for key, dir_path in project_config.items():
-            dir_path = Path(dir_path)
-            dir_path.mkdir(parents=True, exist_ok=True)
-            created_dirs.append(str(dir_path))  # Add to list
-
+    def __create_directories__(self):
+        """
+        Automatically create directories specified in the `project` section and print only newly created directories.
+        """
+        project_config = self.config.get("project", {})
+        created_dirs = [
+            dir_path for dir_path in project_config.values()
+            if not Path(dir_path).exists() and Path(dir_path).mkdir(parents=True, exist_ok=True) is None
+        ]
         if created_dirs:
-            print(f"Directories created: {' '.join(created_dirs)}")
-
-    def _merge_dicts(self, base, overrides):
-        """
-        Recursively merge two dictionaries.
-        """
-        for key, value in overrides.items():
-            if isinstance(value, dict) and key in base and isinstance(base[key], dict):
-                self._merge_dicts(base[key], value)
-            else:
-                base[key] = value
-
-    def _ensure_id2label(self):
-        """
-        Ensures that 'id2label' is present in the 'dataset' section of the config.
-        Raises an error if 'id2label' is missing.
-        """
-        if 'id2label' not in self._config.get('dataset', {}):
-            raise ConfigId2LabelError(
-                "'id2label' is missing in the configuration file.")
+            print(f"Created directories: {', '.join(created_dirs)}")
 
 
 default_config = {
@@ -116,9 +140,38 @@ default_config = {
             "alpha": None,
             "ignore_index": None,
             "weights": {
-                "do_class_weights": True,
+                "class_weights": True,
                 "normalize": "balanced",
             },
         }
     }
+}
+arg_to_key_map = {
+    # Dataset
+    "dataset_path": ["dataset", "dataset_path"],
+
+    # Project
+    "models_dir": ["project", "models_dir"],
+    "pretrained_dir": ["project", "pretrained_dir"],
+    "logs_dir": ["project", "logs_dir"],
+    "results_dir": ["project", "results_dir"],
+
+    # Training
+    "batch_size": ["training", "batch_size"],
+    "max_epochs": ["training", "max_epochs"],
+    "log_step": ["training", "log_every_n_steps"],
+    "lr": ["training", "learning_rate"],
+    "model_name": ["training", "model_name"],
+
+    # Early stopping
+    "stop_patience": ["training", "early_stop", "patience"],
+
+    # Focal loss
+    "gamma": ["training", "focal_loss", "gamma"],
+    "alpha": ["training", "focal_loss", "alpha"],
+    "ignore_index": ["training", "focal_loss", "ignore_index"],
+
+    # Focal loss weights
+    "class_weights": ["training", "focal_loss", "weights", "class_weights"],
+    "normalize": ["training", "focal_loss", "weights", "normalize"]
 }

@@ -52,7 +52,7 @@ def find_checkpoint(config, version: str) -> Path:
         CheckpointNotFoundError: If no checkpoint file is found.
         MultipleCheckpointsError: If multiple checkpoint files are found.
     """
-    from .errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
+    from core.errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
     checkpoint_dir = Path(config.project.logs_dir) / \
         "checkpoints" / f"version_{version}"
 
