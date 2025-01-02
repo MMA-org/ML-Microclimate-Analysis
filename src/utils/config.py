@@ -138,7 +138,7 @@ default_config = {
         "focal_loss": {
             "gamma": 2,
             "alpha": None,
-            "ignore_index": None,
+            "ignore_index": 0,
             "weights": {
                 "class_weights": True,
                 "normalize": "balanced",
