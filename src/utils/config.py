@@ -27,7 +27,7 @@ class Config:
     def __merge_yaml__(self, yaml_path: str):
         """
         Merge custom YAML configurations with the default configurations.
-        :param custom_yaml: Path to the custom YAML file.
+        :param custom_yaml: path to the custom YAML file.
         """
         if not Path(yaml_path).exists():
             print("Config is not provided use default configurations.")

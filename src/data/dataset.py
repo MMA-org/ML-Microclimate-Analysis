@@ -6,19 +6,29 @@ class SemanticSegmentationDataset(Dataset):
     """
     A custom dataset class for semantic segmentation tasks.
 
+    This class is designed to handle datasets containing images and their corresponding segmentation masks.
+    It supports preprocessing using a feature extractor and optional Albumentations transformations.
+
     Args:
-        data (Dataset): The dataset containing images and masks.
-        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
-        transform (callable, optional): Optional transform to be applied on a sample.
+        data (Dataset): 
+            The dataset containing images and masks. Each sample in the dataset should be a dictionary with 
+            keys for the image and the mask.
+        feature_extractor (SegformerImageProcessor): 
+            The feature extractor for preprocessing images. Typically used for resizing, normalization, and 
+            converting images into tensors.
+        transform (Compose, optional): 
+            Optional Albumentations transformations to be applied on the images and masks during training or evaluation.
 
     Attributes:
-        data (Dataset): The dataset containing images and masks.
-        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
-        transform (callable, optional): Optional transform to be applied on a sample.
+        data (Dataset): 
+            The dataset containing images and masks.
+        feature_extractor (SegformerImageProcessor): 
+            The feature extractor for preprocessing images.
+        transform (Compose, optional): 
+            The Albumentations transformations applied on each sample.
     """
 
     def __init__(self, data, feature_extractor, transform=None):
-        # Data loaded from Hugging Face (list of dictionaries)
         self.data = data
         self.feature_extractor = feature_extractor
         self.transform = transform

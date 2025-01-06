@@ -1,4 +1,3 @@
-# data/loader.py
 from torch.utils.data import DataLoader
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
@@ -9,20 +8,19 @@ from datasets import load_dataset
 
 class Loader:
     """
-    A module for loading datasets and creating data loaders for semantic segmentation tasks.
+    A utility class for loading datasets and creating PyTorch DataLoaders for semantic segmentation tasks.
 
     Args:
-        config (dict): Configuration dictionary containing training parameters.
+        config (Config): Configuration dictionary containing parameters for dataset loading and training.
 
     Attributes:
-        dataset (Dataset): The loaded dataset.
-        batch_size (int): The batch size for the data loader.
-        num_workers (int): The number of worker processes for data loading.
-        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+        dataset_path (str): path to the dataset as specified in the configuration.
+        batch_size (int): The batch size for the DataLoader.
+        num_workers (int): Number of worker processes for data loading.
+        feature_extractor (SegformerImageProcessor): Preprocessor for images and masks.
     """
 
     def __init__(self, config):
-        # Initialize paths and settings from the config
         self.dataset_path = config.dataset.dataset_path
         self.batch_size = config.training.batch_size
         self.num_workers = config.training.num_workers
@@ -39,10 +37,13 @@ class Loader:
 
     def get_transforms(self):
         """
-        Returns the data augmentation transforms to be applied to the training data.
+        Returns the data augmentation transforms for training data.
+
+        The transformations include random horizontal and vertical flips, rotations,
+        brightness/contrast adjustments, and other augmentations.
 
         Returns:
-            A.Compose: A composition of data augmentation transforms.
+            Compose: A composition of augmentations applied to training images.
         """
         return A.Compose([
             A.HorizontalFlip(p=0.5),
@@ -60,20 +61,33 @@ class Loader:
             ToTensorV2()
         ])
 
-    def get_dataloader(self, split, shuffle=False):
+    def get_dataloader(self, split: str, shuffle: bool = False) -> DataLoader:
         """
-        Creates a data loader for the specified dataset split.
+        Creates a PyTorch DataLoader for the specified dataset split.
 
         Args:
-            split (str): The dataset split to load (e.g., 'train', 'validation', 'test').
-            shuffle (bool): Whether to shuffle the data. Default is False.
+            split (str): The dataset split to load (e.g., "train", "validation", "test").
+            shuffle (bool): Whether to shuffle the data. Defaults to False.
 
         Returns:
             DataLoader: A PyTorch DataLoader for the specified dataset split.
+
+        Example:
+            Create a data loader for the training dataset::
+
+                loader = Loader(config)
+                train_loader = loader.get_dataloader("train", shuffle=True)
         """
         dataset = SemanticSegmentationDataset(
             data=self.dataset[split],
             feature_extractor=self.feature_extractor,
             transform=self.get_transforms() if split == "train" else None,
         )
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=shuffle, num_workers=self.num_workers, persistent_workers=(self.num_workers > 0), pin_memory=True)
+        return DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            num_workers=self.num_workers,
+            persistent_workers=(self.num_workers > 0),
+            pin_memory=True
+        )

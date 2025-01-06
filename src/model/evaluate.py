@@ -1,6 +1,6 @@
 
 
-def evaluate(config, version="0"):
+def evaluate(config, version=0):
     from model.lightning_model import SegformerFinetuner
     from data.loader import Loader
     from utils import find_checkpoint, save_confusion_matrix_plot

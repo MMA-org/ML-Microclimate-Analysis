@@ -10,25 +10,25 @@ from core.errors import FocalAlphaSizeError, FocalAlphaTypeError, NormalizeError
 
 class FocalLoss(nn.CrossEntropyLoss):
     """
-    Focal Loss for addressing class imbalance in classification tasks.
+        Focal Loss for addressing class imbalance in classification tasks.
 
-    Args:
-        num_classes (int): Number of classes.
-        gamma (float, optional): Focusing parameter. Default is 2.0.
-        alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class. Default is None.
-        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
-        reduction (str, optional): Specifies the reduction to apply to the output. Default is 'mean'.
+        Args:
+            num_classes (int): Number of classes.
+            gamma (float, optional): Focusing parameter. Defaults to 2.0.
+            alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class. Defaults to None.
+            ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Defaults to None.
+            reduction (str, optional): Specifies the reduction to apply to the output. Defaults to 'mean'.
 
-    Attributes:
-        ignore_index (int): The index to ignore in the target.
-        gamma (float): The focusing parameter.
-        reduction (str): The reduction method to apply to the output.
-        num_classes (int): The number of classes.
-        alpha (torch.Tensor): The weighting factor for each class.
+        Attributes:
+            ignore_index (int): The index to ignore in the target.
+            gamma (float): The focusing parameter.
+            reduction (str): The reduction method to apply to the output.
+            num_classes (int): The number of classes.
+            alpha (torch.Tensor): The weighting factor for each class.
 
-    Raises:
-        FocalAlphaTypeError: If the alpha type is unsupported.
-        FocalAlphaSizeError: alpha does not match num_classes.
+        Raises:
+            FocalAlphaTypeError: If the alpha type is unsupported.
+            FocalAlphaSizeError: If alpha does not match `num_classes`.
     """
 
     def __init__(self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction='mean'):
@@ -103,9 +103,6 @@ class SegMetrics(MetricCollection):
         num_classes (int): The number of classes.
         ignore_index (int): The index to ignore in the target.
         metrics (dict): Dictionary of metrics to compute.
-
-    Methods:
-        update(predicted, targets): Update metrics with reshaped predictions and ground truths.
     """
 
     def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
@@ -118,13 +115,6 @@ class SegMetrics(MetricCollection):
         super().__init__(self.metrics)
 
     def update(self, predicted: torch.Tensor, targets: torch.Tensor) -> None:
-        """
-        Update metrics with reshaped predictions and ground truths.
-
-        Args:
-            predicted (torch.Tensor): Predicted labels (shape: [batch_size, height, width]).
-            targets (torch.Tensor): Ground truth labels (shape: [batch_size, height, width]).
-        """
         predicted = predicted.view(-1)
         targets = targets.view(-1)
 
@@ -133,7 +123,8 @@ class SegMetrics(MetricCollection):
 
 class TestMetrics(SegMetrics):
     """
-    A utility class to handle metrics for segmentation tasks, including additional test-specific metrics.
+    A utility class to handle metrics for segmentation tasks.
+    Provides functionality for IoU (Jaccard Index) and Dice coefficient calculation.
 
     Args:
         num_classes (int): Number of classes in the segmentation task.
@@ -143,7 +134,7 @@ class TestMetrics(SegMetrics):
     Attributes:
         num_classes (int): The number of classes.
         ignore_index (int): The index to ignore in the target.
-        metrics (dict): Dictionary of metrics to compute, including test-specific metrics.
+        metrics (dict): Dictionary of metrics to compute.
     """
 
     def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
@@ -161,7 +152,7 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
     Compute class weights based on the frequencies of each class in the dataset.
 
     Args:
-        train_dataloader: PyTorch DataLoader containing the dataset.
+        train_dataloader (DataLoader): PyTorch DataLoader containing the dataset.
         num_classes (int): Total number of classes.
         mask_key (str): Key to access masks/labels in the dataloader's batch.
         normalize (str): "max" | "sum" | "balanced" Whether to normalize the weights.

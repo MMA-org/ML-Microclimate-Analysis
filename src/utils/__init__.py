@@ -41,7 +41,7 @@ def find_checkpoint(config, version: str) -> Path:
     Locate the single checkpoint file in the specified versioned directory.
 
     Args:
-        config: Configuration object.
+        config (Config): Configuration object.
         version (str): The version folder name (e.g., "version_0").
 
     Returns:
@@ -72,13 +72,29 @@ def find_checkpoint(config, version: str) -> Path:
 
 
 def flatten(arr):
-    """Flatten the array if it is multi-dimensional."""
+    """
+    Flatten the array if it is multi-dimensional.
+
+    Args:
+        arr (np.ndarray): Input array.
+
+    Returns:
+        np.ndarray: Flattened array if input is multi-dimensional; original array otherwise.
+    """
     arr = np.array(arr)
     return arr.flatten() if arr.ndim > 1 else arr
 
 
 def format_metrics(metrics):
-    """Format metrics for display below the confusion matrix."""
+    """
+    Format metrics for display below the confusion matrix.
+
+    Args:
+        metrics (dict): Dictionary containing metric names and values.
+
+    Returns:
+        str: Formatted string representation of the metrics for plot box.
+    """
     metric_items = list(metrics.items())
     rows = [
         "    ".join([f"{key}: {value:.3f}" for key,
@@ -93,12 +109,12 @@ def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, 
     Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
 
     Args:
-        y_true (array-like): Ground truth labels.
-        y_pred (array-like): Predicted labels.
+        y_true (np.ndarray): Ground truth labels.
+        y_pred (np.ndarray): Predicted labels.
         labels (list): List of class labels.
-        save_path (str or Path): Path to save the confusion matrix plot.
-        metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
-        title (str, optional): Title for the confusion matrix plot.
+        save_path (Path): path to save the confusion matrix plot.
+        metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix. Defaults to None.
+        title (str, optional): Title for the confusion matrix plot. Defaults to "Confusion Matrix".
     """
     # Generate confusion matrix
     y_true = flatten(y_true)
@@ -134,7 +150,7 @@ def load_class_weights(weights_file):
     Load precomputed class weights from a file and return as a torch tensor.
 
     Args:
-        weights_file (Path): Path to the weights file.
+        weights_file (Path): path to the weights file.
 
     Returns:
         torch.Tensor: Loaded class weights as a tensor.
@@ -150,7 +166,7 @@ def save_class_weights(weights_file, class_weights):
     Save computed class weights to a file.
 
     Args:
-        weights_file (Path): Path to the weights file.
+        weights_file (Path): path to the weights file.
         class_weights (list): Class weights to save.
     """
     print("Saving class weights to file.")
@@ -163,7 +179,7 @@ def apply_color_map(mask, id2color) -> np.ndarray:
     Map class indices to RGB values for visualization.
 
     Args:
-        mask (Image.Image): 2D image with class indices (PIL Image).
+        mask (np.ndarray): 2D array with class indices.
         id2color (dict): Dictionary mapping class IDs to RGB color tuples.
 
     Returns:
@@ -186,11 +202,9 @@ def plot_image_and_mask(image, mask: np.ndarray, id2color):
     Display an image and its corresponding mask side by side.
 
     Args:
-        image_path (str): Path to the image file.
+        image (PIL.Image.Image or str): Image to display, or the path to the image file.
         mask (np.ndarray): 2D array representing the mask.
-
-    Returns:
-        None
+        id2color (dict): Dictionary mapping class IDs to RGB color tuples.
     """
     from PIL import Image
     if not isinstance(image, Image.Image):

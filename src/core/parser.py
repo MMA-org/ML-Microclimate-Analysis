@@ -3,7 +3,7 @@ import argparse
 
 class ArgParser(argparse.ArgumentParser):
     """
-    Custom ArgumentParser to automatically set metavar to the type of the argument.
+    Custom ArgumentParser to automatically set metavar based on the argument type.
     """
 
     def __init__(self, *args, **kwargs):
@@ -17,7 +17,7 @@ class ArgParser(argparse.ArgumentParser):
         """
         # Dataset arguments
         self.add_argument("--dataset_path", type=str, metavar="[path]",
-                          help="path to huggingface or local dataset.")
+                          help="Path to huggingface or local dataset.")
         self.add_argument("--id2label", type=str, metavar="[json]",
                           help="ID to label mapping as a JSON string.")
 
@@ -33,9 +33,8 @@ class ArgParser(argparse.ArgumentParser):
 
     def add_argument(self, *args, **kwargs):
         """
-        Override the add_argument method to set metavar to the type of the argument.
+        Override the add_argument method to set metavar based on the argument type.
         """
-
         if 'metavar' not in kwargs and 'type' in kwargs:
             arg_type = kwargs['type']
             if arg_type is int:
@@ -53,8 +52,7 @@ class ArgParser(argparse.ArgumentParser):
     @staticmethod
     def str_to_bool(value):
         """
-        Convert a string value to a boolean.
-        Supports values like 'true', 'false', '1', '0', 'yes', 'no'.
+        Convert a string value to a boolean. Supports values like 'true', 'false', '1', '0', 'yes', 'no'.
         """
         if isinstance(value, bool):
             return value

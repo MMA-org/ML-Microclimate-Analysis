@@ -13,14 +13,12 @@ def parse_args():
     """
     Parse top-level command-line arguments and subcommands (train/evaluate).
     """
-    # Parent parser for global arguments
-
-    # Main parser
+    # Main parser setup
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description=(
             "LandCover Model:\n"
-            " This script allows you to train or evaluate a SegFormer model for land-cover semantic segmentation tasks.\n"
+            "This script allows you to train or evaluate a SegFormer model for land-cover semantic segmentation tasks.\n"
         ),
     )
     parser.add_argument(
@@ -48,6 +46,9 @@ def parse_args():
 
 
 def handle_arparse(args):
+    """
+    Handle and parse arguments, extracting command details and configuration path.
+    """
     args_dict = vars(args)
     config_path = args.config
     command = args.command
