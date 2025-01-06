@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ml_microclimate"
+name = "ML-Microclimate-Analysis"
 version = "0.1.0"
 description = "Machine Learning Microclimate Prediction Project"
 readme = "README.md"
@@ -22,14 +22,17 @@ dependencies = [
     "tqdm==4.66.5",
     "transformers==4.44.2",
     "tensorboardX==2.6.2.2",
-    "seaborn==0.13.2",
 ]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["data","core","model","utils"]
+
+
 
 
 [project.optional-dependencies]
@@ -42,6 +45,14 @@ dev = [
     "coverage",
     "pytest-cov",
 ]
+docs = [
+    "sphinx>=4.0",
+    "sphinx-rtd-theme",
+    "sphinx.ext.napoleon",
+    "myst-parser",
+    "sphinx.ext.intersphinx",
+    "sphinx-copybutton",
+]
 
 [project.scripts]
 landcover-model = "main:main"
@@ -53,9 +64,5 @@ omit = ["src/main.py", "src/model/evaluate.py", "src/model/train.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-# Suppress all UserWarning messages
 filterwarnings = ["ignore::UserWarning"]
-
 addopts = "--cov=src --cov-report=term-missing --cov-report=xml"
-# Add coverage options and specify which module to measure coverage for

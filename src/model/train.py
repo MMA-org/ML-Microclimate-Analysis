@@ -41,18 +41,18 @@ def prepare_class_weights(config, train_loader):
     Compute or load precomputed class weights based on the configuration.
 
     Args:
-        config: Configuration object containing paths and settings.
-        train_loader: DataLoader for the training dataset.
+        config (Config): Configuration object containing paths and settings.
+        train_loader (DataLoader): DataLoader for the training dataset.
 
     Returns:
         torch.Tensor: Tensor of class weights.
     """
     # Check if class weighting is enabled
-    do_class_weights = config.training.focal_loss.weights.do_class_weights
+    class_weights = config.training.focal_loss.weights.class_weights
     alpha = config.training.focal_loss.alpha
     num_classes = len(config.dataset.id2label)
 
-    if not do_class_weights and not alpha:
+    if not class_weights and not alpha:
         return None  # Return None if class weighting is disabled
 
     if alpha is not None:
@@ -133,8 +133,8 @@ def train(config, resume_version=None):
     Train the Segformer model with the provided configuration.
 
     Args:
-        config: Configuration object containing training parameters.
-        resume_version: Optional checkpoint file to resume training from.
+        config: (Config) Configuration object containing training parameters.
+        resume_version (int): Optional checkpoint file to resume training from.
     """
     # Prepare paths for logging, checkpoints, and pretrained models
     pretrained_dir, logs_dir, checkpoint_dir = prepare_paths(

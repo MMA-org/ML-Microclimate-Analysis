@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from utils.metrics import SegMetrics, FocalLoss
+from utils.metrics import SegMetrics, FocalLoss, TestMetrics
 from transformers import logging
 import warnings
 
@@ -19,9 +19,9 @@ class SegformerFinetuner(pl.LightningModule):
     Args:
         id2label (dict): A dictionary mapping class IDs to class labels.
         model_name (str): The name of the Segformer model variant to use. Default is "b0".
-        class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         lr (float): Learning rate for the optimizer. Default is 2e-5.
         gamma (float): Gamma value for the Focal Loss function. Default is 2.0.
+        class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
 
     Attributes:
@@ -29,13 +29,13 @@ class SegformerFinetuner(pl.LightningModule):
         label2id (dict): A dictionary mapping class labels to class IDs.
         num_classes (int): The number of classes.
         model (SegformerForSemanticSegmentation): The Segformer model for semantic segmentation.
-        metrics (Metrics): Metrics object for tracking performance.
+        metrics (SegMetrics): Metrics object for tracking performance.
         test_results (dict): Dictionary to store test predictions and ground truths.
         class_weights (torch.Tensor): Class weights for the loss function.
-        criterion (nn.CrossEntropyLoss): Loss function.
+        criterion (FocalLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", class_weight=None, lr=2e-5, gamma=2.0, ignore_index=None):
+    def __init__(self, id2label, model_name="b0", lr=2e-5, gamma=2.0, class_weight=None, ignore_index=None):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -131,10 +131,6 @@ class SegformerFinetuner(pl.LightningModule):
                 predicted.view(-1).cpu().numpy())
             self.test_results["ground_truths"].extend(
                 masks.view(-1).cpu().numpy())
-            self.log(f"{stage}_accuracy", metrics["accuracy"], prog_bar=True)
-            self.log(f"{stage}_precision", metrics["precision"], prog_bar=True)
-            self.log(f"{stage}_recall", metrics["recall"], prog_bar=True)
-
         return loss
 
     def on_train_start(self):
@@ -149,7 +145,8 @@ class SegformerFinetuner(pl.LightningModule):
         Add test-specific metrics at the start of the test phase.
         """
         super().on_test_start()
-        self.metrics.add_tests_metrics(self.device)
+        self.metrics = TestMetrics(
+            self.num_classes, self.device, self.ignore_index)
 
     def training_step(self, batch, batch_idx):
         """
@@ -189,7 +186,11 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: The computed loss.
         """
-        return self.step(batch, "test")
+        loss = self.step(batch, "test")
+        self.log("test_accuracy", self.metrics["accuracy"], prog_bar=True)
+        self.log("test_precision", self.metrics["precision"], prog_bar=True)
+        self.log("test_recall", self.metrics["recall"], prog_bar=True)
+        return loss
 
     def on_validation_epoch_end(self):
         self.metrics.reset()

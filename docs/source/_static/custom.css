@@ -1,0 +1,8 @@
+html.writer-html5 .rst-content dl.citation > dd,
+html.writer-html5 .rst-content dl.citation > dt,
+html.writer-html5 .rst-content dl.field-list > dd,
+html.writer-html5 .rst-content dl.field-list > dt,
+html.writer-html5 .rst-content dl.footnote > dd,
+html.writer-html5 .rst-content dl.footnote > dt {
+  margin-bottom: 35px;
+}

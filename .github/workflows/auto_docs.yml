@@ -1,0 +1,41 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - main # Adjust to the branch where docs changes are pushed
+  pull_request:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11" # Specify your Python version
+
+      # Install dependencies
+      - name: Install Dependencies
+        run: |
+          pip install .[docs]
+
+      # Build Sphinx documentation
+      - name: Build Sphinx Docs
+        run: |
+          cd docs
+          make html
+
+      # Deploy to GitHub Pages (if desired)
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build/html
+          # Optional: Set to a different branch if needed

@@ -30,7 +30,7 @@ training:
 
   focal_loss:
     weights:
-      do_class_weights: True # bool (default True)
+      class_weights: True # bool (default True)
       normalize: "balanced" # max | sum | balanced (default 'balanced')
     gamma: 2.0 # float
     alpha: None # None | float
