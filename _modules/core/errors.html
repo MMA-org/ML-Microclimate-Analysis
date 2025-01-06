@@ -1,0 +1,193 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>core.errors &mdash; ML-Microclimate-Analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=b59c9799" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=c218ac73"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ML-Microclimate-Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ML-Microclimate-Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">core.errors</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for core.errors</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="BaseError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.BaseError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all project-specific errors.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;An error occurred.&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BaseError.handle">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.BaseError.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prints the error message and exits with the specified code.&quot;&quot;&quot;</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exit_code</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CheckpointNotFoundError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.CheckpointNotFoundError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CheckpointNotFoundError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when no checkpoint files are found.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;No checkpoint files found in directory: </span><span class="si">{}</span><span class="s2">.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CheckpointDirectoryError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.CheckpointDirectoryError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CheckpointDirectoryError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when the checkpoint directory is invalid or missing.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Checkpoint directory not found or invalid: </span><span class="si">{}</span><span class="s2">.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="MultipleCheckpointsError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.MultipleCheckpointsError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultipleCheckpointsError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when multiple checkpoint files are found.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Multiple checkpoint files found in directory: </span><span class="si">{}</span><span class="s2">. Expected exactly one.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ConfigId2LabelError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.ConfigId2LabelError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfigId2LabelError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when the &#39;id2label&#39; mapping is missing from the configuration or dataset.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&#39;id2label&#39; mapping is missing in config. Please provide it to ensure correct label mapping.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="FocalAlphaTypeError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.FocalAlphaTypeError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FocalAlphaTypeError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised if &#39;alpha&#39; got wrong type.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&#39;alpha&#39; need to be type int|float|list|tensor got </span><span class="si">{}</span><span class="s2">.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="FocalAlphaSizeError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.FocalAlphaSizeError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FocalAlphaSizeError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised if alpha size is not equal to num class.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&#39;alpha&#39; size </span><span class="si">{}</span><span class="s2">. != num_classes </span><span class="si">{}</span><span class="s2">.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="NormalizeError">
+<a class="viewcode-back" href="../../core/core.errors.html#core.errors.NormalizeError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NormalizeError</span><span class="p">(</span><span class="n">BaseError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised if normalize is not from valid options.&quot;&quot;&quot;</span>
+    <span class="n">exit_code</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&#39;normalize&#39; must be &#39;max&#39; | &#39;balance&#39; | &#39;sum&#39; got </span><span class="si">{}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nave Cohen, Erik Pinhasov.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
