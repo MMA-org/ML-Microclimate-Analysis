@@ -48,9 +48,7 @@ dev = [
 docs = [
     "sphinx>=4.0",
     "sphinx-rtd-theme",
-    "sphinx.ext.napoleon",
     "myst-parser",
-    "sphinx.ext.intersphinx",
     "sphinx-copybutton",
 ]
 
