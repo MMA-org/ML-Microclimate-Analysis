@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main # Adjust to the branch where docs changes are pushed
-  pull_request:
 
 jobs:
   build-docs:
