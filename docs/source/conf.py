@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.doctest",
     'sphinx.ext.intersphinx',  # Link to other project's documentation
     'sphinx_copybutton',
+    "sphinx.ext.ifconfig",
 ]
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
@@ -40,7 +41,7 @@ intersphinx_mapping = {
     'pillow': ('https://pillow.readthedocs.io/en/stable/', None),
 }
 
-
+source_suffix = ['.rst', '.md']
 templates_path = ['_templates']
 exclude_patterns = []
 
@@ -125,11 +126,6 @@ def autodoc_process_docstring(app, what, name, obj, options, lines):
                     continue
                 # Perform the replacement
                 line = re.sub(pattern, replacement, line)
-
-        # Log replacements for debugging
-        if line != original_line:
-            print(f"Replaced: {original_line} -> {line}")
-
         # Update the line in the list
         lines[i] = line
 

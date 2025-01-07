@@ -10,7 +10,7 @@ utils
    utils.save_pretrained_callback
 
 Module functions
----------------
+------------------
 
 .. automodule:: utils
    :members:

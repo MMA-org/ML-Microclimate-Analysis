@@ -23,8 +23,8 @@ training:
   max_epochs: 50
   num_workers: 8
   log_every_n_steps: 10
-  learning_rate: 1e-3
-  model_name: b4
+  learning_rate: 2e-5
+  model_name: b0
   early_stop:
     patience: 10
 
