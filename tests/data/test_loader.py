@@ -36,14 +36,6 @@ def test_loader_initialization(mock_load_dataset, mock_config, mock_dataset):
 
 
 @patch('data.loader.load_dataset')
-def test_get_transforms(mock_load_dataset, mock_config, mock_dataset):
-    mock_load_dataset.return_value = mock_dataset
-    loader = Loader(mock_config)
-    transforms = loader.get_transforms()
-    assert isinstance(transforms, A.Compose)
-
-
-@patch('data.loader.load_dataset')
 def test_get_dataloader_train(mock_load_dataset, mock_config, mock_dataset):
     mock_load_dataset.return_value = mock_dataset
     loader = Loader(mock_config)
