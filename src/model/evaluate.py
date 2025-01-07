@@ -1,14 +1,17 @@
 
 
-def evaluate(config, version=0):
+def evaluate(config, version=None):
     from model.lightning_model import SegformerFinetuner
+
     from data.loader import Loader
-    from utils import find_checkpoint, save_confusion_matrix_plot
+    from utils import find_checkpoint, save_confusion_matrix_plot, get_last_version
     from pytorch_lightning import Trainer
     from pathlib import Path
     print(f"Evaluating model version: version_{version}")
     id2label = config.dataset.id2label
     # Locate the checkpoint
+    if not version:
+        version = get_last_version(logs_dir=config.project.logs_dir)
     checkpoint = find_checkpoint(config, version)
     print(f"Using checkpoint: {checkpoint}")
 
