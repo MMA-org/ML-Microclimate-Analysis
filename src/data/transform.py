@@ -30,8 +30,6 @@ class Augmentation:
                     translate_percent=0.0625,
                     rotate=(-30, 30),
                     p=0.5,
-                    fill_value=0,  # Replace deprecated fill with fill_value
-                    mask_fill_value=0  # Replace deprecated fill_mask with mask_fill_value
                 ),
             ], p=0.5),
 
@@ -49,22 +47,16 @@ class Augmentation:
                 A.ElasticTransform(
                     alpha=1, sigma=50, alpha_affine=50,
                     border_mode=0,  # Replace deprecated mode with border_mode
-                    fill_value=0,  # Replace deprecated fill with fill_value
-                    mask_fill_value=0,  # Replace deprecated fill_mask with mask_fill_value
                     p=0.5
                 ),
                 A.GridDistortion(
                     num_steps=5, distort_limit=0.3,
                     border_mode=0,  # Replace deprecated mode with border_mode
-                    fill_value=0,  # Replace deprecated fill with fill_value
-                    mask_fill_value=0,  # Replace deprecated fill_mask with mask_fill_value
                     p=0.5
                 ),
                 A.OpticalDistortion(
                     distort_limit=0.5, shift_limit=0.05,
                     border_mode=0,  # Replace deprecated mode with border_mode
-                    fill_value=0,  # Replace deprecated fill with fill_value
-                    mask_fill_value=0,  # Replace deprecated fill_mask with mask_fill_value
                     p=0.5
                 ),
             ], p=0.3),

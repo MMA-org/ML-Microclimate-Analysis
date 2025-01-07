@@ -56,7 +56,6 @@ class SemanticSegmentationDataset(Dataset):
 
         if self.transform:
             image, mask = self.transform(image=image, mask=mask)
-        print(image.shape)
 
         # Apply feature extractor
         encoded_inputs = self.feature_extractor(
