@@ -23,7 +23,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="utils" href="../utils/utils.html" />
+    <link rel="next" title="data.transform module" href="data.transform.html" />
     <link rel="prev" title="data.dataset module" href="data.dataset.html" /> 
 </head>
 
@@ -50,6 +50,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../configurations.html">Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configurations.html#head">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dataset.html">Dataset</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">Modules</a><ul class="current">
@@ -60,6 +61,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#data.loader.Loader"><code class="docutils literal notranslate"><span class="pre">Loader</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="data.transform.html">data.transform module</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">utils</a></li>
@@ -98,7 +100,7 @@
 <span id="data-loader-module"></span><h1>data.loader module<a class="headerlink" href="#module-data.loader" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="data.loader.Loader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.loader.</span></span><span class="sig-name descname"><span class="pre">Loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/loader.html#Loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.loader.Loader" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.loader.</span></span><span class="sig-name descname"><span class="pre">Loader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/loader.html#Loader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.loader.Loader" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A utility class for loading datasets and creating PyTorch DataLoaders for semantic segmentation tasks.</p>
 <dl class="field-list simple">
@@ -111,6 +113,7 @@
 <li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The batch size for the DataLoader.</p></li>
 <li><p><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of worker processes for data loading.</p></li>
 <li><p><strong>feature_extractor</strong> (<em>SegformerImageProcessor</em>) – Preprocessor for images and masks.</p></li>
+<li><p><strong>transform</strong> (<em>Compose</em><em>, </em><em>optional</em>) – Optional Albumentations transformations to be applied on the images and masks during training or evaluation.</p></li>
 </ul>
 </dd>
 </dl>
@@ -134,26 +137,15 @@
 </dl>
 <p class="rubric">Example</p>
 <p>Create a data loader for the training dataset:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">loader</span> <span class="o">=</span> <span class="n">Loader</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># with default augmentation</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">Loader</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 <span class="n">train_loader</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">get_dataloader</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># custome augmentation</span>
+<span class="n">loader_with_augmentation</span> <span class="o">=</span> <span class="n">Loader</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">transform</span><span class="o">=</span><span class="n">augmentation</span><span class="p">)</span> <span class="c1"># augmentation is callable albumentations.Compose</span>
+<span class="n">train_with_augmentation_loader</span> <span class="o">=</span> <span class="n">loader_with_augmentation</span> <span class="o">=</span> <span class="n">Loader</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="n">transform</span><span class="o">=</span><span class="n">augmentation</span><span class="p">)</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="data.loader.Loader.get_transforms">
-<span class="sig-name descname"><span class="pre">get_transforms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data/loader.html#Loader.get_transforms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.loader.Loader.get_transforms" title="Link to this definition"></a></dt>
-<dd><p>Returns the data augmentation transforms for training data.</p>
-<p>The transformations include random horizontal and vertical flips, rotations,
-brightness/contrast adjustments, and other augmentations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A composition of augmentations applied to training images.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Compose</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -165,7 +157,7 @@ brightness/contrast adjustments, and other augmentations.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="data.dataset.html" class="btn btn-neutral float-left" title="data.dataset module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../utils/utils.html" class="btn btn-neutral float-right" title="utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="data.transform.html" class="btn btn-neutral float-right" title="data.transform module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

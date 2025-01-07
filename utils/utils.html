@@ -24,7 +24,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="utils.config module" href="utils.config.html" />
-    <link rel="prev" title="data.loader module" href="../data/data.loader.html" /> 
+    <link rel="prev" title="data.transform module" href="../data/data.transform.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,6 +50,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../configurations.html">Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configurations.html#head">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dataset.html">Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
@@ -176,16 +177,24 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="utils.get_last_version">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">get_last_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils.html#get_last_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.get_last_version" title="Link to this definition"></a></dt>
-<dd><p>Get the last version number for the logs directory containing only ‘version_*’ folders.</p>
+<dd><blockquote>
+<div><p>Get the last version number for the logs directory containing only ‘version_*’ folders.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>logs_dir (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a>): The base directory where ‘lightning_logs’ are stored.</p>
+</dd>
+</dl>
+<p>Returns:</p>
+</div></blockquote>
+<dl class="simple">
+<dt>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</dt><dd><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>: The last version number. Returns -1 if no ‘version_*’ folders exist.</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>logs_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a>) – The base directory where ‘lightning_logs’ are stored.</p>
+<dd class="field-odd"><p><strong>logs_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><em>Path</em></a>)</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The last version number. Returns 0 if no ‘version_*’ folders exist.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -278,7 +287,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../data/data.loader.html" class="btn btn-neutral float-left" title="data.loader module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../data/data.transform.html" class="btn btn-neutral float-left" title="data.transform module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="utils.config.html" class="btn btn-neutral float-right" title="utils.config module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

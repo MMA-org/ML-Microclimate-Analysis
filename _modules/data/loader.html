@@ -47,6 +47,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../configurations.html">Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configurations.html#head">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
@@ -83,6 +84,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">albumentations.pytorch</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToTensorV2</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">albumentations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">A</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">Augmentation</span>
 
 
 <div class="viewcode-block" id="Loader">
@@ -99,12 +101,15 @@
 <span class="sd">        batch_size (int): The batch size for the DataLoader.</span>
 <span class="sd">        num_workers (int): Number of worker processes for data loading.</span>
 <span class="sd">        feature_extractor (SegformerImageProcessor): Preprocessor for images and masks.</span>
+<span class="sd">        transform (Compose, optional): </span>
+<span class="sd">            Optional Albumentations transformations to be applied on the images and masks during training or evaluation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dataset_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">training</span><span class="o">.</span><span class="n">num_workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span> <span class="ow">or</span> <span class="n">Augmentation</span><span class="p">()</span>
 
         <span class="c1"># Load dataset</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_path</span><span class="p">)</span>
@@ -115,35 +120,6 @@
             <span class="sa">f</span><span class="s2">&quot;nvidia/segformer-</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">-finetuned-ade-512-512&quot;</span><span class="p">,</span>
             <span class="n">do_reduce_labels</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
-
-<div class="viewcode-block" id="Loader.get_transforms">
-<a class="viewcode-back" href="../../data/data.loader.html#data.loader.Loader.get_transforms">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_transforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the data augmentation transforms for training data.</span>
-
-<span class="sd">        The transformations include random horizontal and vertical flips, rotations,</span>
-<span class="sd">        brightness/contrast adjustments, and other augmentations.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Compose: A composition of augmentations applied to training images.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">A</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
-            <span class="n">A</span><span class="o">.</span><span class="n">HorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
-            <span class="n">A</span><span class="o">.</span><span class="n">VerticalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
-            <span class="n">A</span><span class="o">.</span><span class="n">RandomRotate90</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
-            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
-                <span class="n">A</span><span class="o">.</span><span class="n">RandomBrightnessContrast</span><span class="p">(),</span>
-                <span class="n">A</span><span class="o">.</span><span class="n">RandomGamma</span><span class="p">(),</span>
-            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
-            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
-                <span class="n">A</span><span class="o">.</span><span class="n">ElasticTransform</span><span class="p">(),</span>
-                <span class="n">A</span><span class="o">.</span><span class="n">GridDistortion</span><span class="p">(),</span>
-                <span class="n">A</span><span class="o">.</span><span class="n">OpticalDistortion</span><span class="p">(),</span>
-            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
-            <span class="n">ToTensorV2</span><span class="p">()</span>
-        <span class="p">])</span></div>
-
 
 <div class="viewcode-block" id="Loader.get_dataloader">
 <a class="viewcode-back" href="../../data/data.loader.html#data.loader.Loader.get_dataloader">[docs]</a>
@@ -161,13 +137,19 @@
 <span class="sd">        Example:</span>
 <span class="sd">            Create a data loader for the training dataset::</span>
 
+<span class="sd">                # with default augmentation</span>
 <span class="sd">                loader = Loader(config)</span>
 <span class="sd">                train_loader = loader.get_dataloader(&quot;train&quot;, shuffle=True)</span>
+
+<span class="sd">                # custome augmentation</span>
+<span class="sd">                loader_with_augmentation = Loader(config,transform=augmentation) # augmentation is callable albumentations.Compose</span>
+<span class="sd">                train_with_augmentation_loader = loader_with_augmentation = Loader(config,transform=augmentation)</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">SemanticSegmentationDataset</span><span class="p">(</span>
             <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
             <span class="n">feature_extractor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_extractor</span><span class="p">,</span>
-            <span class="n">transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_transforms</span><span class="p">()</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">DataLoader</span><span class="p">(</span>
             <span class="n">dataset</span><span class="p">,</span>

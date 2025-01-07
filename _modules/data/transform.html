@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data.transform &mdash; ML-Microclimate-Analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=49f23159" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=c218ac73"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ML-Microclimate-Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configurations.html">Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configurations.html#head">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ML-Microclimate-Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data.transform</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data.transform</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">albumentations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">A</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">albumentations.pytorch</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToTensorV2</span>
+
+
+<div class="viewcode-block" id="Augmentation">
+<a class="viewcode-back" href="../../data/data.transform.html#data.transform.Augmentation">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Augmentation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to define and manage data augmentation pipelines for training.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        transform (albumentations.Compose):</span>
+<span class="sd">            A composition of augmentation transformations applied to training images and masks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the Augmentation class with a set of training transformations.</span>
+
+<span class="sd">        The transformations include geometric augmentations (e.g., flips, rotations),</span>
+<span class="sd">        photometric adjustments (e.g., brightness, contrast), distortions, occlusion handling,</span>
+<span class="sd">        and tensor conversion.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+            <span class="c1"># Geometric Augmentations</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">HorizontalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">VerticalFlip</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">RandomRotate90</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
+                    <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span>
+                    <span class="n">translate_percent</span><span class="o">=</span><span class="mf">0.0625</span><span class="p">,</span>
+                    <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+                    <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
+                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
+                <span class="p">),</span>
+            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+
+            <span class="c1"># Photometric Augmentations</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">RandomBrightnessContrast</span><span class="p">(</span>
+                    <span class="n">brightness_limit</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">contrast_limit</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">RandomGamma</span><span class="p">(</span><span class="n">gamma_limit</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">HueSaturationValue</span><span class="p">(</span>
+                    <span class="n">hue_shift_limit</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">sat_shift_limit</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">val_shift_limit</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+
+            <span class="c1"># Distortions</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">ElasticTransform</span><span class="p">(</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">alpha_affine</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                    <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
+                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
+                    <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
+                <span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">GridDistortion</span><span class="p">(</span>
+                    <span class="n">num_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">distort_limit</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+                    <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
+                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
+                    <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
+                <span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">OpticalDistortion</span><span class="p">(</span>
+                    <span class="n">distort_limit</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">shift_limit</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+                    <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
+                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
+                    <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
+                <span class="p">),</span>
+            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+
+            <span class="c1"># Blur</span>
+            <span class="n">A</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">MotionBlur</span><span class="p">(</span><span class="n">blur_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">blur_limit</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+            <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+
+            <span class="c1"># To Tensor (must always be last)</span>
+            <span class="n">ToTensorV2</span><span class="p">()</span>
+        <span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply the training transforms to the given image and mask.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (np.ndarray): The input image.</span>
+<span class="sd">            mask (np.ndarray, optional): The corresponding mask. Default is None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple (Tensor, Tensor): Transformed image and mask (if provided), or only the transformed image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">augmented</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">augmented</span><span class="p">[</span><span class="s1">&#39;image&#39;</span><span class="p">],</span> <span class="n">augmented</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">augmented</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">augmented</span><span class="p">[</span><span class="s1">&#39;image&#39;</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nave Cohen, Erik Pinhasov.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
