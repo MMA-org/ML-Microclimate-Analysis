@@ -112,8 +112,6 @@
                     <span class="n">translate_percent</span><span class="o">=</span><span class="mf">0.0625</span><span class="p">,</span>
                     <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
                     <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
-                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
                 <span class="p">),</span>
             <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
 
@@ -131,22 +129,16 @@
                 <span class="n">A</span><span class="o">.</span><span class="n">ElasticTransform</span><span class="p">(</span>
                     <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">alpha_affine</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
                     <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
-                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
                     <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
                 <span class="p">),</span>
                 <span class="n">A</span><span class="o">.</span><span class="n">GridDistortion</span><span class="p">(</span>
                     <span class="n">num_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">distort_limit</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
                     <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
-                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
                     <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
                 <span class="p">),</span>
                 <span class="n">A</span><span class="o">.</span><span class="n">OpticalDistortion</span><span class="p">(</span>
                     <span class="n">distort_limit</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">shift_limit</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
                     <span class="n">border_mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated mode with border_mode</span>
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill with fill_value</span>
-                    <span class="n">mask_fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># Replace deprecated fill_mask with mask_fill_value</span>
                     <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span>
                 <span class="p">),</span>
             <span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
