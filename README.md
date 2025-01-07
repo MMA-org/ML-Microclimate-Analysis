@@ -10,11 +10,11 @@ This repository is organized into several key sections for ease of use:
 
 ### Documentation
 
-- [Installation Guide](./docs/source/installation.md): Instructions to set up and install the project on your local machine.
-- [Configuration Guide](./docs/source/configurations.md): Details on project configuration, including examples and use cases.
-- [Dataset Documentation](./docs/source/Dataset.md): Comprehensive information on the datasets used in the project.
-- [Usage Guide](./docs/source/usage.md): Step-by-step instructions for training, evaluation, and model usage.
-- [Project Documentation](https://mma-org.github.io/ML-Microclimate-Analysis/index.html): Centralized project documentation hosted online.
+- [Installation Guide](https://mma-org.github.io/ML-Microclimate-Analysis/installation.html) - Instructions to set up and install the project on your local machine.
+- [Configuration Guide](https://mma-org.github.io/ML-Microclimate-Analysis/configurations.html) - Details on project configuration, including examples and use cases.
+- [Dataset Documentation](https://mma-org.github.io/ML-Microclimate-Analysis/usage.html) - Comprehensive information on the datasets used in the project.
+- [Usage Guide](https://mma-org.github.io/ML-Microclimate-Analysis/dataset.html) - Step-by-step instructions for training, evaluation, and model usage.
+- [Project Documentation](https://mma-org.github.io/ML-Microclimate-Analysis/index.html) - Centralized project documentation hosted online.
 
 ### Source Code
 
@@ -24,7 +24,7 @@ This repository is organized into several key sections for ease of use:
   - **`model/`**: Model architectures and training scripts.
   - **`utils/`**: Utility scripts for data preprocessing, model evaluation, and more.
 
-### Tests
+### Tests (pytest)
 
 - **`tests/`**: Unit and integration tests to ensure the reliability of the project.
 
@@ -36,7 +36,7 @@ This repository is organized into several key sections for ease of use:
 
 ## Datasets
 
-This repository leverages high-quality, publicly available datasets for training and evaluation. For detailed information on these datasets, including their structure and applications, please refer to the [Datasets Documentation](./docs/source/Dataset.md).
+This repository leverages high-quality, publicly available datasets for training and evaluation. For detailed information on these datasets, including their structure and applications, please refer to the [Datasets Documentation](https://mma-org.github.io/ML-Microclimate-Analysis/dataset.html).
 
 ### Key Dataset
 
@@ -79,7 +79,7 @@ lcm train -h
 lcm evaluate -h
 ```
 
-For more details, refer to the [Usage Guide](./docs/source/usage.md).
+For more details, refer to the [Usage Guide](https://mma-org.github.io/ML-Microclimate-Analysis/usage.html).
 
 ---
 

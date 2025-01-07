@@ -6,8 +6,6 @@ This document provides an overview of the `config.yaml` file used for configurin
 
 The `config.yaml` file organizes the project configuration into three main sections: `DATA`, `project`, and `training`.
 
----
-
 > **_NOTE_**  
 > The YAML file is **not required** for running the project with default settings. The project is designed to run seamlessly without a `config.yaml` file by using pre-defined default configuration values.
 
