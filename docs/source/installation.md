@@ -6,7 +6,11 @@ This document provides instructions for setting up and installing the project on
 
 Before installing the project, ensure that you have the following prerequisites installed on your system:
 
+<<<<<<< HEAD
 - **Python**: Version 3.9 or higher
+=======
+- **Python**: Version 3.8 or higher
+>>>>>>> 510856727fce09b9a7f37d7e40587e228972e368
 - **pip**: The Python package manager
 - **Virtual Environment** (optional but recommended): `venv`, `virtualenv`, or a similar tool
 - Any other system requirements (e.g., specific libraries, tools, or dependencies)
