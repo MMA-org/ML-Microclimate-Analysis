@@ -187,8 +187,10 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
     elif normalize == "max":
         class_weights /= class_weights.max()
     elif normalize == "balanced":
+        scale_factor = (
+            num_classes - 1) if ignore_index is not None else num_classes
         class_weights = (class_weights / class_weights.sum()
-                         ) * (num_classes - 1)
+                         ) * scale_factor
     else:
         raise NormalizeError(normalize)
 

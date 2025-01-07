@@ -93,7 +93,7 @@ class SegformerFinetuner(pl.LightningModule):
         outputs = self.model(pixel_values=images)
         upsampled_logits = nn.functional.interpolate(
             outputs.logits, size=(images.shape[-2], images.shape[-1]),
-            mode="bilinear", align_corners=False
+            mode="bilinear", align_corners=True
         )
         loss = self.criterion(
             upsampled_logits, masks) if masks is not None else None
