@@ -1,11 +1,36 @@
 
-import matplotlib.colors as mcolors
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 from .config import Config
+
+
+def get_last_version(logs_dir: Path) -> int:
+    """
+    Get the last version number for the logs directory containing only 'version_*' folders.
+
+    Args:
+        logs_dir (Path): The base directory where 'lightning_logs' are stored.
+
+    Returns:
+        int: The last version number. Returns 0 if no 'version_*' folders exist.
+    """
+    lightning_logs_dir = logs_dir / "lightning_logs"
+
+    # Ensure the 'lightning_logs' directory exists
+    if not lightning_logs_dir.exists():
+        return 0
+
+    # Extract version numbers from folder names
+    version_numbers = [
+        int(d.name.split("_")[1])
+        for d in lightning_logs_dir.iterdir()
+        if d.is_dir() and d.name.startswith("version_")
+    ]
+
+    return max(version_numbers, default=0)
 
 
 def get_next_version(logs_dir: Path) -> str:
@@ -18,21 +43,8 @@ def get_next_version(logs_dir: Path) -> str:
     Returns:
         str: The next version number in the format 'version_{n}'.
     """
-    lightning_logs_dir = logs_dir / "lightning_logs"
-
-    # Ensure the 'lightning_logs' directory exists
-    if not lightning_logs_dir.exists():
-        return "version_0"
-
-    # Extract version numbers from folder names
-    version_numbers = [
-        int(d.name.split("_")[1])
-        for d in lightning_logs_dir.iterdir()
-        if d.is_dir() and d.name.startswith("version_")
-    ]
-
-    # Determine the next version number
-    next_version = max(version_numbers, default=-1) + 1
+    last_version = get_last_version(logs_dir)
+    next_version = last_version + 1
     return f"version_{next_version}"
 
 

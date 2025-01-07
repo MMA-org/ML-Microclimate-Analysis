@@ -6,3 +6,29 @@ html.writer-html5 .rst-content dl.footnote > dd,
 html.writer-html5 .rst-content dl.footnote > dt {
   margin-bottom: 35px;
 }
+/* General blockquote styling */
+blockquote {
+  background-color: #f9fafc; /* Light gray/blue background */
+  border-left: 4px solid #0070f3; /* Blue border on the left */
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 5px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional shadow for better appearance */
+}
+
+/* Styling the "NOTE" label */
+blockquote div p:first-child strong em {
+  color: #0070f3; /* White text */
+  font-weight: bold;
+  display: inline-block;
+  font-style: normal; /* Remove italic styling */
+}
+
+/* Inline code styling */
+blockquote div p code {
+  background-color: #f5f5f5; /* Light gray for inline code */
+  border: 1px solid #ddd; /* Light gray border */
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: Consolas, monospace; /* Monospace font for code */
+}
