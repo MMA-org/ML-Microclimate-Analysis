@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage &mdash; ML-Microclimate-Analysis  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=49f23159" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=c218ac73"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Dataset" href="dataset.html" />
+    <link rel="prev" title="Configurations" href="configurations.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ML-Microclimate-Analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configurations.html">Configurations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#default-configurations">Default Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training-the-model">Training the Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#training-outputs">Training Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluating-the-model">Evaluating the Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-evaluation">Running Evaluation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evaluation-outputs">Evaluation Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#folder-structure-and-outputs">Folder Structure and Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ML-Microclimate-Analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/usage.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h1>
+<p>This document provides guidance on how to use the <strong>Urban Climate Segmentation Model</strong> repository for training, evaluating, and managing outputs efficiently.</p>
+<hr class="docutils" />
+<section id="default-configurations">
+<h2>Default Configurations<a class="headerlink" href="#default-configurations" title="Link to this heading"></a></h2>
+<p>The project is designed to run seamlessly even if <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> does not exist. When no configuration file is provided, it automatically uses default settings. If a <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> file exists, it will be loaded automatically. Refer to the <a class="reference internal" href="configurations.html"><span class="std std-doc">Configurations Guide</span></a> for details.</p>
+</section>
+<hr class="docutils" />
+<section id="training-the-model">
+<h2>Training the Model<a class="headerlink" href="#training-the-model" title="Link to this heading"></a></h2>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">lcm</span> <span class="pre">train</span></code> command to start training. Examples:</p>
+<ol class="arabic">
+<li><p><strong>Default Training</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>train
+</pre></div>
+</div>
+</li>
+<li><p><strong>With Custom Configurations</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>train<span class="w"> </span>--config<span class="w"> </span>path/to/config.yaml
+</pre></div>
+</div>
+</li>
+<li><p><strong>Command-Line Overrides</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>train<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">32</span><span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.001
+</pre></div>
+</div>
+</li>
+</ol>
+<section id="training-outputs">
+<h3>Training Outputs<a class="headerlink" href="#training-outputs" title="Link to this heading"></a></h3>
+<p>During training, the following outputs are generated:</p>
+<ul class="simple">
+<li><p><strong>Checkpoints</strong>:
+Saved in <code class="docutils literal notranslate"><span class="pre">models/logs/checkpoints/</span></code>. This includes the best model checkpoints based on validation performance.</p></li>
+<li><p><strong>Pretrained Models</strong>:
+The pretrained BERT-based transformer model from Hugging Face is saved in <code class="docutils literal notranslate"><span class="pre">models/pretrained_models/</span></code>.</p></li>
+<li><p><strong>Lightning Logs</strong>:
+Training logs for TensorBoard are stored in <code class="docutils literal notranslate"><span class="pre">models/logs/lightning_logs/</span></code>. These logs include metrics and other details for visualization.</p></li>
+</ul>
+<p>To view all available training options, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>train<span class="w"> </span>-h
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="evaluating-the-model">
+<h2>Evaluating the Model<a class="headerlink" href="#evaluating-the-model" title="Link to this heading"></a></h2>
+<p>Evaluate a specific version of the model and save results, including a confusion matrix, to the <code class="docutils literal notranslate"><span class="pre">results/</span></code> directory.</p>
+<section id="running-evaluation">
+<h3>Running Evaluation<a class="headerlink" href="#running-evaluation" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p><strong>Default Evaluation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>evaluate
+</pre></div>
+</div>
+</li>
+<li><p><strong>Evaluate Specific Version</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>evaluate<span class="w"> </span>-v<span class="w"> </span>&lt;version&gt;
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lcm<span class="w"> </span>evaluate<span class="w"> </span>-v<span class="w"> </span><span class="m">5</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="evaluation-outputs">
+<h3>Evaluation Outputs<a class="headerlink" href="#evaluation-outputs" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>Confusion Matrix</strong>:
+Saved in the <code class="docutils literal notranslate"><span class="pre">results/</span></code> directory as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>results/version_&lt;version&gt;_confusion_matrix.png
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="folder-structure-and-outputs">
+<h2>Folder Structure and Outputs<a class="headerlink" href="#folder-structure-and-outputs" title="Link to this heading"></a></h2>
+<p>During training and evaluation, outputs are organized as follows:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">models/</span></code></strong>: Root folder for all model-related outputs.</p>
+<ul>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">models/logs/</span></code></strong>:</p>
+<ul>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">models/logs/checkpoints/</span></code></strong>: Contains the best model checkpoints.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">models/logs/lightning_logs/</span></code></strong>: Training logs for TensorBoard.</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">models/pretrained_models/</span></code></strong>:</p>
+<ul>
+<li><p>Contains pretrained models used for initializing training.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">results/</span></code></strong>:</p>
+<ul>
+<li><p>Contains evaluation results, including confusion matrices saved as:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">results/version_&lt;version&gt;_confusion_matrix.png</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr class="docutils" />
+<p>For more details, refer to the <a class="reference internal" href="configurations.html"><span class="std std-doc">Configurations Guide</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configurations.html" class="btn btn-neutral float-left" title="Configurations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataset.html" class="btn btn-neutral float-right" title="Dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nave Cohen, Erik Pinhasov.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

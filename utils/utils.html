@@ -10,7 +10,7 @@
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
-      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=b59c9799" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=49f23159" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -49,6 +49,9 @@
               <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configurations.html">Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
 </ul>
 
@@ -87,9 +90,9 @@
 <li class="toctree-l1"><a class="reference internal" href="utils.save_pretrained_callback.html">utils.save_pretrained_callback module</a></li>
 </ul>
 </div>
-<section id="module-functions">
-<h2>Module functions<a class="headerlink" href="#module-functions" title="Link to this heading"></a></h2>
-<dl class="py function" id="module-utils">
+<section id="module-utils">
+<span id="module-functions"></span><h2>Module functions<a class="headerlink" href="#module-utils" title="Link to this heading"></a></h2>
+<dl class="py function">
 <dt class="sig sig-object py" id="utils.apply_color_map">
 <span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">apply_color_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id2color</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils.html#apply_color_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.apply_color_map" title="Link to this definition"></a></dt>
 <dd><p>Map class indices to RGB values for visualization.</p>
@@ -166,6 +169,23 @@
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="utils.get_last_version">
+<span class="sig-prename descclassname"><span class="pre">utils.</span></span><span class="sig-name descname"><span class="pre">get_last_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utils.html#get_last_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.get_last_version" title="Link to this definition"></a></dt>
+<dd><p>Get the last version number for the logs directory containing only ‘version_*’ folders.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logs_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a>) – The base directory where ‘lightning_logs’ are stored.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The last version number. Returns 0 if no ‘version_*’ folders exist.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
