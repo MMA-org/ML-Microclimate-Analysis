@@ -55,9 +55,8 @@ class SemanticSegmentationDataset(Dataset):
         mask = np.array(mask)
 
         if self.transform:
-            augmented = self.transform(image=image, mask=mask)
-            image = augmented['image']
-            mask = augmented['mask']
+            image, mask = self.transform(image=image, mask=mask)
+        print(image.shape)
 
         # Apply feature extractor
         encoded_inputs = self.feature_extractor(

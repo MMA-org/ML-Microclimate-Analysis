@@ -11,7 +11,7 @@ def evaluate(config, version=None):
     id2label = config.dataset.id2label
     # Locate the checkpoint
     if not version:
-        version = get_last_version(logs_dir=config.project.logs_dir)
+        version = get_last_version(logs_dir=Path(config.project.logs_dir))
     checkpoint = find_checkpoint(config, version)
     print(f"Using checkpoint: {checkpoint}")
 

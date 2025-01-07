@@ -15,13 +15,13 @@ def get_last_version(logs_dir: Path) -> int:
         logs_dir (Path): The base directory where 'lightning_logs' are stored.
 
     Returns:
-        int: The last version number. Returns 0 if no 'version_*' folders exist.
+        int: The last version number. Returns -1 if no 'version_*' folders exist.
     """
     lightning_logs_dir = logs_dir / "lightning_logs"
 
     # Ensure the 'lightning_logs' directory exists
     if not lightning_logs_dir.exists():
-        return 0
+        return -1
 
     # Extract version numbers from folder names
     version_numbers = [
@@ -30,7 +30,7 @@ def get_last_version(logs_dir: Path) -> int:
         if d.is_dir() and d.name.startswith("version_")
     ]
 
-    return max(version_numbers, default=0)
+    return max(version_numbers, default=-1)
 
 
 def get_next_version(logs_dir: Path) -> str:

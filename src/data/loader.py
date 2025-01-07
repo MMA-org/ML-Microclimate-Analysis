@@ -4,6 +4,7 @@ from .dataset import SemanticSegmentationDataset
 from albumentations.pytorch import ToTensorV2
 import albumentations as A
 from datasets import load_dataset
+from .transform import Augmentation
 
 
 class Loader:
@@ -18,12 +19,15 @@ class Loader:
         batch_size (int): The batch size for the DataLoader.
         num_workers (int): Number of worker processes for data loading.
         feature_extractor (SegformerImageProcessor): Preprocessor for images and masks.
+        transform (Compose, optional): 
+            Optional Albumentations transformations to be applied on the images and masks during training or evaluation.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, transform=None):
         self.dataset_path = config.dataset.dataset_path
         self.batch_size = config.training.batch_size
         self.num_workers = config.training.num_workers
+        self.transform = transform or Augmentation()
 
         # Load dataset
         self.dataset = load_dataset(self.dataset_path)
@@ -34,32 +38,6 @@ class Loader:
             f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
             do_reduce_labels=False
         )
-
-    def get_transforms(self):
-        """
-        Returns the data augmentation transforms for training data.
-
-        The transformations include random horizontal and vertical flips, rotations,
-        brightness/contrast adjustments, and other augmentations.
-
-        Returns:
-            Compose: A composition of augmentations applied to training images.
-        """
-        return A.Compose([
-            A.HorizontalFlip(p=0.5),
-            A.VerticalFlip(p=0.5),
-            A.RandomRotate90(p=0.5),
-            A.OneOf([
-                A.RandomBrightnessContrast(),
-                A.RandomGamma(),
-            ], p=0.3),
-            A.OneOf([
-                A.ElasticTransform(),
-                A.GridDistortion(),
-                A.OpticalDistortion(),
-            ], p=0.3),
-            ToTensorV2()
-        ])
 
     def get_dataloader(self, split: str, shuffle: bool = False) -> DataLoader:
         """
@@ -75,13 +53,19 @@ class Loader:
         Example:
             Create a data loader for the training dataset::
 
+                # with default augmentation
                 loader = Loader(config)
                 train_loader = loader.get_dataloader("train", shuffle=True)
+
+                # custome augmentation
+                loader_with_augmentation = Loader(config,transform=augmentation) # augmentation is callable albumentations.Compose
+                train_with_augmentation_loader = loader_with_augmentation = Loader(config,transform=augmentation)
+
         """
         dataset = SemanticSegmentationDataset(
             data=self.dataset[split],
             feature_extractor=self.feature_extractor,
-            transform=self.get_transforms() if split == "train" else None,
+            transform=self.transform if split == "train" else None,
         )
         return DataLoader(
             dataset,
