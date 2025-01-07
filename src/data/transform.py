@@ -18,6 +18,12 @@ class Augmentation:
         The transformations include geometric augmentations (e.g., flips, rotations),
         photometric adjustments (e.g., brightness, contrast), distortions, occlusion handling,
         and tensor conversion.
+        Example:
+            Create callable albumination.Compose::
+
+            transform = Augmentation()
+            image,mask = transform(image,mask) # return augmented image and mask
+
         """
         self.transform = A.Compose([
             # Geometric Augmentations
@@ -25,12 +31,6 @@ class Augmentation:
                 A.HorizontalFlip(p=0.5),
                 A.VerticalFlip(p=0.5),
                 A.RandomRotate90(p=0.5),
-                A.Affine(
-                    scale=(0.9, 1.1),
-                    translate_percent=0.0625,
-                    rotate=(-30, 30),
-                    p=0.5,
-                ),
             ], p=0.5),
 
             # Photometric Augmentations
