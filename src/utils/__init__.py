@@ -52,13 +52,13 @@ def get_next_version(logs_dir: Path) -> str:
     return f"version_{next_version}"
 
 
-def find_checkpoint(config, version: str) -> Path:
+def find_checkpoint(config, version: int) -> Path:
     """
     Locate the single checkpoint file in the specified versioned directory.
 
     Args:
         config (Config): Configuration object.
-        version (str): The version folder name (e.g., "version_0").
+        version (int): The version folder name (e.g., "version_0").
 
     Returns:
         Path: Absolute path to the checkpoint file.

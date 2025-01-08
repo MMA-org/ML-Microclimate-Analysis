@@ -45,7 +45,7 @@ class Augmentation:
             # Distortions
             A.OneOf([
                 A.ElasticTransform(
-                    alpha=1, sigma=50, alpha_affine=50,
+                    alpha=1, sigma=50,
                     border_mode=0,  # Replace deprecated mode with border_mode
                     p=0.5
                 ),

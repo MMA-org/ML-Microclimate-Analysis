@@ -58,3 +58,15 @@ class NormalizeError(BaseError):
     """Exception raised if normalize is not from valid options."""
     exit_code = 8
     message = "'normalize' must be 'max' | 'balance' | 'sum' got {}"
+
+
+class CeDiceCombineTypeError(BaseError):
+    """Exception raised if 'weights' got wrong type."""
+    exit_code = 9
+    message = "'weights' need to be type int|float|list|tensor got {}."
+
+
+class CeDiceCombineSizeError(BaseError):
+    """Exception raised if weights size is not equal to num class."""
+    exit_code = 10
+    message = "'weights' size {}. != num_classes {}."

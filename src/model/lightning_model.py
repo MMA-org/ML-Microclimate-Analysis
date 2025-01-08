@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from utils.metrics import SegMetrics, FocalLoss, TestMetrics
+from utils.metrics import SegMetrics, CeDiceLoss, TestMetrics
 from transformers import logging
 import warnings
 
@@ -63,10 +63,9 @@ class SegformerFinetuner(pl.LightningModule):
         self.test_results = {"predictions": [], "ground_truths": []}
 
         # Initialize the loss function (FocalLoss)
-        self.criterion = FocalLoss(
+        self.criterion = CeDiceLoss(
             num_classes=self.num_classes,
-            alpha=class_weight,
-            gamma=gamma,
+            weights=class_weight,
             reduction='mean',
             ignore_index=self.ignore_index
         )

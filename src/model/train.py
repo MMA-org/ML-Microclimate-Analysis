@@ -112,13 +112,13 @@ def initialize_trainer(config, callbacks, logger):
     )
 
 
-def resolve_checkpoint_path(config, resume_version: str) -> Path:
+def resolve_checkpoint_path(config, resume_version: int) -> Path:
     """
     Resolve the path for resuming training from a checkpoint.
 
     Args:
         config: Configuration object.
-        resume_version (str): The version folder name (e.g., "version_0").
+        resume_version (int): The version folder name (e.g., "version_0").
 
     Returns:
         Path: Absolute path to the checkpoint file or None if no resume version is provided.
