@@ -6,8 +6,9 @@ This document provides an overview of the `config.yaml` file used for configurin
 
 The `config.yaml` file organizes the project configuration into three main sections: `DATA`, `project`, and `training`.
 
-> **_NOTE_**  
-> The YAML file is **not required** for running the project with default settings. The project is designed to run seamlessly without a `config.yaml` file by using pre-defined default configuration values.
+```{note}
+The YAML file is **not required** for running the project with default settings. The project is designed to run seamlessly without a `config.yaml` file by using pre-defined default configuration values.
+```
 
 ---
 
@@ -44,19 +45,21 @@ dataset:
 The `project` section defines directory paths for saving models, logs, and results:
 
 ```yaml
-project:
-  models_dir: models
-  pretrained_dir: models/pretrained_models
-  logs_dir: models/logs
-  results_dir: results
+directories:
+  models: models
+  pretrained: models/pretrained_models
+  logs: models/logs
+  checkpoints: models/logs/checkpoints
+  results: results
 ```
 
 **Details:**
 
-- `models_dir`: Directory to save trained models.
-- `pretrained_dir`: Directory for storing pre-trained models.
-- `logs_dir`: Directory for logs.
-- `results_dir`: Directory for evaluation results.
+- `models`: Directory to save trained models.
+- `pretrained`: Directory for storing pre-trained models.
+- `logs`: Directory for logs.
+- `checkpoints`: Directory for storing training checkpoints.
+- `results`: Directory for evaluation results.
 
 ---
 
@@ -66,22 +69,14 @@ The `training` section provides options for training parameters:
 
 ```yaml
 training:
+  model_name: b0
   batch_size: 16
   max_epochs: 50
   num_workers: 8
+  learning_rate: 2e-5
   log_every_n_steps: 10
-  learning_rate: 1e-3
-  model_name: b4
   early_stop:
     patience: 10
-
-  focal_loss:
-    weights:
-      class_weights: True # bool (default True)
-      normalize: "balanced" # max | sum | balanced (default 'balanced')
-    gamma: 2.0 # float
-    alpha: None # None | float
-    ignore_index: 0 # None | int
 ```
 
 **Details:**
@@ -92,8 +87,33 @@ training:
 - `log_every_n_steps`: Logging frequency during training.
 - `learning_rate`: Learning rate for the optimizer.
 - `model_name`: Name of the model architecture (e.g., `b4`).
-- `early_stop.patience`: Number of epochs to wait for improvement before stopping training.
-- `focal_loss`: Configuration for the focal loss function, with options for class weights, gamma, and alpha.
+- `early_stop.patience`: Number of epochs to wait for improvement
+
+---
+
+### Loss Configuration
+
+The loss function combines `Cross-Entropy` Loss and `Dice` Loss. Below are the configurable parameters:
+
+```yaml
+loss:
+  ignore_index: 0
+  weights: True
+  normalize: "sum"
+  alpha: 0.5
+  beta: 0.5
+```
+
+**Details:**
+
+- `ignore_index`: Index for the class to ignore during loss calculation. Use `None` if no class should be ignored.
+- `weights`: Whether to use class weights to balance contributions from imbalanced classes. Set to True to enable.
+- `normalize`: Method for normalizing class weights.
+  - `max`: Scales weights relative to the maximum weight.
+  - `sum`: Ensures the weights sum to 1.
+  - `none`: Do not normalize, use raw weights.
+- `alpha`: Weight for the Cross-Entropy Loss component in the combined loss.
+- `beta`: Weight for the Dice Loss component in the combined loss.
 
 ---
 
@@ -111,8 +131,6 @@ Command-line options allow overriding `config.yaml` settings or default values. 
   ```bash
   lcm train --batch_size 32 --lr 0.001
   ```
-
-Refer to the [Usage Guide](./usage.md) for additional examples.
 
 ---
 
