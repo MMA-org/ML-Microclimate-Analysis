@@ -1,79 +1,11 @@
 # util/metric.py
-from tqdm import tqdm
-from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
-import torch
-import torch.nn as nn
-from typing import Optional
-import numpy as np
-from core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
-from torchmetrics.functional.classification import dice
 from typing import Optional, Literal
 import torch
+import torch.nn as nn
 import numpy as np
-
-# Function to initialize weights
-
-
-def initialize_weights(weights, num_classes, ignore_index=None):
-    """
-    Initialize and normalize weights for a loss function.
-
-    Args:
-        weights (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class.
-        num_classes (int): Number of classes.
-        ignore_index (int, optional): Class index to ignore during loss computation.
-
-    Returns:
-        torch.Tensor: The validated and normalized weights tensor.
-
-    Raises:
-        ValueError: If weights type is unsupported or size is invalid.
-    """
-    if weights is None:
-        return None  # No weights provided, return None
-
-    # Convert weights to tensor
-    if isinstance(weights, (list, np.ndarray)):
-        weights_tensor = torch.tensor(weights, dtype=torch.float)
-    elif isinstance(weights, torch.Tensor):
-        weights_tensor = weights
-    else:
-        raise LossWeightsTypeError(type(weights))
-    if weights_tensor.size(0) != num_classes:
-        raise LossWeightsSizeError(
-            weights_tensor.size(0), num_classes)
-
-    return weights_tensor
-
-
-# DiceLoss class
-class DiceLoss(nn.Module):
-    def __init__(self, num_classes, ignore_index=None, reduction="mean", weights=None):
-        super().__init__()
-        self.num_classes = num_classes
-        self.ignore_index = ignore_index
-        self.reduction = reduction
-        self.weights = initialize_weights(weights, num_classes, ignore_index)
-
-    def forward(self, inputs, targets):
-        probs = torch.softmax(inputs, dim=1)
-        dice_score = dice(
-            probs,
-            targets,
-            average="none",
-            multiclass=True,
-            ignore_index=self.ignore_index,
-            num_classes=self.num_classes,
-        )
-        dice_score = torch.nan_to_num(dice_score, nan=0.0)
-        if self.weights is not None:
-            dice_score = dice_score * self.weights
-        if self.reduction == "mean":
-            return 1 - dice_score.mean()
-        elif self.reduction == "sum":
-            return 1 - dice_score.sum()
-        else:
-            return 1 - dice_score
+from tqdm import tqdm
+from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
+from core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
 
 
 # CeDiceLoss class
@@ -84,23 +16,56 @@ class CeDiceLoss(nn.Module):
         self.beta = beta
         self.num_classes = num_classes
         self.ignore_index = ignore_index
-        self.weights = initialize_weights(weights, num_classes, ignore_index)
+        self.weights = self.initialize_weights(weights, num_classes)
         self.ce_loss = nn.CrossEntropyLoss(
             ignore_index=ignore_index if ignore_index is not None else -100,
             reduction=reduction,
             weight=self.weights,
         )
-        self.dice_loss = DiceLoss(
-            num_classes=num_classes,
-            ignore_index=ignore_index,
-            reduction=reduction,
-            weights=self.weights,
+        self.dice_score = Dice(
+            average="macro",
+            multiclass=True,
+            ignore_index=self.ignore_index,
+            num_classes=self.num_classes,
         )
 
     def forward(self, inputs, targets):
         ce_loss = self.ce_loss(inputs, targets)
-        dice_loss = self.dice_loss(inputs, targets)
+        probs = torch.softmax(inputs, dim=1)
+        dice_loss = 1 - self.dice_score(probs, targets)
         return self.alpha * ce_loss + self.beta * dice_loss
+
+    def initialize_weights(self, weights, num_classes):
+        """
+        Initialize and validate weights for a loss function.
+
+        Args:
+            weights (list, np.ndarray, torch.Tensor, optional): Weighting factor(s) for each class. 
+            num_classes (int): The total number of classes for the loss function.
+
+        Returns:
+            torch.Tensor: A tensor of weights for all classes.
+
+        Raises:
+            LossWeightsTypeError: If the `weights` argument is of an unsupported type.
+            LossWeightsSizeError: If the size of `weights` does not match `num_classes`.
+        """
+
+        if weights is None:
+            return None  # No weights provided, return None
+
+        # Convert weights to tensor
+        if isinstance(weights, (list, np.ndarray)):
+            weights_tensor = torch.tensor(weights, dtype=torch.float)
+        elif isinstance(weights, torch.Tensor):
+            weights_tensor = weights
+        else:
+            raise LossWeightsTypeError(type(weights))
+        if weights_tensor.size(0) != num_classes:
+            raise LossWeightsSizeError(
+                weights_tensor.size(0), num_classes)
+
+        return weights_tensor
 
 
 class FocalLoss(nn.CrossEntropyLoss):
@@ -204,8 +169,8 @@ class SegMetrics(MetricCollection):
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.metrics = {
-            "mean_iou": JaccardIndex(task='multiclass', num_classes=num_classes, ignore_index=self.ignore_index).to(device),
-            "mean_dice": Dice(average='micro', num_classes=num_classes, ignore_index=self.ignore_index).to(device)
+            "mean_iou": JaccardIndex(task='multiclass', average="macro", num_classes=num_classes, ignore_index=self.ignore_index).to(device),
+            "mean_dice": Dice(average='macro', num_classes=num_classes, ignore_index=self.ignore_index).to(device)
         }
         super().__init__(self.metrics)
 
