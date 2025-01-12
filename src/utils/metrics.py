@@ -5,66 +5,102 @@ import torch
 import torch.nn as nn
 from typing import Optional
 import numpy as np
-from core.errors import FocalAlphaSizeError, FocalAlphaTypeError, NormalizeError, CeDiceCombineSizeError, CeDiceCombineTypeError
+from core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
 from torchmetrics.functional.classification import dice
+from typing import Optional, Literal
+import torch
+import numpy as np
+
+# Function to initialize weights
 
 
-class CeDiceLoss(nn.CrossEntropyLoss):
-    def __init__(self, num_classes, alpha=0.5, beta=0.5, weights=None, ignore_index=None, reduction='mean'):
-        self.ignore_index = ignore_index if ignore_index is not None else -100
-        weights = self.__handle_weights__(weights, num_classes)
-        super().__init__(ignore_index=self.ignore_index, reduction='none', weight=weights)
-        self.alpha = alpha
-        self.beta = beta
-        self.reduction = reduction
+def initialize_weights(weights, num_classes, ignore_index=None):
+    """
+    Initialize and normalize weights for a loss function.
+
+    Args:
+        weights (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class.
+        num_classes (int): Number of classes.
+        ignore_index (int, optional): Class index to ignore during loss computation.
+
+    Returns:
+        torch.Tensor: The validated and normalized weights tensor.
+
+    Raises:
+        ValueError: If weights type is unsupported or size is invalid.
+    """
+    if weights is None:
+        return None  # No weights provided, return None
+
+    # Convert weights to tensor
+    if isinstance(weights, (list, np.ndarray)):
+        weights_tensor = torch.tensor(weights, dtype=torch.float)
+    elif isinstance(weights, torch.Tensor):
+        weights_tensor = weights
+    else:
+        raise LossWeightsTypeError(type(weights))
+    if weights_tensor.size(0) != num_classes:
+        raise LossWeightsSizeError(
+            weights_tensor.size(0), num_classes)
+
+    return weights_tensor
+
+
+# DiceLoss class
+class DiceLoss(nn.Module):
+    def __init__(self, num_classes, ignore_index=None, reduction="mean", weights=None):
+        super().__init__()
         self.num_classes = num_classes
-        self.dice_ignore_index = ignore_index
+        self.ignore_index = ignore_index
+        self.reduction = reduction
+        self.weights = initialize_weights(weights, num_classes, ignore_index)
 
     def forward(self, inputs, targets):
-        ce_loss = super().forward(inputs, targets)
-
         probs = torch.softmax(inputs, dim=1)
-        dice_loss = 1 - dice(probs, targets, num_classes=self.num_classes,
-                             multiclass=True, average="macro", ignore_index=self.dice_ignore_index)
-        if self.reduction == 'mean':
-            return self.alpha * ce_loss.mean() + self.beta * dice_loss
-        elif self.reduction == 'sum':
-            return self.alpha * ce_loss.sum() + self.beta * dice_loss
+        dice_score = dice(
+            probs,
+            targets,
+            average="none",
+            multiclass=True,
+            ignore_index=self.ignore_index,
+            num_classes=self.num_classes,
+        )
+        dice_score = torch.nan_to_num(dice_score, nan=0.0)
+        if self.weights is not None:
+            dice_score = dice_score * self.weights
+        if self.reduction == "mean":
+            return 1 - dice_score.mean()
+        elif self.reduction == "sum":
+            return 1 - dice_score.sum()
         else:
-            return self.alpha * ce_loss + self.beta * dice_loss
+            return 1 - dice_score
 
-    def __handle_weights__(self, weights, num_classes):
-        """
-        Set the weights value for class weighting.
 
-        Args:
-            weights (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class.
+# CeDiceLoss class
+class CeDiceLoss(nn.Module):
+    def __init__(self, num_classes, alpha=0.5, beta=0.5, weights=None, ignore_index=None, reduction="mean"):
+        super().__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+        self.weights = initialize_weights(weights, num_classes, ignore_index)
+        self.ce_loss = nn.CrossEntropyLoss(
+            ignore_index=ignore_index if ignore_index is not None else -100,
+            reduction=reduction,
+            weight=self.weights,
+        )
+        self.dice_loss = DiceLoss(
+            num_classes=num_classes,
+            ignore_index=ignore_index,
+            reduction=reduction,
+            weights=self.weights,
+        )
 
-        Returns:
-            torch.Tensor: The weights tensor.
-
-        Raises:
-            CeDiceCombineTypeError: If the weights type is unsupported.
-            CeDiceCombineSizeError: weights does not match num_classes.
-        """
-        if weights is None:
-            weights_tensor = torch.ones(num_classes, dtype=torch.float)
-        elif isinstance(weights, (float, int)):
-            weights_tensor = torch.full(
-                (num_classes,), weights, dtype=torch.float)
-        elif isinstance(weights, (np.ndarray, list)):
-            weights_tensor = torch.tensor(weights, dtype=torch.float)
-        elif isinstance(weights, torch.Tensor):
-            weights_tensor = weights
-        else:
-            raise CeDiceCombineTypeError(
-                f"Unsupported alpha type: {type(weights)}")
-
-        if weights_tensor.size(0) != num_classes:
-            raise CeDiceCombineSizeError(
-                weights_tensor.size(0), num_classes)
-
-        return weights_tensor
+    def forward(self, inputs, targets):
+        ce_loss = self.ce_loss(inputs, targets)
+        dice_loss = self.dice_loss(inputs, targets)
+        return self.alpha * ce_loss + self.beta * dice_loss
 
 
 class FocalLoss(nn.CrossEntropyLoss):
@@ -98,9 +134,9 @@ class FocalLoss(nn.CrossEntropyLoss):
         self.num_classes = num_classes
         self.alpha = self.__set_alpha__(alpha)
 
-    def forward(self, input_, target):
-        self.alpha = self.alpha.to(input_.device)
-        cross_entropy = super().forward(input_, target)
+    def forward(self, inputs, target):
+        self.alpha = self.alpha.to(inputs.device)
+        cross_entropy = super().forward(inputs, target)
         pt = torch.exp(-cross_entropy)
         at = self.alpha[target]
 
@@ -140,10 +176,10 @@ class FocalLoss(nn.CrossEntropyLoss):
         elif isinstance(alpha, torch.Tensor):
             alpha_tensor = alpha
         else:
-            raise FocalAlphaTypeError(f"Unsupported alpha type: {type(alpha)}")
+            raise LossWeightsTypeError(type(alpha))
 
         if alpha_tensor.size(0) != self.num_classes:
-            raise FocalAlphaSizeError(alpha_tensor.size(0), self.num_classes)
+            raise LossWeightsSizeError(alpha_tensor.size(0), self.num_classes)
 
         return alpha_tensor
 
@@ -206,7 +242,7 @@ class TestMetrics(SegMetrics):
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize="balanced", ignore_index=None):
+def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize: Literal["sum", "max", "none"] = "sum", ignore_index=None):
     """
     Compute class weights based on the frequencies of each class in the dataset.
 
@@ -214,14 +250,14 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
         train_dataloader (DataLoader): PyTorch DataLoader containing the dataset.
         num_classes (int): Total number of classes.
         mask_key (str): Key to access masks/labels in the dataloader's batch.
-        normalize (str): "max" | "sum" | "balanced" Whether to normalize the weights.
+        normalize (str): "max" | "sum" | "none" Whether to normalize the weights.
         ignore_index (int, optional): Class index to ignore in weight computation.
 
     Returns:
         torch.Tensor: Computed class weights of shape (num_classes,).
 
     Raises:
-        ValueError: If the normalization method is unsupported.
+        NormalizeError: If the normalization method is unsupported.
     """
     class_counts = torch.zeros(num_classes, dtype=torch.int64)
 
@@ -235,21 +271,20 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
         counts = torch.bincount(masks, minlength=num_classes)
         class_counts += counts
 
-    total_pixels = class_counts.sum().item()
-    class_weights = total_pixels / (class_counts.float() + 1e-6)
+    class_weights = 1.0 / (class_counts + 1e-6)
 
     if ignore_index is not None:
         class_weights[ignore_index] = 0
 
+    # Compute class weights based on the normalization strategy
     if normalize == "sum":
         class_weights /= class_weights.sum()
+
     elif normalize == "max":
         class_weights /= class_weights.max()
-    elif normalize == "balanced":
-        scale_factor = (
-            num_classes - 1) if ignore_index is not None else num_classes
-        class_weights = (class_weights / class_weights.sum()
-                         ) * scale_factor
+
+    elif normalize == "none":
+        pass
     else:
         raise NormalizeError(normalize)
 

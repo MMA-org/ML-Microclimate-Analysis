@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from utils import Config, find_checkpoint,  save_confusion_matrix_plot, apply_color_map, plot_image_and_mask, save_class_weights, load_class_weights
+from utils import Config, find_checkpoint, save_class_weights, load_class_weights
 import json
 import matplotlib
 from pathlib import Path
@@ -22,8 +22,8 @@ def mock_config(tmp_path):
 
     # Create the mock config dictionary
     config_dict = {
-        "project": {
-            "logs_dir": str(logs_dir),  # Path for logs_dir
+        "directories": {
+            "logs": str(logs_dir),  # Path for logs_dir
             "checkpoint_dir": str(checkpoint_dir)  # Path for checkpoint_dir
         }
     }
@@ -37,7 +37,7 @@ def test_find_checkpoint(mock_config, tmp_path):
     version = "0"
 
     # Create the checkpoint directory as expected by the function
-    cpkt_dir = Path(mock_config.project.checkpoint_dir)
+    cpkt_dir = Path(mock_config.directories.checkpoint_dir)
     cpkt_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
 
     # Create the checkpoint file

@@ -25,18 +25,19 @@ class TrainParser:
             "--model_name", type=str, choices=["b0", "b1", "b2", "b3", "b4"], metavar="b1-b4",  help="Model name.")
         self.parser.add_argument(
             "--stop_patience", type=int,  help="Early stopping patience.")
-
+        self.parser.add_argument("--checkpoints_dir", type=str, metavar="[path]",
+                                 help="Path to checkpoints directiory.")
         # Add focal loss arguments
         self.parser.add_argument(
-            "--gamma", type=float,  help="Focal loss gamma.")
+            "--alpha", type=float,  help="loss alpha.")
         self.parser.add_argument(
-            "--alpha", type=float,  help="Focal loss alpha.")
+            "--beta", type=float,  help="loss beta.")
         self.parser.add_argument(
-            "--ignore_index", type=int,  help="Focal loss ignore index.")
+            "--ignore_index", type=int,  help="loss function ignore index.")
         self.parser.add_argument(
-            "--class_weights", type=ArgParser.str_to_bool, help="Use class weights for focal loss.")
-        self.parser.add_argument("--normalize", type=str,
-                                 metavar="[max | sum | balanced]", help="Normalization method for class weights.")
+            "--class_weights", type=ArgParser.str_to_bool, help="Use class weights for loss function.")
+        self.parser.add_argument("--normalize", type=str, choices=["max", "sum", "none"],
+                                 metavar="[max | sum | none]", help="Normalization method for class weights.")
 
     def get_parser(self):
         return self.parser

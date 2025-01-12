@@ -15,11 +15,7 @@ def get_last_version(logs_dir: Path) -> int:
         logs_dir (Path): The base directory where 'lightning_logs' are stored.
 
     Returns:
-<<<<<<< HEAD
         int: The last version number. Returns -1 if no 'version_*' folders exist.
-=======
-        int: The last version number. Returns 0 if no 'version_*' folders exist.
->>>>>>> 510856727fce09b9a7f37d7e40587e228972e368
     """
     lightning_logs_dir = logs_dir / "lightning_logs"
 
@@ -69,7 +65,7 @@ def find_checkpoint(config, version: int) -> Path:
         MultipleCheckpointsError: If multiple checkpoint files are found.
     """
     from core.errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
-    checkpoint_dir = Path(config.project.logs_dir) / \
+    checkpoint_dir = Path(config.directories.logs) / \
         "checkpoints" / f"version_{version}"
 
     # Check if the checkpoint directory exists

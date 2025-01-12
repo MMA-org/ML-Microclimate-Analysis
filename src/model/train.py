@@ -13,15 +13,15 @@ import torch
 def prepare_paths(config, resume_version=None):
     """Prepare directory paths for logging and checkpoints."""
     # Get the base directories
-    pretrained_dir = Path(config.project.pretrained_dir)
-    logs_dir = Path(config.project.logs_dir)
+    pretrained_dir = Path(config.directories.pretrained)
+    logs_dir = Path(config.directories.logs)
 
     # Determine the version for logging/checkpoints
     version = f"version_{resume_version}" if resume_version else get_next_version(
         logs_dir)
 
     # Define paths for checkpoints and pretrained models
-    checkpoint_dir = logs_dir / "checkpoints" / version
+    checkpoint_dir = Path(config.directories.checkpoints) / version
     pretrained_dir = pretrained_dir / version
 
     return pretrained_dir, logs_dir, checkpoint_dir
@@ -48,20 +48,16 @@ def prepare_class_weights(config, train_loader):
         torch.Tensor: Tensor of class weights.
     """
     # Check if class weighting is enabled
-    class_weights = config.training.focal_loss.weights.class_weights
-    alpha = config.training.focal_loss.alpha
+    class_weights = config.loss.weights
     num_classes = len(config.dataset.id2label)
 
-    if not class_weights and not alpha:
+    if not class_weights:
         return None  # Return None if class weighting is disabled
 
-    if alpha is not None:
-        return alpha
-
     # Define the path for class weights file
-    weights_file = Path(config.project.logs_dir) / "class_weights.json"
-    normalize = config.training.focal_loss.weights.normalize
-    ignore_index = config.training.focal_loss.ignore_index
+    weights_file = Path(config.directories.logs) / "class_weights.json"
+    normalize = config.loss.normalize
+    ignore_index = config.loss.ignore_index
 
     # Load or compute class weights
     if weights_file.exists():
@@ -159,8 +155,9 @@ def train(config, resume_version=None):
         model_name=config.training.model_name,
         class_weight=class_weights,  # alpha/class weights
         lr=float(config.training.learning_rate),
-        gamma=float(config.training.focal_loss.gamma),
-        ignore_index=config.training.focal_loss.ignore_index
+        alpha=float(config.loss.alpha),
+        beta=float(config.loss.beta),
+        ignore_index=config.loss.ignore_index
     )
 
     # Initialize callbacks (Checkpoint, EarlyStopping, SavePretrained)
@@ -173,5 +170,10 @@ def train(config, resume_version=None):
     # Resolve checkpoint path if resuming from a checkpoint
     resume_checkpoint = resolve_checkpoint_path(config, resume_version)
 
+    print("start training:")
+    print("segformer model:", config.training.model_name, "learning rate:",
+          config.training.learning_rate, "batch size:", config.training.batch_size)
+    print("ignore index:", config.loss.ignore_index, "weights:",
+          config.loss.weights, "normalize method:", config.loss.normalize)
     # Train the model
     trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)

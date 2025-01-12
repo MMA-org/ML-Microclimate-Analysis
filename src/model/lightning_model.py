@@ -1,11 +1,10 @@
 import pytorch_lightning as pl
-from transformers import SegformerForSemanticSegmentation
+from transformers import logging, SegformerForSemanticSegmentation
 import torch
 from torch import nn
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from utils.metrics import SegMetrics, CeDiceLoss, TestMetrics
-from transformers import logging
 import warnings
 
 if torch.cuda.is_available():
@@ -20,7 +19,6 @@ class SegformerFinetuner(pl.LightningModule):
         id2label (dict): A dictionary mapping class IDs to class labels.
         model_name (str): The name of the Segformer model variant to use. Default is "b0".
         lr (float): Learning rate for the optimizer. Default is 2e-5.
-        gamma (float): Gamma value for the Focal Loss function. Default is 2.0.
         class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
 
@@ -35,7 +33,7 @@ class SegformerFinetuner(pl.LightningModule):
         criterion (FocalLoss): Loss function.
     """
 
-    def __init__(self, id2label, model_name="b0", lr=2e-5, gamma=2.0, class_weight=None, ignore_index=None):
+    def __init__(self, id2label, model_name="b0", lr=2e-5, alpha=0.5, beta=0.5, class_weight=None, ignore_index=None):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -62,10 +60,12 @@ class SegformerFinetuner(pl.LightningModule):
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
-        # Initialize the loss function (FocalLoss)
+        # Initialize the loss function (CeDiceLoss)
         self.criterion = CeDiceLoss(
             num_classes=self.num_classes,
             weights=class_weight,
+            alpha=alpha,
+            beta=beta,
             reduction='mean',
             ignore_index=self.ignore_index
         )

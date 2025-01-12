@@ -12,26 +12,29 @@ dataset:
     7: "agriculture land"
     8: "buildings"
 
-project:
-  models_dir: models
-  pretrained_dir: models/pretrained_models
-  logs_dir: models/logs
-  results_dir: results
+# PROJECT DIRECTORIES
+directories:
+  models: models
+  pretrained: models/pretrained_models
+  logs: models/logs
+  checkpoints: models/logs/checkpoints
+  results: results
 
+# TRAINING SETTINGS
 training:
+  model_name: b0
   batch_size: 16
   max_epochs: 50
   num_workers: 8
-  log_every_n_steps: 10
   learning_rate: 2e-5
-  model_name: b0
+  log_every_n_steps: 10
   early_stop:
     patience: 10
 
-  focal_loss:
-    weights:
-      class_weights: True # bool (default True)
-      normalize: "balanced" # max | sum | balanced (default 'balanced')
-    gamma: 2.0 # float
-    alpha: None # None | float
-    ignore_index: 0 # None | int
+# LOSS SETTINGS
+loss:
+  ignore_index: 0
+  weights: True # Use class weights
+  normalize: "sum" # Options: max, sum, none
+  alpha: 0.5
+  beta: 0.5

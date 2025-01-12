@@ -42,31 +42,25 @@ class ConfigId2LabelError(BaseError):
     message = "'id2label' mapping is missing in config. Please provide it to ensure correct label mapping."
 
 
-class FocalAlphaTypeError(BaseError):
-    """Exception raised if 'alpha' got wrong type."""
-    exit_code = 6
-    message = "'alpha' need to be type int|float|list|tensor got {}."
-
-
-class FocalAlphaSizeError(BaseError):
-    """Exception raised if alpha size is not equal to num class."""
-    exit_code = 7
-    message = "'alpha' size {}. != num_classes {}."
-
-
 class NormalizeError(BaseError):
     """Exception raised if normalize is not from valid options."""
-    exit_code = 8
+    exit_code = 6
     message = "'normalize' must be 'max' | 'balance' | 'sum' got {}"
 
 
-class CeDiceCombineTypeError(BaseError):
+class LossWeightsTypeError(BaseError):
     """Exception raised if 'weights' got wrong type."""
-    exit_code = 9
-    message = "'weights' need to be type int|float|list|tensor got {}."
+    exit_code = 7
+    message = "'weights' need to be type list|tensor got {}."
 
 
-class CeDiceCombineSizeError(BaseError):
+class LossWeightsSizeError(BaseError):
     """Exception raised if weights size is not equal to num class."""
-    exit_code = 10
+    exit_code = 8
     message = "'weights' size {}. != num_classes {}."
+
+
+class LossIgnoreIndexError(BaseError):
+    """Exception raised if weights size is not equal to num class."""
+    exit_code = 9
+    message = "'ignore_index' {} is out of bounds for 'num_classes' {}."

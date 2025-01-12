@@ -11,7 +11,7 @@ def evaluate(config, version=None):
     id2label = config.dataset.id2label
     # Locate the checkpoint
     if not version:
-        version = get_last_version(logs_dir=Path(config.project.logs_dir))
+        version = get_last_version(logs_dir=Path(config.directories.logs))
     checkpoint = find_checkpoint(config, version)
     print(f"Using checkpoint: {checkpoint}")
 
@@ -36,8 +36,8 @@ def evaluate(config, version=None):
     y_pred = test_results["predictions"]
 
     # Save confusion matrix
-    results_dir = Path(config.project.results_dir)
-    cm_save_path = results_dir / f"version_{version}_confusion_matrix.png"
+    results = Path(config.directories.results)
+    cm_save_path = results / f"version_{version}_confusion_matrix.png"
     labels = list(id2label.keys())
 
     # Plot and save the confusion matrix

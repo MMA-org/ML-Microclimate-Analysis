@@ -1,9 +1,5 @@
 import yaml
 from pathlib import Path
-
-from typing import Any, Dict
-
-
 import copy
 
 
@@ -105,11 +101,11 @@ class Config:
 
     def __create_directories__(self):
         """
-        Automatically create directories specified in the `project` section and print only newly created directories.
+        Automatically create directories specified in the `directories` section and print only newly created directories.
         """
-        project_config = self.config.get("project", {})
+        directories_config = self.config.get("directories", {})
         created_dirs = [
-            dir_path for dir_path in project_config.values()
+            dir_path for dir_path in directories_config.values()
             if not Path(dir_path).exists() and Path(dir_path).mkdir(parents=True, exist_ok=True) is None
         ]
         if created_dirs:
@@ -118,60 +114,72 @@ class Config:
 
 default_config = {
     "dataset": {
-        "dataset_path": "erikpinhasov/landcover_dataset"
+        "dataset_path": "erikpinhasov/landcover_dataset",
+        "id2label": {
+            0: "background",
+            1: "bareland",
+            2: "rangeland",
+            3: "developed space",
+            4: "road",
+            5: "tree",
+            6: "water",
+            7: "agriculture land",
+            8: "buildings"
+        }
     },
-    "project": {
-        "models_dir": "models",
-        "pretrained_dir": "models/pretrained_models",
-        "logs_dir": "models/logs",
-        "results_dir": "results",
+    "directories": {
+        "models": "models",
+        "pretrained": "models/pretrained_models",
+        "logs": "models/logs",
+        "checkpoints": "models/logs/checkpoints",
+        "results": "results"
     },
     "training": {
-        "batch_size": 32,
+        "model_name": "b0",
+        "batch_size": 16,
         "max_epochs": 50,
-        "log_every_n_steps": 10,
+        "num_workers": 8,
         "learning_rate": 2e-5,
-        "model_name": "b1",
+        "log_every_n_steps": 10,
         "early_stop": {
-            "patience": 10,
-        },
-        "focal_loss": {
-            "gamma": 2,
-            "alpha": None,
-            "ignore_index": 0,
-            "weights": {
-                "class_weights": True,
-                "normalize": "balanced",
-            },
+            "patience": 10
         }
+    },
+    "loss": {
+        "ignore_index": None,
+        "weights": True,
+        "normalize": "sum",  # Options: max, sum
+        "alpha": 0.5,
+        "beta": 0.5
     }
 }
+
 arg_to_key_map = {
     # Dataset
     "dataset_path": ["dataset", "dataset_path"],
 
     # Project
-    "models_dir": ["project", "models_dir"],
-    "pretrained_dir": ["project", "pretrained_dir"],
-    "logs_dir": ["project", "logs_dir"],
-    "results_dir": ["project", "results_dir"],
+    "models_dir": ["project", "directories", "models"],
+    "pretrained_dir": ["project", "directories", "pretrained"],
+    "logs_dir": ["project", "directories", "logs"],
+    "checkpoints_dir": ["project", "directories", "checkpoints"],
+    "results": ["project", "directories", "results"],
 
     # Training
     "batch_size": ["training", "batch_size"],
     "max_epochs": ["training", "max_epochs"],
-    "log_step": ["training", "log_every_n_steps"],
+    "log_step": ["training", "logging", "log_every_n_steps"],
     "lr": ["training", "learning_rate"],
     "model_name": ["training", "model_name"],
+    "num_workers": ["training", "num_workers"],
 
     # Early stopping
     "stop_patience": ["training", "early_stop", "patience"],
 
-    # Focal loss
-    "gamma": ["training", "focal_loss", "gamma"],
-    "alpha": ["training", "focal_loss", "alpha"],
-    "ignore_index": ["training", "focal_loss", "ignore_index"],
-
-    # Focal loss weights
-    "class_weights": ["training", "focal_loss", "weights", "class_weights"],
-    "normalize": ["training", "focal_loss", "weights", "normalize"]
+    # Loss
+    "ignore_index": ["loss", "ignore_index"],
+    "alpha": ["loss", "alpha"],
+    "beta": ["loss", "beta"],
+    "weights": ["loss", "weights"],
+    "normalize": ["loss", "normalize"]
 }

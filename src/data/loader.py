@@ -1,10 +1,15 @@
 from torch.utils.data import DataLoader
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
-from albumentations.pytorch import ToTensorV2
-import albumentations as A
 from datasets import load_dataset
 from .transform import Augmentation
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    module="transformers.utils.deprecation",
+    category=UserWarning
+)
 
 
 class Loader:
