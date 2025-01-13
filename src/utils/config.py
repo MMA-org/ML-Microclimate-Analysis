@@ -136,7 +136,7 @@ default_config = {
     },
     "training": {
         "model_name": "b0",
-        "batch_size": 16,
+        "batch_size": 32,
         "max_epochs": 50,
         "num_workers": 8,
         "learning_rate": 2e-5,
@@ -148,9 +148,9 @@ default_config = {
     "loss": {
         "ignore_index": None,
         "weights": True,
-        "normalize": "sum",  # Options: max, sum
-        "alpha": 0.5,
-        "beta": 0.5
+        "normalize": "none",  # Options: max, sum, ballance, none
+        "alpha": 0.8,
+        "beta": 0.2
     }
 }
 

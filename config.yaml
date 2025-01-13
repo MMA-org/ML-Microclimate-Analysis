@@ -23,7 +23,7 @@ directories:
 # TRAINING SETTINGS
 training:
   model_name: b0
-  batch_size: 16
+  batch_size: 32
   max_epochs: 50
   num_workers: 8
   learning_rate: 2e-5
@@ -35,6 +35,6 @@ training:
 loss:
   ignore_index: 0
   weights: True # Use class weights
-  normalize: "sum" # Options: max, sum, none
-  alpha: 0.5
-  beta: 0.5
+  normalize: "none" # Options: balanced, max, sum, none
+  alpha: 0.8
+  beta: 0.2

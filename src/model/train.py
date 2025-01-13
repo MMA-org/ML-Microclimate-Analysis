@@ -7,6 +7,7 @@ from data.loader import Loader
 from utils import load_class_weights, save_class_weights, get_next_version, find_checkpoint
 from utils.metrics import compute_class_weights
 from utils.save_pretrained_callback import SavePretrainedCallback
+from data.transform import Augmentation
 import torch
 
 
@@ -30,13 +31,14 @@ def prepare_paths(config, resume_version=None):
 def prepare_dataloaders(config):
     """Prepare train and validation dataloaders."""
     loader = Loader(config)
-    train_loader = loader.get_dataloader("train", shuffle=True)
+    train_loader = loader.get_dataloader(
+        "train", shuffle=True, transform=Augmentation())
     val_loader = loader.get_dataloader("validation")
 
-    return train_loader, val_loader
+    return loader, train_loader, val_loader
 
 
-def prepare_class_weights(config, train_loader):
+def prepare_class_weights(config, loader):
     """
     Compute or load precomputed class weights based on the configuration.
 
@@ -63,6 +65,7 @@ def prepare_class_weights(config, train_loader):
     if weights_file.exists():
         class_weights = load_class_weights(weights_file)
     else:
+        train_loader = loader.get_dataloader("train")
         class_weights = compute_class_weights(
             train_loader, num_classes, normalize=normalize, ignore_index=ignore_index)
         save_class_weights(weights_file, class_weights)
@@ -144,10 +147,10 @@ def train(config, resume_version=None):
     )
 
     # Prepare data loaders for training and validation
-    train_loader, val_loader = prepare_dataloaders(config)
+    loader, train_loader, val_loader = prepare_dataloaders(config)
 
     # Prepare class weights for training
-    class_weights = prepare_class_weights(config, train_loader)
+    class_weights = prepare_class_weights(config, loader)
 
     # Initialize the Segformer model
     model = SegformerFinetuner(
@@ -170,10 +173,16 @@ def train(config, resume_version=None):
     # Resolve checkpoint path if resuming from a checkpoint
     resume_checkpoint = resolve_checkpoint_path(config, resume_version)
 
-    print("start training:")
-    print("segformer model:", config.training.model_name, "learning rate:",
-          config.training.learning_rate, "batch size:", config.training.batch_size)
-    print("ignore index:", config.loss.ignore_index, "weights:",
-          config.loss.weights, "normalize method:", config.loss.normalize)
+    print(f"Start training:")
+    print(f"SegFormer model: {config.training.model_name}, "
+          f"Learning rate: {config.training.learning_rate}, "
+          f"Batch size: {config.training.batch_size}, ")
+    print("Croos-Entropy - Dice Loss:\n"
+          f"Ignore index: {config.loss.ignore_index}, "
+          f"Weights: {config.loss.weights}, "
+          f"Normalize method: {config.loss.normalize}, "
+          f"Alpha (Cross-Entropy): {config.loss.alpha}, "
+          f"Beta (Dice): {config.loss.beta}")
+
     # Train the model
     trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)

@@ -36,8 +36,8 @@ class TrainParser:
             "--ignore_index", type=int,  help="loss function ignore index.")
         self.parser.add_argument(
             "--class_weights", type=ArgParser.str_to_bool, help="Use class weights for loss function.")
-        self.parser.add_argument("--normalize", type=str, choices=["max", "sum", "none"],
-                                 metavar="[max | sum | none]", help="Normalization method for class weights.")
+        self.parser.add_argument("--normalize", type=str, choices=["max", "sum", "none", "balanced"],
+                                 metavar="[max | sum | none | balanced]", help="Normalization method for class weights.")
 
     def get_parser(self):
         return self.parser

@@ -2,7 +2,6 @@ from torch.utils.data import DataLoader
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
 from datasets import load_dataset
-from .transform import Augmentation
 import warnings
 
 warnings.filterwarnings(
@@ -23,16 +22,14 @@ class Loader:
         dataset_path (str): path to the dataset as specified in the configuration.
         batch_size (int): The batch size for the DataLoader.
         num_workers (int): Number of worker processes for data loading.
+        dataset (Dataset): A dataset object loaded from the specified path.
         feature_extractor (SegformerImageProcessor): Preprocessor for images and masks.
-        transform (Compose, optional): 
-            Optional Albumentations transformations to be applied on the images and masks during training or evaluation.
     """
 
-    def __init__(self, config, transform=None):
+    def __init__(self, config):
         self.dataset_path = config.dataset.dataset_path
         self.batch_size = config.training.batch_size
         self.num_workers = config.training.num_workers
-        self.transform = transform or Augmentation()
 
         # Load dataset
         self.dataset = load_dataset(self.dataset_path)
@@ -44,13 +41,15 @@ class Loader:
             do_reduce_labels=False
         )
 
-    def get_dataloader(self, split: str, shuffle: bool = False) -> DataLoader:
+    def get_dataloader(self, split: str, shuffle: bool = False, transform=None) -> DataLoader:
         """
         Creates a PyTorch DataLoader for the specified dataset split.
 
         Args:
             split (str): The dataset split to load (e.g., "train", "validation", "test").
             shuffle (bool): Whether to shuffle the data. Defaults to False.
+            transform (Compose, optional): 
+                Optional Albumentations transformations to be applied on the images and masks during training or evaluation.
 
         Returns:
             DataLoader: A PyTorch DataLoader for the specified dataset split.
@@ -58,19 +57,21 @@ class Loader:
         Example:
             Create a data loader for the training dataset::
 
-                # with default augmentation
+                # no augmentation
                 loader = Loader(config)
                 train_loader = loader.get_dataloader("train", shuffle=True)
 
-                # custome augmentation
-                loader_with_augmentation = Loader(config,transform=augmentation) # augmentation is callable albumentations.Compose
-                train_with_augmentation_loader = loader_with_augmentation = Loader(config,transform=augmentation)
+                from data.transform import Augmentation
+                # with custome augmentation
+                loader = Loader(config) # augmentation is callable albumentations.Compose
+                train_loader_with_augmentation = loader.get_dataloader("train",shuffle=True,transform=Augmentation())
 
         """
+        transform = transform
         dataset = SemanticSegmentationDataset(
             data=self.dataset[split],
             feature_extractor=self.feature_extractor,
-            transform=self.transform if split == "train" else None,
+            transform=transform
         )
         return DataLoader(
             dataset,
