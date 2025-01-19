@@ -2,13 +2,6 @@ from torch.utils.data import DataLoader
 from transformers import SegformerImageProcessor
 from .dataset import SemanticSegmentationDataset
 from datasets import load_dataset
-import warnings
-
-warnings.filterwarnings(
-    "ignore",
-    module="transformers.utils.deprecation",
-    category=UserWarning
-)
 
 
 class Loader:

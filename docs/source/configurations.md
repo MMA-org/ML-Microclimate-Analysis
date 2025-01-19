@@ -99,9 +99,9 @@ The loss function combines `Cross-Entropy` Loss and `Dice` Loss. Below are the c
 loss:
   ignore_index: 0
   weights: True
-  normalize: "sum"
-  alpha: 0.5
-  beta: 0.5
+  normalize: "none"
+  alpha: 0.8
+  beta: 0.2
 ```
 
 **Details:**
@@ -110,8 +110,9 @@ loss:
 - `weights`: Whether to use class weights to balance contributions from imbalanced classes. Set to True to enable.
 - `normalize`: Method for normalizing class weights.
   - `max`: Scales weights relative to the maximum weight.
-  - `sum`: Ensures the weights sum to 1.
-  - `none`: Do not normalize, use raw weights.
+  - `sum`: Scales weights so their sum equals 1.
+  - `none`: Uses raw, unnormalized weights
+  - `balanced`: Adjusts weights to ensure equal contribution from all classes.
 - `alpha`: Weight for the Cross-Entropy Loss component in the combined loss.
 - `beta`: Weight for the Dice Loss component in the combined loss.
 
@@ -124,12 +125,12 @@ Command-line options allow overriding `config.yaml` settings or default values. 
 - Specify a custom configuration file:
 
   ```bash
-  lcm train --config path/to/config.yaml
+  ucs train --config path/to/config.yaml
   ```
 
 - Override specific parameters without a configuration file:
   ```bash
-  lcm train --batch_size 32 --lr 0.001
+  ucs train --batch_size 32 --lr 0.001
   ```
 
 ---

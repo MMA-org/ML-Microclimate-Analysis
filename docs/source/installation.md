@@ -53,7 +53,7 @@ pip install -e .[dev]
 Run the following command to ensure the project is correctly installed:
 
 ```bash
-lcm --help
+ucs --help
 ```
 
 This should display the project's CLI usage or help information.

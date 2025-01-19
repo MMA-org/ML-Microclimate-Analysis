@@ -6,7 +6,7 @@ from model.lightning_model import SegformerFinetuner
 from data.loader import Loader
 from utils import load_class_weights, save_class_weights, get_next_version, find_checkpoint
 from utils.metrics import compute_class_weights
-from utils.save_pretrained_callback import SavePretrainedCallback
+from ucs.utils.callbacks import SavePretrainedCallback
 from data.transform import Augmentation
 import torch
 
@@ -78,7 +78,7 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
     checkpoint_callback = ModelCheckpoint(
         dirpath=checkpoint_dir,
         filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
-        monitor="val_mean_iou",
+        monitor="val_loss",
         save_top_k=1,
         mode="max",
     )
@@ -87,6 +87,7 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
         monitor="val_loss",
         patience=patience,
         mode="min",
+        min_delta=0.01,
     )
 
     pretrained_callback = SavePretrainedCallback(

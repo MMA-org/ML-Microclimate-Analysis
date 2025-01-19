@@ -1,12 +1,8 @@
-import os
 import argparse
 from argparse import RawTextHelpFormatter
 from core.train_parser import TrainParser
 from core.eval_parser import EvalParser
 from utils.config import Config
-
-# Disable Albumentations update check
-os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
 
 
 def parse_args():

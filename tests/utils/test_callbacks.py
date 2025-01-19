@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from utils.save_pretrained_callback import SavePretrainedCallback
+from utils.callbacks import SavePretrainedCallback
 from pathlib import Path
 
 
