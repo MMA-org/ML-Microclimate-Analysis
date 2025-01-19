@@ -4,7 +4,7 @@ from core.parser import ArgParser
 class EvalParser:
     def __init__(self):
         self.parser = ArgParser(
-            usage="lcm evaliate [--help|-h] [options]"
+            usage="ucs evaliate [--help|-h] [options]"
         )
         self.add_arguments()
 

@@ -54,14 +54,14 @@ This repository provides a seamless interface for training and evaluating segmen
 To train the model with default configurations, run:
 
 ```bash
-lcm train
+ucs train
 ```
 
 For custom configurations, provide a `config.yaml` file or override specific parameters via the command line:
 
 ```bash
-lcm train --config path/to/config.yaml
-lcm train --batch_size 32 --lr 0.001
+ucs train --config path/to/config.yaml
+ucs train --batch_size 32 --lr 0.001
 ```
 
 ### Evaluation
@@ -69,14 +69,14 @@ lcm train --batch_size 32 --lr 0.001
 Evaluate a trained model and save the confusion matrix in the `results/` directory:
 
 ```bash
-lcm evaluate -v <version>
+ucs evaluate -v <version>
 ```
 
 For available options, run:
 
 ```bash
-lcm train -h
-lcm evaluate -h
+ucs train -h
+ucs evaluate -h
 ```
 
 For more details, refer to the [Usage Guide](https://mma-org.github.io/ML-Microclimate-Analysis/usage.html).

@@ -4,7 +4,7 @@ from core.parser import ArgParser
 class TrainParser:
     def __init__(self):
         self.parser = ArgParser(
-            usage="mc train [--help|-h] [options]"
+            usage="ucs train [--help|-h] [options]"
         )
         self.add_arguments()
 
