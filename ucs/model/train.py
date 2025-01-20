@@ -6,7 +6,7 @@ from model.lightning_model import SegformerFinetuner
 from data.loader import Loader
 from utils import load_class_weights, save_class_weights, get_next_version, find_checkpoint
 from utils.metrics import compute_class_weights
-from ucs.utils.callbacks import SavePretrainedCallback
+from ucs.utils.callbacks import SaveModel, UnfreezeOnPlateau
 from data.transform import Augmentation
 import torch
 
@@ -73,27 +73,30 @@ def prepare_class_weights(config, loader):
     return class_weights
 
 
-def initialize_callbacks(pretrained_dir, checkpoint_dir, patience):
+def initialize_callbacks(pretrained_dir, checkpoint_dir, early_stop_patience=10):
     """Initialize callbacks for model training."""
-    checkpoint_callback = ModelCheckpoint(
+    save_model_callback = SaveModel(
+        pretrained_dir,
         dirpath=checkpoint_dir,
         filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
         monitor="val_loss",
         save_top_k=1,
-        mode="max",
+        mode="min",
     )
 
     early_stop_callback = EarlyStopping(
         monitor="val_loss",
-        patience=patience,
+        patience=early_stop_patience,
         mode="min",
         min_delta=0.01,
     )
-
-    pretrained_callback = SavePretrainedCallback(
-        pretrained_dir, checkpoint_callback)
-
-    return [checkpoint_callback, early_stop_callback, pretrained_callback]
+    unfreeze_on_platea_callback = UnfreezeOnPlateau(
+        monitor="val_loss",
+        mode="min",
+        patience=3,
+        delta=0.01
+    )
+    return [save_model_callback, early_stop_callback, unfreeze_on_platea_callback]
 
 
 def initialize_trainer(config, callbacks, logger):

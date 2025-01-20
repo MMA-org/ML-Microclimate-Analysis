@@ -1,17 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from utils.callbacks import SavePretrainedCallback
-from pathlib import Path
-
-
-@pytest.fixture
-def mock_checkpoint_callback():
-    """
-    Fixture for a mock checkpoint callback.
-    """
-    callback = MagicMock()
-    callback.best_model_path = "mock_best_model.ckpt"
-    return callback
+from utils.callbacks import SaveModel
 
 
 @pytest.fixture
@@ -19,7 +8,9 @@ def mock_trainer():
     """
     Fixture for a mock trainer object.
     """
-    return MagicMock()
+    trainer = MagicMock()
+    trainer.is_global_zero = True  # Simulate the main process
+    return trainer
 
 
 @pytest.fixture
@@ -32,60 +23,50 @@ def mock_pl_module():
     return module
 
 
-def test_save_pretrained_callback_initialization(mock_checkpoint_callback):
+def test_save_model_initialization():
     """
-    Test that SavePretrainedCallback initializes correctly.
+    Test that SaveModel initializes correctly.
     """
-    callback = SavePretrainedCallback(
-        "mock_pretrained_dir", mock_checkpoint_callback)
-    assert callback.pretrained_dir == Path("mock_pretrained_dir")
-    assert callback.checkpoint_callback == mock_checkpoint_callback
-    assert callback.last_best_model_path is None, "Expected last_best_model_path to be None."
+    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    assert callback.pretrained_path == "mock_pretrained_dir"
 
 
-@patch("pathlib.Path.exists")
-def test_on_validation_epoch_end_saves_model(mock_exists, mock_checkpoint_callback, mock_trainer, mock_pl_module):
+@patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")
+def test_save_model_calls_super_save_checkpoint(mock_super_save, mock_trainer, mock_pl_module):
     """
-    Test that the callback saves the model when a new best checkpoint exists.
+    Test that SaveModel calls the parent _save_checkpoint method.
     """
-    mock_exists.return_value = True  # Simulate that the checkpoint file exists
-    callback = SavePretrainedCallback(
-        "mock_pretrained_dir", mock_checkpoint_callback)
+    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
-    # Simulate validation epoch end
-    callback.on_validation_epoch_end(mock_trainer, mock_pl_module)
+    # Check that the parent method was called
+    mock_super_save.assert_called_once_with(
+        mock_trainer, "mock_checkpoint.ckpt")
 
-    # Check that save_pretrained_model was called
+
+@patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")
+def test_save_model_saves_pretrained_on_global_zero(mock_super_save, mock_trainer, mock_pl_module):
+    """
+    Test that SaveModel saves the pretrained model only on the main process (is_global_zero).
+    """
+    mock_trainer.lightning_module = mock_pl_module  # Attach the mock module
+    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
+
+    # Ensure save_pretrained_model was called
     mock_pl_module.save_pretrained_model.assert_called_once_with(
-        Path("mock_pretrained_dir"), Path("mock_best_model.ckpt")
-    )
+        "mock_pretrained_dir")
 
 
-def test_on_validation_epoch_end_no_new_checkpoint(mock_checkpoint_callback, mock_trainer, mock_pl_module):
+@patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")
+def test_save_model_does_not_save_pretrained_on_non_global_zero(mock_super_save, mock_trainer, mock_pl_module):
     """
-    Test that the callback does nothing if there is no new best checkpoint.
+    Test that SaveModel does not save the pretrained model if not global zero.
     """
-    callback = SavePretrainedCallback(
-        "mock_pretrained_dir", mock_checkpoint_callback)
-    # Simulate no change in best checkpoint
-    callback.last_best_model_path = "mock_best_model.ckpt"
+    mock_trainer.is_global_zero = False  # Simulate a non-main process
+    mock_trainer.lightning_module = mock_pl_module  # Attach the mock module
+    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
-    callback.on_validation_epoch_end(mock_trainer, mock_pl_module)
-
-    # Check that save_pretrained_model was not called
-    mock_pl_module.save_pretrained_model.assert_not_called()
-
-
-@patch("pathlib.Path.exists")
-def test_on_validation_epoch_end_missing_checkpoint(mock_exists, mock_checkpoint_callback, mock_trainer, mock_pl_module):
-    """
-    Test that the callback handles missing checkpoint files gracefully.
-    """
-    mock_exists.return_value = False  # Simulate that the checkpoint file does not exist
-    callback = SavePretrainedCallback(
-        "mock_pretrained_dir", mock_checkpoint_callback)
-
-    callback.on_validation_epoch_end(mock_trainer, mock_pl_module)
-
-    # Check that save_pretrained_model was not called
+    # Ensure save_pretrained_model was not called
     mock_pl_module.save_pretrained_model.assert_not_called()

@@ -74,6 +74,7 @@ class SegformerFinetuner(pl.LightningModule):
         """
         set model in training mode.
         """
+        self.freeze_encoder_layers()
         self.train()
         self.model.train()
 
@@ -209,13 +210,24 @@ class SegformerFinetuner(pl.LightningModule):
 
         # Set up the learning rate scheduler
         scheduler = {
-            'scheduler': ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5, min_lr=2e-5),
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', patience=6, factor=0.5, min_lr=1e-6),
             'monitor': 'val_loss'  # The metric to monitor for plateau
         }
 
         return [optimizer], [scheduler]
 
-    def save_pretrained_model(self, pretrained_path, checkpoint_path=None):
+    def freeze_encoder_layers(self, layers_to_freeze=None):
+        if layers_to_freeze is None:
+            layers_to_freeze = ["layer0", "layer1"]
+        for name, param in self.model.encoder.named_parameters():
+            if any(layer in name for layer in layers_to_freeze):
+                param.requires_grad = False
+
+    def unfreeze_encoder_layers(self):
+        for param in self.model.encoder.parameters():
+            param.requires_grad = True
+
+    def save_pretrained_model(self, pretrained_path):
         """
         Save the best model to a directory.
 
@@ -223,17 +235,11 @@ class SegformerFinetuner(pl.LightningModule):
             pretrained_path (str or Path): Directory where the model will be saved.
             checkpoint_path (str or Path, optional): Path to the checkpoint file.
         """
-        if checkpoint_path and Path(checkpoint_path).exists():  # pragma: no cover
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")  # Ignore all warnings
-                logging.set_verbosity_error()  # Suppress Transformers logging
-                model = SegformerFinetuner.load_from_checkpoint(
-                    checkpoint_path, id2label=self.id2label
-                )
-                model.model.save_pretrained(pretrained_path)
-                logging.set_verbosity_warning()  # Restore Transformers logging level
-        else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Ignore all warnings
+            logging.set_verbosity_error()  # Suppress Transformers logging
             self.model.save_pretrained(pretrained_path)  # pragma: no cover
+            logging.set_verbosity_warning()  # Restore Transformers logging level
 
     def reset_test_results(self):
         """
