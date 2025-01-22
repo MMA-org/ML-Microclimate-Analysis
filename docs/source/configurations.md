@@ -74,9 +74,10 @@ training:
   max_epochs: 50
   num_workers: 8
   learning_rate: 2e-5
-  log_every_n_steps: 10
+  dropout: 0.2
+  weight_decay: 1e-4
   early_stop:
-    patience: 10
+    patience: 5
 ```
 
 **Details:**
@@ -84,8 +85,9 @@ training:
 - `batch_size`: Number of samples processed per training batch.
 - `max_epochs`: Maximum number of epochs for training.
 - `num_workers`: Number of worker threads for data loading.
-- `log_every_n_steps`: Logging frequency during training.
 - `learning_rate`: Learning rate for the optimizer.
+- `dropout`: Fraction of neurons dropped during training for regularization.
+- `weight_decay`: Strength of L2 regularization applied to the optimizer.
 - `model_name`: Name of the model architecture (e.g., `b4`).
 - `early_stop.patience`: Number of epochs to wait for improvement
 
@@ -100,8 +102,8 @@ loss:
   ignore_index: 0
   weights: True
   normalize: "none"
-  alpha: 0.8
-  beta: 0.2
+  alpha: 0.5
+  beta: 0.5
 ```
 
 **Details:**

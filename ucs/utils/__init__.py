@@ -4,7 +4,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import json
-from .config import Config
 
 
 def get_last_version(logs_dir: Path) -> int:

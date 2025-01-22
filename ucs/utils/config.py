@@ -140,17 +140,18 @@ default_config = {
         "max_epochs": 50,
         "num_workers": 8,
         "learning_rate": 2e-5,
-        "log_every_n_steps": 10,
+        "dropout": 0.2,
+        "weight_decay": 1e-4,
         "early_stop": {
-            "patience": 10
+            "patience": 5
         }
     },
     "loss": {
         "ignore_index": None,
         "weights": True,
         "normalize": "none",  # Options: max, sum, ballance, none
-        "alpha": 0.8,
-        "beta": 0.2
+        "alpha": 0.5,
+        "beta": 0.5
     }
 }
 
@@ -168,8 +169,9 @@ arg_to_key_map = {
     # Training
     "batch_size": ["training", "batch_size"],
     "max_epochs": ["training", "max_epochs"],
-    "log_step": ["training", "logging", "log_every_n_steps"],
     "lr": ["training", "learning_rate"],
+    "dropout": ["training", "dropout"],
+    "weight_decay": ["training", "weight_decay"],
     "model_name": ["training", "model_name"],
     "num_workers": ["training", "num_workers"],
 
@@ -180,6 +182,6 @@ arg_to_key_map = {
     "ignore_index": ["loss", "ignore_index"],
     "alpha": ["loss", "alpha"],
     "beta": ["loss", "beta"],
-    "weights": ["loss", "weights"],
+    "class_weights": ["loss", "weights"],
     "normalize": ["loss", "normalize"]
 }

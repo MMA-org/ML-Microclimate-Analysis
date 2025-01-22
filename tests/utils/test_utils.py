@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from utils import Config, find_checkpoint, save_class_weights, load_class_weights
+from utils.config import Config
+from utils import find_checkpoint, save_class_weights, load_class_weights
 import json
 import matplotlib
 from pathlib import Path

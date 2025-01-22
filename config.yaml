@@ -27,14 +27,15 @@ training:
   max_epochs: 50
   num_workers: 8
   learning_rate: 2e-5
-  log_every_n_steps: 10
+  dropout: 0.2
+  weight_decay: 1e-4
   early_stop:
-    patience: 10
+    patience: 5
 
 # LOSS SETTINGS
 loss:
   ignore_index: 0
   weights: True # Use class weights
   normalize: "none" # Options: balanced, max, sum, none
-  alpha: 0.8
-  beta: 0.2
+  alpha: 0.5
+  beta: 0.5

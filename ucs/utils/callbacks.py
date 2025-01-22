@@ -81,7 +81,7 @@ class UnfreezeOnPlateau(Callback):
             self._update_best_value(current_value)
         else:
             self.epochs_without_improvement += 1
-            if self.epochs_without_improvement >= self.patience and pl_module.is_layers_freeze:
+            if self.epochs_without_improvement >= self.patience:
                 self._unfreeze_layers(trainer, pl_module)
 
     def _get_current_metric(self, trainer):
@@ -134,10 +134,9 @@ class UnfreezeOnPlateau(Callback):
         """
         pl_module.unfreeze_encoder_layers()
         self.unfreeze_done = True
-        self._log_event(trainer,
-                        f"Unfrozen encoder layers due to plateau at epoch {trainer.current_epoch}. "
-                        f"Patience: {self.patience}, Best {self.monitor}: {self.best_value:.4f}"
-                        )
+        message = f"UnfreezeOnPlateau: Layers unfrozen at epoch {trainer.current_epoch}. Patience: {self.patience}, Best {self.monitor}: {self.best_value:.4f}"
+
+        self._log_event(trainer, message)
 
     def _log_event(self, trainer, message):
         """
@@ -147,13 +146,19 @@ class UnfreezeOnPlateau(Callback):
             trainer (Trainer): The Lightning trainer instance.
             message (str): The message to log.
         """
-        if trainer.is_global_zero:
-            print(message)  # Immediate visibility
-            if trainer.logger:
-                logger_method = getattr(
-                    trainer.logger.experiment, "log_text", None)
-                if callable(logger_method):
-                    try:
-                        logger_method(message, step=trainer.current_epoch)
-                    except Exception:
-                        pass  # Skip if logging fails
+        if trainer.is_global_zero and trainer.logger:
+            print(f"\n{message}\n")
+            if hasattr(trainer.logger.experiment, "log"):
+                trainer.logger.experiment.log(
+                    {"event_message": message, "epoch": trainer.current_epoch})
+            # Handle TensorBoardLogger
+            elif hasattr(trainer.logger.experiment, "add_text"):
+                trainer.logger.experiment.add_text(
+                    "event_logs", message, global_step=trainer.current_epoch)
+            # Handle MLFlowLogger
+            elif hasattr(trainer.logger.experiment, "set_tags"):
+                trainer.logger.experiment.set_tags({"event_message": message})
+            # Fallback
+            else:
+                trainer.logger.log_metrics(
+                    {"event_message": message}, step=trainer.current_epoch)

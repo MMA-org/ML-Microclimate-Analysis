@@ -21,6 +21,8 @@ class SegformerFinetuner(pl.LightningModule):
         lr (float): Learning rate for the optimizer. Default is 2e-5.
         class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+        weight_decay (float): Weight decay (L2 regularization) coefficient for the optimizer. Helps prevent overfitting. Default is 1e-4.
+        dropout_rate (float): Dropout rate applied to the model's logits to prevent overfitting. Default is 0.2.
 
     Attributes:
         id2label (dict): A dictionary mapping class IDs to class labels.
@@ -31,9 +33,11 @@ class SegformerFinetuner(pl.LightningModule):
         test_results (dict): Dictionary to store test predictions and ground truths.
         class_weights (torch.Tensor): Class weights for the loss function.
         criterion (FocalLoss): Loss function.
+        dropout_rate (float): Dropout rate applied to the model's logits to prevent overfitting.
+
     """
 
-    def __init__(self, id2label, model_name="b0", lr=2e-5, alpha=0.5, beta=0.5, class_weight=None, ignore_index=None):
+    def __init__(self, id2label, model_name="b0", lr=2e-5, alpha=0.5, beta=0.5, class_weight=None, ignore_index=None, weight_decay=1e-4, dropout_rate=0.2):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -42,6 +46,7 @@ class SegformerFinetuner(pl.LightningModule):
         self.num_classes = len(id2label)
         self.learning_rate = lr
         self.ignore_index = ignore_index
+        self.weight_decay = weight_decay
 
         # Initialize the model
         self.model = SegformerForSemanticSegmentation.from_pretrained(
@@ -60,6 +65,7 @@ class SegformerFinetuner(pl.LightningModule):
         # Store test results
         self.test_results = {"predictions": [], "ground_truths": []}
 
+        self.dropout = nn.Dropout(p=dropout_rate)
         # Initialize the loss function (CeDiceLoss)
         self.criterion = CeDiceLoss(
             num_classes=self.num_classes,
@@ -74,7 +80,6 @@ class SegformerFinetuner(pl.LightningModule):
         """
         set model in training mode.
         """
-        self.freeze_encoder_layers()
         self.train()
         self.model.train()
 
@@ -93,8 +98,9 @@ class SegformerFinetuner(pl.LightningModule):
         outputs = self.model(pixel_values=images)
         upsampled_logits = nn.functional.interpolate(
             outputs.logits, size=(images.shape[-2], images.shape[-1]),
-            mode="bilinear", align_corners=True
+            mode="bilinear", align_corners=False
         )
+        upsampled_logits = self.dropout(upsampled_logits)
         loss = self.criterion(
             upsampled_logits, masks) if masks is not None else None
         return loss, upsampled_logits.argmax(dim=1)
@@ -116,15 +122,14 @@ class SegformerFinetuner(pl.LightningModule):
         self.metrics.update(predicted, masks)
         metrics = self.metrics.compute()
 
-        # Logging metrics
+        # Logging loss and metrics
         self.log(f"{stage}_loss", loss, prog_bar=True,
                  on_step=False, on_epoch=True)
-        self.log(f"{stage}_mean_iou", metrics["mean_iou"],
-                 prog_bar=True, on_step=False, on_epoch=True)
-        self.log(f"{stage}_mean_dice", metrics["mean_dice"],
-                 prog_bar=True, on_step=False, on_epoch=True)
 
-        # Log loss at the step level
+        for metric_name, value in metrics.items():
+            self.log(f"{stage}_{metric_name}", value,
+                     prog_bar=True, on_step=False, on_epoch=True)
+
         if stage == "test":
             # Collect test predictions and ground truths
             self.test_results["predictions"].extend(
@@ -172,7 +177,6 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: The computed loss.
         """
-
         return self.step(batch, "val")
 
     def test_step(self, batch, batch_idx):
@@ -186,11 +190,7 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             torch.Tensor: The computed loss.
         """
-        loss = self.step(batch, "test")
-        self.log("test_accuracy", self.metrics["accuracy"], prog_bar=True)
-        self.log("test_precision", self.metrics["precision"], prog_bar=True)
-        self.log("test_recall", self.metrics["recall"], prog_bar=True)
-        return loss
+        return self.step(batch, "test")
 
     def on_validation_epoch_end(self):
         self.metrics.reset()
@@ -206,26 +206,33 @@ class SegformerFinetuner(pl.LightningModule):
 
     def configure_optimizers(self):
         # Set up the optimizer
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.AdamW(
+            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
 
         # Set up the learning rate scheduler
         scheduler = {
-            'scheduler': ReduceLROnPlateau(optimizer, mode='min', patience=6, factor=0.5, min_lr=1e-6),
+            'scheduler': ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5, min_lr=1e-6),
             'monitor': 'val_loss'  # The metric to monitor for plateau
         }
 
         return [optimizer], [scheduler]
 
-    def freeze_encoder_layers(self, layers_to_freeze=None):
-        if layers_to_freeze is None:
-            layers_to_freeze = ["layer0", "layer1"]
-        for name, param in self.model.encoder.named_parameters():
-            if any(layer in name for layer in layers_to_freeze):
+    def freeze_encoder_layers(self, blocks_to_freeze=None):
+        if blocks_to_freeze is None:
+            # Freeze the first two blocks by default
+            blocks_to_freeze = ["block.0"]
+
+        for name, param in self.model.named_parameters():
+            if any(block in name for block in blocks_to_freeze):
                 param.requires_grad = False
 
-    def unfreeze_encoder_layers(self):
-        for param in self.model.encoder.parameters():
-            param.requires_grad = True
+    def unfreeze_encoder_layers(self, block_to_unfreeze=None):
+        if blocks_to_unfreeze is None:
+            # Freeze the first two blocks by default
+            blocks_to_unfreeze = ["block.0"]
+        for name, param in self.model.named_parameters():
+            if any(block in name for block in blocks_to_unfreeze):
+                param.requires_grad = True
 
     def save_pretrained_model(self, pretrained_path):
         """

@@ -1,12 +1,12 @@
 from pathlib import Path
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from model.lightning_model import SegformerFinetuner
 from data.loader import Loader
 from utils import load_class_weights, save_class_weights, get_next_version, find_checkpoint
 from utils.metrics import compute_class_weights
-from ucs.utils.callbacks import SaveModel, UnfreezeOnPlateau
+from ucs.utils.callbacks import SaveModel
 from data.transform import Augmentation
 import torch
 
@@ -30,7 +30,12 @@ def prepare_paths(config, resume_version=None):
 
 def prepare_dataloaders(config):
     """Prepare train and validation dataloaders."""
-    loader = Loader(config)
+    loader = Loader(
+        dataset_path=config.dataset.dataset_path,
+        batch_size=config.training.batch_size,
+        num_workers=config.training.num_workers,
+        model_name=config.training.model_name
+    )
     train_loader = loader.get_dataloader(
         "train", shuffle=True, transform=Augmentation())
     val_loader = loader.get_dataloader("validation")
@@ -88,15 +93,9 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, early_stop_patience=10)
         monitor="val_loss",
         patience=early_stop_patience,
         mode="min",
-        min_delta=0.01,
     )
-    unfreeze_on_platea_callback = UnfreezeOnPlateau(
-        monitor="val_loss",
-        mode="min",
-        patience=3,
-        delta=0.01
-    )
-    return [save_model_callback, early_stop_callback, unfreeze_on_platea_callback]
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    return [save_model_callback, early_stop_callback, lr_monitor]
 
 
 def initialize_trainer(config, callbacks, logger):
@@ -111,7 +110,6 @@ def initialize_trainer(config, callbacks, logger):
         logger=logger,
         max_epochs=config.training.max_epochs,
         callbacks=callbacks,
-        log_every_n_steps=config.training.log_every_n_steps,
     )
 
 
@@ -164,7 +162,9 @@ def train(config, resume_version=None):
         lr=float(config.training.learning_rate),
         alpha=float(config.loss.alpha),
         beta=float(config.loss.beta),
-        ignore_index=config.loss.ignore_index
+        ignore_index=config.loss.ignore_index,
+        dropout_rate=float(config.training.dropout),
+        weight_decay=float(config.training.weight_decay)
     )
 
     # Initialize callbacks (Checkpoint, EarlyStopping, SavePretrained)
@@ -180,11 +180,13 @@ def train(config, resume_version=None):
     print(f"Start training:")
     print(f"SegFormer model: {config.training.model_name}, "
           f"Learning rate: {config.training.learning_rate}, "
-          f"Batch size: {config.training.batch_size}, ")
+          f"Batch size: {config.training.batch_size}, "
+          f"Dropout rate: {config.training.dropout}, "
+          f"Weight decay: {config.training.weight_decay}")
     print("Croos-Entropy - Dice Loss:\n"
           f"Ignore index: {config.loss.ignore_index}, "
           f"Weights: {config.loss.weights}, "
-          f"Normalize method: {config.loss.normalize}, "
+          f"Normalize method: {config.loss.normalize if config.loss.weights else None}",
           f"Alpha (Cross-Entropy): {config.loss.alpha}, "
           f"Beta (Dice): {config.loss.beta}")
 

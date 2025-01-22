@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from utils import Config
+from utils.config import Config
 import yaml
 import shutil
 

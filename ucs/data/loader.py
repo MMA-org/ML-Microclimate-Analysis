@@ -9,26 +9,27 @@ class Loader:
     A utility class for loading datasets and creating PyTorch DataLoaders for semantic segmentation tasks.
 
     Args:
-        config (Config): Configuration dictionary containing parameters for dataset loading and training.
-
-    Attributes:
-        dataset_path (str): path to the dataset as specified in the configuration.
+        dataset_path (str): Path to the dataset.
         batch_size (int): The batch size for the DataLoader.
         num_workers (int): Number of worker processes for data loading.
+        model_name (str): Name of the model used for feature extraction.
+
+    Attributes:
+        dataset_path (str): Path to the dataset.
+        batch_size (int): The batch size for the DataLoader.
+        num_workers (int): Number of worker processes for data loading.
+        model_name (str): Name of the model used for feature extraction.
         dataset (Dataset): A dataset object loaded from the specified path.
         feature_extractor (SegformerImageProcessor): Preprocessor for images and masks.
     """
 
-    def __init__(self, config):
-        self.dataset_path = config.dataset.dataset_path
-        self.batch_size = config.training.batch_size
-        self.num_workers = config.training.num_workers
+    def __init__(self, dataset_path, batch_size, num_workers, model_name):
+        self.dataset_path = dataset_path
+        self.batch_size = batch_size
+        self.num_workers = num_workers
 
         # Load dataset
         self.dataset = load_dataset(self.dataset_path)
-
-        # Initialize feature extractor
-        model_name = config.training.model_name
         self.feature_extractor = SegformerImageProcessor.from_pretrained(
             f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
             do_reduce_labels=False
@@ -51,12 +52,12 @@ class Loader:
             Create a data loader for the training dataset::
 
                 # no augmentation
-                loader = Loader(config)
+                loader = Loader(dataset_path, batch_size, num_workers, model_name)
                 train_loader = loader.get_dataloader("train", shuffle=True)
 
                 from data.transform import Augmentation
                 # with custome augmentation
-                loader = Loader(config) # augmentation is callable albumentations.Compose
+                loader = Loader(dataset_path, batch_size, num_workers, model_name) # augmentation is callable albumentations.Compose
                 train_loader_with_augmentation = loader.get_dataloader("train",shuffle=True,transform=Augmentation())
 
         """

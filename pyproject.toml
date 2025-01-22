@@ -34,7 +34,7 @@ Homepage = "https://github.com/MMA-org/ML-Microclimate-Analysis"
 Documentation = "https://mma-org.github.io/ML-Microclimate-Analysis/" 
 [project.scripts]
 landcover-model = "main:main"
-ucs = "main:main"
+ucs = "ucs.main:main"
 
 
 [tool.setuptools.packages.find]
