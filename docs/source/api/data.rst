@@ -8,5 +8,5 @@ The `data` package provides utilities for managing datasets, creating PyTorch Da
    :caption: Modules
 
    data/dataset
-   data/loader
+   data/data_module
    data/transform

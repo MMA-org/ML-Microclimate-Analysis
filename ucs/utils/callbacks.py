@@ -1,3 +1,4 @@
+from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 
 
@@ -9,14 +10,14 @@ class SaveModel(ModelCheckpoint):
     model to a specified directory in addition to saving the training checkpoint.
 
     Args:
-        pretrained_path (str): The directory where the pretrained model will be saved.
+        pretrained_dir (str): The directory where the pretrained model will be saved.
         *args: Variable length argument list for the base ModelCheckpoint class.
         **kwargs: Arbitrary keyword arguments for the base ModelCheckpoint class.
     """
 
-    def __init__(self, pretrained_path, *args, **kwargs):
+    def __init__(self, pretrained_dir, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pretrained_path = pretrained_path
+        self.pretrained_dir = pretrained_dir
 
     def _save_checkpoint(self, trainer, filepath):
         """
@@ -30,7 +31,7 @@ class SaveModel(ModelCheckpoint):
 
         if trainer.is_global_zero:  # main process
             trainer.lightning_module.save_pretrained_model(
-                self.pretrained_path)
+                self.pretrained_dir)
 
 
 class UnfreezeOnPlateau(Callback):
@@ -162,3 +163,66 @@ class UnfreezeOnPlateau(Callback):
             else:
                 trainer.logger.log_metrics(
                     {"event_message": message}, step=trainer.current_epoch)
+
+
+class LossAdjustmentCallback(Callback):
+    """
+    A callback to adjust the loss function weights dynamically during training.
+
+    The callback changes the weights of the loss components (Cross-Entropy and Dice loss)
+    over the course of the training process. It starts with pure Cross-Entropy loss during 
+    the warmup phase, then transitions smoothly to a balanced combination of Cross-Entropy 
+    and Dice loss, and finally focuses on Dice loss towards the end of training.
+
+    The transition between loss components happens in three phases:
+    1. **Warmup Phase** (First `warmup_epochs` epochs): Uses only Cross-Entropy loss.
+    2. **Transition Phase** (From `warmup_epochs` to `transition_end`): Linearly adjusts from CE loss to a mix of CE and Dice loss.
+    3. **Dice Loss Phase** (After `transition_end` epochs): Uses only Dice loss.
+
+    Args:
+        warmup_epochs (int): The number of epochs for the warmup phase where only Cross-Entropy loss is used.
+                              Default is 10.
+        transition_end (int): The epoch at which the transition to pure Dice loss should end. Default is 40.
+    """
+
+    def __init__(self, max_epochs=50):
+        super().__init__()
+        self.warmup_epochs = max_epochs * 0.2
+        self.transition_end = max_epochs * 0.8
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        """
+        This method is called at the start of each epoch to adjust the loss weights
+        based on the current epoch number.
+
+        Args:
+            trainer (pl.Trainer): The PyTorch Lightning Trainer instance.
+            pl_module (pl.LightningModule): The LightningModule for which the callback is applied.
+
+        The loss weights (`alpha` and `beta`) are dynamically set based on the epoch:
+        - During the warmup phase (epochs 0 to `warmup_epochs`), only Cross-Entropy loss is used (`alpha=1.0`, `beta=0.0`).
+        - In the transition phase (epochs `warmup_epochs` to `transition_end`), the weights linearly shift from Cross-Entropy to a combination of Cross-Entropy and Dice loss.
+        - After `transition_end` epochs, only Dice loss is used (`alpha=0.0`, `beta=1.0`).
+        """
+        current_epoch = trainer.current_epoch
+
+        # Pure CE loss during warmup
+        if current_epoch < self.warmup_epochs:
+            alpha, beta = 1.0, 0.0
+        # Pure Dice loss after transition
+        elif self.warmup_epochs <= current_epoch <= self.transition_end:
+            progress = progress = (
+                current_epoch - self.warmup_epochs) / (self.transition_end - self.warmup_epochs)
+            alpha = 1 - progress
+            beta = progress
+        # Linear transition phase
+        else:
+            alpha = 0.0
+            beta = 1.0
+
+        # Update loss weights
+        pl_module.criterion.set_stage(alpha, beta)
+
+        # Log weights
+        pl_module.log("alpha", alpha, on_epoch=True, prog_bar=True)
+        pl_module.log("beta", beta, on_epoch=True, prog_bar=True)

@@ -3,6 +3,7 @@ import torch
 from unittest.mock import MagicMock
 from model.lightning_model import SegformerFinetuner, SegformerForSemanticSegmentation
 from utils.metrics import SegMetrics, TestMetrics
+import numpy as np
 
 
 @pytest.fixture
@@ -46,12 +47,18 @@ def test_validation_step(mock_model, mock_batch):
 
 def test_test_step(mock_model, mock_batch):
     mock_model.on_test_start()
-    loss = mock_model.test_step(mock_batch, 0)
-    assert loss.item() > 0, "Test step loss should be positive."
-    assert len(mock_model.test_results["predictions"]
-               ) > 0, "Test results should contain predictions."
-    assert len(mock_model.test_results["ground_truths"]
-               ) > 0, "Test results should contain ground truths."
+    result = mock_model.test_step(mock_batch, 0)
+
+    # Validate the loss
+    assert isinstance(
+        result["loss"], torch.Tensor), "Test step loss should be a torch.Tensor."
+    assert result["loss"].item() > 0, "Test step loss should be positive."
+
+    # Validate predictions and ground truths
+    assert result["predictions"].numel(
+    ) > 0, "Test results should contain predictions."
+    assert result["ground_truths"].numel(
+    ) > 0, "Test results should contain ground truths."
 
 
 def test_on_test_start(mock_model):
@@ -62,8 +69,32 @@ def test_on_test_start(mock_model):
 
 def test_on_test_epoch_end(mock_model):
     mock_model.on_test_start()
+
+    # Mock outputs to simulate aggregated test_step results
+    mock_outputs = [
+        {"predictions": torch.randint(
+            0, 3, (512 * 512,)), "ground_truths": torch.randint(0, 3, (512 * 512,))}
+    ]
+
+    # Mock metric reset to verify it is called
     mock_model.metrics.reset = MagicMock()
-    mock_model.on_test_epoch_end()
+
+    # Call on_test_epoch_end
+    results = mock_model.on_test_epoch_end(mock_outputs)
+
+    # Validate confusion matrix and metrics
+    assert "confusion_matrix" in results, "Confusion matrix should be in the results."
+    assert "metrics" in results, "Metrics should be in the results."
+
+    # Validate confusion matrix type
+    assert isinstance(results["confusion_matrix"],
+                      np.ndarray), "Confusion matrix should be a NumPy array."
+
+    # Ensure metrics are valid
+    assert isinstance(results["metrics"],
+                      dict), "Metrics should be a dictionary."
+
+    # Check that metrics.reset is called
     mock_model.metrics.reset.assert_called_once()
 
 
@@ -90,19 +121,3 @@ def test_save_pretrained_model(mock_model, tmp_path):
     pretrained_path = tmp_path / "pretrained_model"
     mock_model.save_pretrained_model(pretrained_path)
     assert pretrained_path.exists(), "Pretrained model path should exist."
-
-
-def test_reset_test_results(mock_model):
-    mock_model.test_results = {"predictions": [
-        1, 2, 3], "ground_truths": [1, 2, 3]}
-    mock_model.reset_test_results()
-    assert mock_model.test_results == {
-        "predictions": [], "ground_truths": []}, "Test results should be reset."
-
-
-def test_get_test_results(mock_model):
-    mock_model.test_results = {"predictions": [
-        1, 2, 3], "ground_truths": [1, 2, 3]}
-    results = mock_model.get_test_results()
-    assert results == {"predictions": [1, 2, 3], "ground_truths": [
-        1, 2, 3]}, "Test results should match expected results."

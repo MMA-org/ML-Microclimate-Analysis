@@ -98,6 +98,8 @@ replacements = {
     r"\btorch\.Tensor\b": ":class:`~torch.Tensor`",
     r"\bDataLoader\b": ":class:`~torch.utils.data.DataLoader`",
     r"\btorch\.nn\.CrossEntropyLoss\b": ":class:`~torch.nn.CrossEntropyLoss`",
+    r"\bLightningDataModule\b": ":class:`~pytorch_lightning.LightningDataModule`",
+    r"\bpl\.LightningModule\b": ":class:`~pytorch_lightning.LightningModule`",
     r"\bPIL.Image.Image\b": ":class:`~PIL.Image.Image`",
     r"\bImage.Image\b": ":class:`~PIL.Image.Image`",
     r"\bImage\b": ":class:`~PIL.Image.Image`",

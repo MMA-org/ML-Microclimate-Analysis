@@ -1,5 +1,5 @@
 
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
@@ -82,20 +82,6 @@ def find_checkpoint(config, version: int) -> Path:
     return checkpoint_files[0].resolve()
 
 
-def flatten(arr):
-    """
-    Flatten the array if it is multi-dimensional.
-
-    Args:
-        arr (np.ndarray): Input array.
-
-    Returns:
-        np.ndarray: Flattened array if input is multi-dimensional; original array otherwise.
-    """
-    arr = np.array(arr)
-    return arr.flatten() if arr.ndim > 1 else arr
-
-
 def format_metrics(metrics):
     """
     Format metrics for display below the confusion matrix.
@@ -115,26 +101,20 @@ def format_metrics(metrics):
     return "\n".join(rows)
 
 
-def save_confusion_matrix_plot(y_true, y_pred, labels, save_path, metrics=None, title="Confusion Matrix"):
+def save_confusion_matrix_plot(conf_matrix, labels, save_path, metrics=None, title="Confusion Matrix"):
     """
     Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
 
     Args:
-        y_true (np.ndarray): Ground truth labels.
-        y_pred (np.ndarray): Predicted labels.
         labels (list): List of class labels.
         save_path (Path): path to save the confusion matrix plot.
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix. Defaults to None.
         title (str, optional): Title for the confusion matrix plot. Defaults to "Confusion Matrix".
     """
-    # Generate confusion matrix
-    y_true = flatten(y_true)
-    y_pred = flatten(y_pred)
-
-    cm = confusion_matrix(y_true, y_pred, labels=range(len(labels)))
 
     # Create confusion matrix display
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=conf_matrix, display_labels=labels)
 
     # Plot the confusion matrix
     fig, ax = plt.subplots(figsize=(12, 12))

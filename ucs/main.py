@@ -49,7 +49,15 @@ def create_train_parser(subparsers, common_parser):
     train_parser.add_argument(
         "--model_name", type=str, choices=["b0", "b1", "b2", "b3", "b4"], metavar="b1-b4",  help="Model name.")
     train_parser.add_argument(
-        "--stop_patience", type=int,  help="Early stopping patience.")
+        "--early_stop_patience", type=int,  help="Early stopping callback patience.")
+    train_parser.add_argument(
+        "--early_stop_monitor", type=str,  help="Early stopping callback metrics to monitor.")
+    train_parser.add_argument(
+        "--early_stop_mode", type=str, choices=["min", "max"], help="Early stopping callback metrics mode for metrics.")
+    train_parser.add_argument(
+        "--save_model_monitor", type=str,  help="Save model callback metrics to monitor.")
+    train_parser.add_argument(
+        "--save_model_mode", type=str, choices=["min", "max"], help="Save model callback metrics mode for metrics.")
     train_parser.add_argument("--checkpoints_dir", type=str, metavar="[path]",
                               help="Path to checkpoints directiory.")
     # Add focal loss arguments
@@ -60,13 +68,18 @@ def create_train_parser(subparsers, common_parser):
     train_parser.add_argument(
         "--ignore_index", type=int,  help="loss function ignore index.")
     train_parser.add_argument(
-        "--class_weights",
-        type=ArgParser.str_to_bool,  # Use the custom boolean parser
-        help="Use class weights for loss function (true/false)."
+        "--weighting_strategy",
+        type=str,
+        # Unified parameter options
+        choices=["none", "balanced", "max", "sum", 'raw'],
+        metavar="[none | balanced | max | sum | raw]",
+        help="Strategy for computing class weights: "
+        "'raw' for inverse frequency without normalization, "
+        "'balanced' to normalize weights so their sum equals 1, "
+        "'max' to normalize weights so the max weight equals 1, "
+        "'sum' to normalize weights so their sum equals 1, "
+        "or 'none' to disable class weights."
     )
-
-    train_parser.add_argument("--normalize", type=str, choices=["max", "sum", "none", "balanced"],
-                              metavar="[max | sum | none | balanced]", help="Normalization method for class weights.")
     return train_parser
 
 

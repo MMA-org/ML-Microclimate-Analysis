@@ -140,16 +140,22 @@ default_config = {
         "max_epochs": 50,
         "num_workers": 8,
         "learning_rate": 2e-5,
-        "dropout": 0.2,
-        "weight_decay": 1e-4,
+        "weight_decay": 1e-2
+    },
+    "callbacks": {
         "early_stop": {
-            "patience": 5
+            "patience": 5,
+            "monitor": "val_loss",
+            'mode': "min"
+        },
+        "save_model": {
+            "monitor": "val_mean_iou",
+            "mode": "max"
         }
     },
     "loss": {
         "ignore_index": None,
-        "weights": True,
-        "normalize": "none",  # Options: max, sum, ballance, none
+        "weighting_strategy": "raw",  # Options: max, sum, balance, none, raw
         "alpha": 0.5,
         "beta": 0.5
     }
@@ -170,18 +176,22 @@ arg_to_key_map = {
     "batch_size": ["training", "batch_size"],
     "max_epochs": ["training", "max_epochs"],
     "lr": ["training", "learning_rate"],
-    "dropout": ["training", "dropout"],
     "weight_decay": ["training", "weight_decay"],
     "model_name": ["training", "model_name"],
     "num_workers": ["training", "num_workers"],
 
-    # Early stopping
-    "stop_patience": ["training", "early_stop", "patience"],
+    # Early stopping callback
+    "early_stop_patience": ["callbacks", "early_stop", "patience"],
+    "early_stop_monitor": ["callbacks", "early_stop", "monitor"],
+    "early_stop_mode": ["callbacks", "early_stop", "mode"],
+
+    # Save model callback
+    "save_model_monitor": ["callbacks", "save_model", "monitor"],
+    "save_model_mode": ["callbacks", "save_model", "mode"],
 
     # Loss
     "ignore_index": ["loss", "ignore_index"],
     "alpha": ["loss", "alpha"],
     "beta": ["loss", "beta"],
-    "class_weights": ["loss", "weights"],
-    "normalize": ["loss", "normalize"]
+    "weighting_strategy": ["loss", "weighting_strategy"],
 }

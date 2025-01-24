@@ -1,47 +1,88 @@
+from pathlib import Path
 
 
-def evaluate(config, version=None):
+def initialize_data_module(config):
+    """
+    Initialize the SegmentationDataModule with dataset and augmentation settings.
+    """
+    from data.data_module import SegmentationDataModule
+    return SegmentationDataModule(
+        dataset_path=config.dataset.dataset_path,
+        batch_size=config.training.batch_size,
+        num_workers=config.training.num_workers,
+        model_name=config.training.model_name,
+        id2label=config.id2label,
+    )
+
+
+def load_model_from_checkpoint(config, version):
+    """
+    Load the model from a specific checkpoint.
+
+    Args:
+        config: Configuration object containing directories and model settings.
+        version: Model version to locate the appropriate checkpoint.
+
+    Returns:
+        A SegformerFinetuner instance loaded from the checkpoint.
+    """
     from model.lightning_model import SegformerFinetuner
+    from utils import find_checkpoint, get_last_version
 
-    from data.loader import Loader
-    from utils import find_checkpoint, save_confusion_matrix_plot, get_last_version
-    from pytorch_lightning import Trainer
-    from pathlib import Path
-    print(f"Evaluating model version: version_{version}")
-    id2label = config.dataset.id2label
-    # Locate the checkpoint
+    # Determine the version if not provided
     if not version:
         version = get_last_version(logs_dir=Path(config.directories.logs))
     checkpoint = find_checkpoint(config, version)
-    print(f"Using checkpoint: {checkpoint}")
 
-    # Prepare the test dataloader
-    loader = Loader(config)
-    test_loader = loader.get_dataloader("test")
+    # Load the model
+    print(f"Loading model from checkpoint: {checkpoint}")
+    return SegformerFinetuner.load_from_checkpoint(
+        checkpoint_path=checkpoint,
+        id2label=config.dataset.id2label,
+    )
+
+
+def save_confusion_matrix(conf_matrix, metrics, labels, save_path):
+    """
+    Plot and save the confusion matrix with metrics.
+
+    Args:
+        conf_matrix: Confusion matrix as a NumPy array.
+        metrics: Dictionary of evaluation metrics.
+        labels: List of class labels for the confusion matrix.
+        save_path: Path to save the confusion matrix plot.
+    """
+    from utils import save_confusion_matrix_plot
+
+    print(f"Saving confusion matrix to: {save_path}")
+    save_confusion_matrix_plot(
+        conf_matrix=conf_matrix,
+        labels=labels,
+        save_path=save_path,
+        metrics=metrics
+    )
+    print("Confusion matrix saved successfully.")
+
+
+def evaluate(config, version=None):
+    from pytorch_lightning import Trainer
+
+    # Initialize the data module
+    datamodule = initialize_data_module(config)
 
     # Load the model from the checkpoint
-    model = SegformerFinetuner.load_from_checkpoint(
-        checkpoint_path=checkpoint,
-        id2label=id2label,
-    )
+    model = load_model_from_checkpoint(config, version)
 
     # Evaluate the model
     trainer = Trainer()
-    tests = trainer.test(model, test_loader)
-    print("Create Confusion matrix")
-    tests_metrics_results = tests[0]
+    tests = trainer.test(model, datamodule=datamodule)
 
-    test_results = model.get_test_results()
-    y_true = test_results["ground_truths"]
-    y_pred = test_results["predictions"]
+    conf_matrix = tests[0]["confusion_matrix"]
+    metrics = tests[0]["metrics"]
 
-    # Save confusion matrix
-    results = Path(config.directories.results)
-    cm_save_path = results / f"version_{version}_confusion_matrix.png"
-    labels = list(id2label.keys())
+    # Save confusion matrix plot
+    cm_save_path = Path(config.directories.results) / \
+        f"version_{version}_confusion_matrix.png"
 
-    # Plot and save the confusion matrix
-    save_confusion_matrix_plot(
-        y_true, y_pred, labels, save_path=cm_save_path, metrics=tests_metrics_results)
-
-    print(f"Confusion matrix saved to {cm_save_path}")
+    save_confusion_matrix(conf_matrix, metrics, list(
+        config.dataset.id2label.values()), cm_save_path)

@@ -8,6 +8,42 @@ from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precisi
 from core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
 
 
+class DiceLoss(nn.Module):
+    def __init__(self, ignore_index=None, smooth=1e-6):
+        super().__init__()
+        self.ignore_index = ignore_index
+        self.smooth = smooth
+
+    def forward(self, inputs, targets):
+        """
+        inputs: Tensor of shape (B, C, H, W), probabilities
+        target: Tensor of shape (B, H, W), class indices
+        """
+
+        # One-hot encode the target to match the shape of inputs (B, C, H, W)
+        target_one_hot = torch.nn.functional.one_hot(
+            targets, num_classes=inputs.shape[1]
+        ).permute(0, 3, 1, 2).float()
+
+        if self.ignore_index is not None:
+            # Create a mask for valid pixels (ignore_index excluded)
+            valid_mask = targets != self.ignore_index
+            valid_mask = valid_mask.unsqueeze(1)  # Shape: (B, 1, H, W)
+            inputs = inputs * valid_mask  # Mask probabilities
+            target_one_hot = target_one_hot * valid_mask  # Mask target
+
+        # Compute intersection and union
+        # Sum over H and W
+        intersection = (inputs * target_one_hot).sum(dim=(2, 3))
+        union = inputs.sum(dim=(2, 3)) + target_one_hot.sum(dim=(2, 3))
+
+        # Compute Dice coefficient for each class and average across classes
+        dice = (2. * intersection + self.smooth) / (union + self.smooth)
+        mean_dice = dice.mean(dim=1)  # Average across classes for each batch
+
+        return 1 - mean_dice.mean()  # Average across batch
+
+
 # CeDiceLoss class
 class CeDiceLoss(nn.Module):
     """
@@ -36,10 +72,10 @@ class CeDiceLoss(nn.Module):
         ignore_index (int or None): Class index to ignore during loss computation.
         weights (torch.Tensor or None): Tensor containing class weights for CE loss.
         ce_loss (torch.nn.CrossEntropyLoss): Cross-Entropy loss module.
-        dice_score (Dice): Dice score metric for multi-class segmentation.
+        dice_loss (Dice): Dice loss for multi-class segmentation.
     """
 
-    def __init__(self, num_classes, alpha=0.8, beta=0.2, weights=None, ignore_index=None, reduction="mean"):
+    def __init__(self, num_classes, alpha=0.5, beta=0.5, weights=None, ignore_index=None, reduction="mean"):
         super().__init__()
         self.alpha = alpha
         self.beta = beta
@@ -47,16 +83,16 @@ class CeDiceLoss(nn.Module):
         self.ignore_index = ignore_index
         self.weights = self.initialize_weights(weights, num_classes)
         self.ce_loss = nn.CrossEntropyLoss(
+            label_smoothing=0.1,
             ignore_index=ignore_index if ignore_index is not None else -100,
             reduction=reduction,
             weight=self.weights,
         )
-        self.dice_score = Dice(
-            average="macro",
-            multiclass=True,
-            ignore_index=self.ignore_index,
-            num_classes=self.num_classes,
-        )
+        self.dice_loss = DiceLoss(ignore_index=ignore_index)
+
+    def set_stage(self, alpha, beta):
+        self.alpha = alpha
+        self.beta = beta
 
     def forward(self, inputs, targets):
         """
@@ -82,8 +118,7 @@ class CeDiceLoss(nn.Module):
 
         """
         ce_loss = self.ce_loss(inputs, targets)
-        probs = torch.softmax(inputs, dim=1)
-        dice_loss = 1 - self.dice_score(probs, targets)
+        dice_loss = self.dice_loss(inputs.softmax(dim=1), targets)
         return self.alpha * ce_loss + self.beta * dice_loss
 
     def initialize_weights(self, weights, num_classes):
@@ -106,17 +141,16 @@ class CeDiceLoss(nn.Module):
             return None  # No weights provided, return None
 
         # Convert weights to tensor
-        if isinstance(weights, (list, np.ndarray)):
-            weights_tensor = torch.tensor(weights, dtype=torch.float)
-        elif isinstance(weights, torch.Tensor):
-            weights_tensor = weights
-        else:
-            raise LossWeightsTypeError(type(weights))
-        if weights_tensor.size(0) != num_classes:
-            raise LossWeightsSizeError(
-                weights_tensor.size(0), num_classes)
+        if not isinstance(weights, torch.Tensor):
+            try:
+                weights = torch.tensor(weights, dtype=torch.float)
+            except Exception:
+                raise LossWeightsTypeError(type(weights))
+        # Validate size
+        if weights.size(0) != num_classes:
+            raise LossWeightsSizeError(weights.size(0), num_classes)
 
-        return weights_tensor
+        return weights
 
 
 class FocalLoss(nn.CrossEntropyLoss):
@@ -258,18 +292,18 @@ class TestMetrics(SegMetrics):
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(train_dataloader, num_classes, mask_key="labels", normalize: Literal["sum", "max", "none", "balanced"] = "none", ignore_index=None):
+def compute_class_weights(dataloader, num_classes, mask_key="labels", normalize: Literal["sum", "max", "raw", "balanced"] = "raw", ignore_index=None):
     """
     Compute class weights based on the frequencies of each class in the dataset.
 
     Args:
-        train_dataloader (DataLoader): PyTorch DataLoader containing the dataset.
+        dataloader (DataLoader): PyTorch DataLoader containing the dataset.
         num_classes (int): Total number of classes.
         mask_key (str): Key to access masks/labels in the dataloader's batch.
         normalize (str): Method to normalize weights:
             - "sum": Scales weights to sum to 1.
             - "max": Scales weights so the maximum weight is 1.
-            - "none": Leaves weights unnormalized.
+            - "raw": Leaves weights unnormalized.
             - "balanced": Ensures equal contribution from all classes.
         ignore_index (int, optional): Class index to ignore in weight computation.
 
@@ -281,7 +315,7 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
     """
     class_counts = torch.zeros(num_classes, dtype=torch.int64)
 
-    for batch in tqdm(train_dataloader, desc="Compute class weights"):
+    for batch in tqdm(dataloader, desc="Compute class weights"):
         masks = batch[mask_key]
         masks = masks.view(-1)  # Flatten masks into 1D
 
@@ -311,7 +345,7 @@ def compute_class_weights(train_dataloader, num_classes, mask_key="labels", norm
         class_weights = class_weights * \
             (effective_classes / class_weights.sum())
 
-    elif normalize == "none":
+    elif normalize == "raw":
         pass
     else:
         raise NormalizeError(normalize)

@@ -27,8 +27,8 @@ def test_save_model_initialization():
     """
     Test that SaveModel initializes correctly.
     """
-    callback = SaveModel(pretrained_path="mock_pretrained_dir")
-    assert callback.pretrained_path == "mock_pretrained_dir"
+    callback = SaveModel(pretrained_dir="mock_pretrained_dir")
+    assert callback.pretrained_dir == "mock_pretrained_dir"
 
 
 @patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")
@@ -36,7 +36,7 @@ def test_save_model_calls_super_save_checkpoint(mock_super_save, mock_trainer, m
     """
     Test that SaveModel calls the parent _save_checkpoint method.
     """
-    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback = SaveModel(pretrained_dir="mock_pretrained_dir")
     callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
     # Check that the parent method was called
@@ -50,7 +50,7 @@ def test_save_model_saves_pretrained_on_global_zero(mock_super_save, mock_traine
     Test that SaveModel saves the pretrained model only on the main process (is_global_zero).
     """
     mock_trainer.lightning_module = mock_pl_module  # Attach the mock module
-    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback = SaveModel(pretrained_dir="mock_pretrained_dir")
     callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
     # Ensure save_pretrained_model was called
@@ -65,7 +65,7 @@ def test_save_model_does_not_save_pretrained_on_non_global_zero(mock_super_save,
     """
     mock_trainer.is_global_zero = False  # Simulate a non-main process
     mock_trainer.lightning_module = mock_pl_module  # Attach the mock module
-    callback = SaveModel(pretrained_path="mock_pretrained_dir")
+    callback = SaveModel(pretrained_dir="mock_pretrained_dir")
     callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
     # Ensure save_pretrained_model was not called

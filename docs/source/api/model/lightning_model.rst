@@ -1,7 +1,7 @@
-Lightning Model Module
+Fine Tuner Module
 ======================
 
-The `lightning_model` module provides a PyTorch Lightning module for fine-tuning the Segformer model for semantic segmentation tasks.
+The `lightning_model` module provides a PyTorch Lightning `LightningModule` for fine-tuning the Segformer model for semantic segmentation tasks.
 
 .. automodule:: model.lightning_model
    :members:

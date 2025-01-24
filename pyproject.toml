@@ -39,7 +39,6 @@ ucs = "ucs.main:main"
 
 [tool.setuptools.packages.find]
 include = ["ucs*"]
-exclude = ["data*","model*","utils*","core*"]
 
 [project.optional-dependencies]
 dev = [

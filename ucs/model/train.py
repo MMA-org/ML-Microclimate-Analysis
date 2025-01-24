@@ -3,192 +3,142 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from model.lightning_model import SegformerFinetuner
-from data.loader import Loader
-from utils import load_class_weights, save_class_weights, get_next_version, find_checkpoint
-from utils.metrics import compute_class_weights
+from data.data_module import SegmentationDataModule
+from utils import get_next_version, find_checkpoint
 from ucs.utils.callbacks import SaveModel
 from data.transform import Augmentation
 import torch
 
 
 def prepare_paths(config, resume_version=None):
-    """Prepare directory paths for logging and checkpoints."""
-    # Get the base directories
-    pretrained_dir = Path(config.directories.pretrained)
+    """
+    Prepare directory paths for logging and checkpoints.
+    """
     logs_dir = Path(config.directories.logs)
-
-    # Determine the version for logging/checkpoints
     version = f"version_{resume_version}" if resume_version else get_next_version(
         logs_dir)
-
-    # Define paths for checkpoints and pretrained models
-    checkpoint_dir = Path(config.directories.checkpoints) / version
-    pretrained_dir = pretrained_dir / version
-
-    return pretrained_dir, logs_dir, checkpoint_dir
-
-
-def prepare_dataloaders(config):
-    """Prepare train and validation dataloaders."""
-    loader = Loader(
-        dataset_path=config.dataset.dataset_path,
-        batch_size=config.training.batch_size,
-        num_workers=config.training.num_workers,
-        model_name=config.training.model_name
-    )
-    train_loader = loader.get_dataloader(
-        "train", shuffle=True, transform=Augmentation())
-    val_loader = loader.get_dataloader("validation")
-
-    return loader, train_loader, val_loader
+    return {
+        "pretrained_dir": Path(config.directories.pretrained) / version,
+        "logs_dir": logs_dir,
+        "checkpoint_dir": Path(config.directories.checkpoints) / version,
+    }
 
 
-def prepare_class_weights(config, loader):
+def initialize_logger(logs_dir, resume_version):
     """
-    Compute or load precomputed class weights based on the configuration.
-
-    Args:
-        config (Config): Configuration object containing paths and settings.
-        train_loader (DataLoader): DataLoader for the training dataset.
-
-    Returns:
-        torch.Tensor: Tensor of class weights.
+    Initialize TensorBoard logger.
     """
-    # Check if class weighting is enabled
-    class_weights = config.loss.weights
-    num_classes = len(config.dataset.id2label)
-
-    if not class_weights:
-        return None  # Return None if class weighting is disabled
-
-    # Define the path for class weights file
-    weights_file = Path(config.directories.logs) / "class_weights.json"
-    normalize = config.loss.normalize
-    ignore_index = config.loss.ignore_index
-
-    # Load or compute class weights
-    if weights_file.exists():
-        class_weights = load_class_weights(weights_file)
-    else:
-        train_loader = loader.get_dataloader("train")
-        class_weights = compute_class_weights(
-            train_loader, num_classes, normalize=normalize, ignore_index=ignore_index)
-        save_class_weights(weights_file, class_weights)
-
-    return class_weights
-
-
-def initialize_callbacks(pretrained_dir, checkpoint_dir, early_stop_patience=10):
-    """Initialize callbacks for model training."""
-    save_model_callback = SaveModel(
-        pretrained_dir,
-        dirpath=checkpoint_dir,
-        filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
-        monitor="val_loss",
-        save_top_k=1,
-        mode="min",
+    return TensorBoardLogger(
+        save_dir=logs_dir,
+        version=f"version_{resume_version}" if resume_version else None,
+        default_hp_metric=False
     )
 
-    early_stop_callback = EarlyStopping(
-        monitor="val_loss",
-        patience=early_stop_patience,
-        mode="min",
-    )
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')
-    return [save_model_callback, early_stop_callback, lr_monitor]
+
+def initialize_callbacks(pretrained_dir, checkpoint_dir, callbacks_config):
+    """
+    Initialize callbacks for model training.
+    """
+    return [
+        SaveModel(
+            pretrained_dir=pretrained_dir,
+            dirpath=checkpoint_dir,
+            filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
+            monitor=callbacks_config.save_model.monitor,
+            save_top_k=1,
+            mode=callbacks_config.save_model.mode,
+        ),
+        EarlyStopping(
+            monitor=callbacks_config.early_stop.monitor,
+            patience=callbacks_config.early_stop.patience,
+            mode=callbacks_config.early_stop.mode,
+        ),
+        LearningRateMonitor(logging_interval='epoch'),
+    ]
 
 
 def initialize_trainer(config, callbacks, logger):
-    """Initialize the PyTorch Lightning Trainer."""
-    # Set the accelerator and number of devices
-    accelerator = "gpu" if torch.cuda.is_available() else "cpu"
-    devices = torch.cuda.device_count() if torch.cuda.is_available() else 1
-
+    """
+    Initialize PyTorch Lightning Trainer.
+    """
     return Trainer(
-        accelerator=accelerator,
-        devices=devices,
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        devices=torch.cuda.device_count() if torch.cuda.is_available() else 1,
         logger=logger,
         max_epochs=config.training.max_epochs,
         callbacks=callbacks,
     )
 
 
-def resolve_checkpoint_path(config, resume_version: int) -> Path:
+def initialize_data_module(config):
     """
-    Resolve the path for resuming training from a checkpoint.
-
-    Args:
-        config: Configuration object.
-        resume_version (int): The version folder name (e.g., "version_0").
-
-    Returns:
-        Path: Absolute path to the checkpoint file or None if no resume version is provided.
+    Initialize the SegmentationDataModule with dataset and augmentation settings.
     """
-    if resume_version:
-        return find_checkpoint(config, resume_version)
-    return None
+    class_weight_path = Path(config.directories.logs) / "class_weights.json"
+    return SegmentationDataModule(
+        dataset_path=config.dataset.dataset_path,
+        batch_size=config.training.batch_size,
+        num_workers=config.training.num_workers,
+        model_name=config.training.model_name,
+        id2label=config.dataset.id2label,
+        transform=Augmentation(),
+        weighting_strategy=config.loss.weighting_strategy,
+        class_weights_path=class_weight_path,
+        ignore_index=config.loss.ignore_index,
+    )
+
+
+def initialize_model(config, class_weights):
+    """
+    Initialize the Segformer model with the provided configuration and class weights.
+    """
+    return SegformerFinetuner(
+        id2label=config.dataset.id2label,
+        model_name=config.training.model_name,
+        class_weight=class_weights,
+        lr=float(config.training.learning_rate),
+        alpha=float(config.loss.alpha),
+        beta=float(config.loss.beta),
+        ignore_index=config.loss.ignore_index,
+        weight_decay=float(config.training.weight_decay),
+        max_epochs=config.training.max_epochs,
+    )
 
 
 def train(config, resume_version=None):
     """
     Train the Segformer model with the provided configuration.
-
-    Args:
-        config: (Config) Configuration object containing training parameters.
-        resume_version (int): Optional checkpoint file to resume training from.
     """
-    # Prepare paths for logging, checkpoints, and pretrained models
-    pretrained_dir, logs_dir, checkpoint_dir = prepare_paths(
-        config, resume_version)
+    # Prepare paths
+    paths = prepare_paths(config, resume_version)
 
-    # Initialize logger for TensorBoard
-    logger = TensorBoardLogger(
-        save_dir=logs_dir,
-        version=f"version_{resume_version}" if resume_version else None,
-        default_hp_metric=False
-    )
-
-    # Prepare data loaders for training and validation
-    loader, train_loader, val_loader = prepare_dataloaders(config)
-
-    # Prepare class weights for training
-    class_weights = prepare_class_weights(config, loader)
-
-    # Initialize the Segformer model
-    model = SegformerFinetuner(
-        id2label=config.dataset.id2label,
-        model_name=config.training.model_name,
-        class_weight=class_weights,  # alpha/class weights
-        lr=float(config.training.learning_rate),
-        alpha=float(config.loss.alpha),
-        beta=float(config.loss.beta),
-        ignore_index=config.loss.ignore_index,
-        dropout_rate=float(config.training.dropout),
-        weight_decay=float(config.training.weight_decay)
-    )
-
-    # Initialize callbacks (Checkpoint, EarlyStopping, SavePretrained)
+    # Initialize components
+    logger = initialize_logger(paths["logs_dir"], resume_version)
+    data_module = initialize_data_module(config)
+    model = initialize_model(config, data_module.class_weights)
     callbacks = initialize_callbacks(
-        pretrained_dir, checkpoint_dir, config.training.early_stop.patience)
-
-    # Initialize trainer
+        paths["pretrained_dir"], paths["checkpoint_dir"],
+        callbacks_config=config.callbacks
+    )
     trainer = initialize_trainer(config, callbacks, logger)
 
     # Resolve checkpoint path if resuming from a checkpoint
-    resume_checkpoint = resolve_checkpoint_path(config, resume_version)
+    resume_checkpoint = find_checkpoint(
+        config, resume_version) if resume_version else None
 
+    # Log the training configuration
     print(f"Start training:")
-    print(f"SegFormer model: {config.training.model_name}, "
+    print(f"SegFormer model: {config.training.model_name}")
+    print(f"Training parameters:"
           f"Learning rate: {config.training.learning_rate}, "
           f"Batch size: {config.training.batch_size}, "
-          f"Dropout rate: {config.training.dropout}, "
-          f"Weight decay: {config.training.weight_decay}")
-    print("Croos-Entropy - Dice Loss:\n"
+          f"Weight decay: {config.training.weight_decay}",
+          f"Max epochs: {config.training.max_epochs}")
+    print("Cross-Entropy - Dice Loss:\n"
           f"Ignore index: {config.loss.ignore_index}, "
-          f"Weights: {config.loss.weights}, "
-          f"Normalize method: {config.loss.normalize if config.loss.weights else None}",
+          f"Weights: {config.loss.weighting_strategy}, "
           f"Alpha (Cross-Entropy): {config.loss.alpha}, "
           f"Beta (Dice): {config.loss.beta}")
 
     # Train the model
-    trainer.fit(model, train_loader, val_loader, ckpt_path=resume_checkpoint)
+    trainer.fit(model, datamodule=data_module, ckpt_path=resume_checkpoint)
