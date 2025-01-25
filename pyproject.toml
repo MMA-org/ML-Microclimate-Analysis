@@ -37,8 +37,13 @@ landcover-model = "main:main"
 ucs = "ucs.main:main"
 
 
+[tool.setuptools]
+package-dir = { "" = "ucs" }
+include-package-data = true
+
 [tool.setuptools.packages.find]
-include = ["ucs*"]
+where = ["ucs"]
+include = ["data","core","model","utils"]
 
 [project.optional-dependencies]
 dev = [
