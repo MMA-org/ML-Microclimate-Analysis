@@ -12,24 +12,24 @@ The project is designed to run seamlessly even if `config.yaml` does not exist. 
 
 ## Training the Model
 
-Use the `lcm train` command to start training. Examples:
+Use the `ucs train` command to start training. Examples:
 
 1. **Default Training**:
 
    ```bash
-   lcm train
+   ucs train
    ```
 
 2. **With Custom Configurations**:
 
    ```bash
-   lcm train --config path/to/config.yaml
+   ucs train --config path/to/config.yaml
    ```
 
 3. **Command-Line Overrides**:
 
    ```bash
-   lcm train --batch_size 32 --lr 0.001
+   ucs train --batch_size 32 --lr 0.001
    ```
 
 ### Training Outputs
@@ -46,7 +46,7 @@ During training, the following outputs are generated:
 To view all available training options, run:
 
 ```bash
-lcm train -h
+ucs train -h
 ```
 
 ---
@@ -60,19 +60,19 @@ Evaluate a specific version of the model and save results, including a confusion
 1. **Default Evaluation**:
 
    ```bash
-   lcm evaluate
+   ucs evaluate
    ```
 
 2. **Evaluate Specific Version**:
 
    ```bash
-   lcm evaluate -v <version>
+   ucs evaluate -v <version>
    ```
 
    Example:
 
    ```bash
-   lcm evaluate -v 5
+   ucs evaluate -v 5
    ```
 
 ### Evaluation Outputs
