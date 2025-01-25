@@ -16,7 +16,7 @@ Contents:
    configurations
    usage
    dataset
-   modules
+   api/modules
 
 Indices and Tables
 ==================
