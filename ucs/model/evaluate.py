@@ -11,7 +11,7 @@ def initialize_data_module(config):
         batch_size=config.training.batch_size,
         num_workers=config.training.num_workers,
         model_name=config.training.model_name,
-        id2label=config.id2label,
+        id2label=config.dataset.id2label,
     )
 
 
@@ -42,7 +42,7 @@ def load_model_from_checkpoint(config, version):
     )
 
 
-def save_confusion_matrix(conf_matrix, metrics, labels, save_path):
+def save_confusion_matrix(conf_matrix, metrics, labels, save_path, version):
     """
     Plot and save the confusion matrix with metrics.
 
@@ -53,12 +53,14 @@ def save_confusion_matrix(conf_matrix, metrics, labels, save_path):
         save_path: Path to save the confusion matrix plot.
     """
     from utils import save_confusion_matrix_plot
+    # Save confusion matrix plot
+    cm_save_path = Path(save_path) / f"version_{version}_confusion_matrix.png"
 
-    print(f"Saving confusion matrix to: {save_path}")
+    print(f"Saving confusion matrix to: {cm_save_path}")
     save_confusion_matrix_plot(
         conf_matrix=conf_matrix,
         labels=labels,
-        save_path=save_path,
+        save_path=cm_save_path,
         metrics=metrics
     )
     print("Confusion matrix saved successfully.")
@@ -76,13 +78,8 @@ def evaluate(config, version=None):
     # Evaluate the model
     trainer = Trainer()
     tests = trainer.test(model, datamodule=datamodule)
-
-    conf_matrix = tests[0]["confusion_matrix"]
-    metrics = tests[0]["metrics"]
-
-    # Save confusion matrix plot
-    cm_save_path = Path(config.directories.results) / \
-        f"version_{version}_confusion_matrix.png"
+    metrics = tests[0]
+    conf_matrix = model.calculate_confusion_matrix()
 
     save_confusion_matrix(conf_matrix, metrics, list(
-        config.dataset.id2label.values()), cm_save_path)
+        config.dataset.id2label.values()), config.directories.results, version)

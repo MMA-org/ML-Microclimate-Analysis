@@ -4,7 +4,6 @@ import torch
 from torch import nn
 from utils.metrics import SegMetrics, CeDiceLoss, TestMetrics
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from sklearn.metrics import confusion_matrix
 
 if torch.cuda.is_available():
     torch.set_float32_matmul_precision('medium')  # pragma: no cover
@@ -17,10 +16,13 @@ class SegformerFinetuner(pl.LightningModule):
     Args:
         id2label (dict): A dictionary mapping class IDs to class labels. Ensure all class IDs in the dataset are included.
         model_name (str): The name of the Segformer model variant to use. Default is "b0".
+        max_epochs (int): Maximum number of training epochs. Default is 50.
         lr (float): Learning rate for the optimizer. Default is 2e-5.
+        alpha (float): Weighting factor for Dice loss. Default is 0.7.
+        beta (float): Weighting factor for cross-entropy loss. Default is 0.3.
         class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
-        weight_decay (float): Weight decay (L2 regularization) coefficient for the optimizer. Helps prevent overfitting. Default is 1e-4.
+        weight_decay (float): Weight decay (L2 regularization) coefficient for the optimizer. Helps prevent overfitting. Default is 1e-3.
 
     Attributes:
         id2label (dict): A dictionary mapping class IDs to class labels.
@@ -31,9 +33,10 @@ class SegformerFinetuner(pl.LightningModule):
         class_weights (torch.Tensor): Class weights for the loss function.
         lr (float): Learning rate for the optimizer.
         criterion (CeDiceLoss): Combined cross-entropy and Dice loss function for training.
+        test_results (dict): Contains 'predictions' and 'ground_truths' tensors for calculating confusion matrix after tests.
     """
 
-    def __init__(self, id2label, model_name="b0", max_epochs=50, lr=2e-5, alpha=0.5, beta=0.5, class_weight=None, ignore_index=None, weight_decay=1e-2):
+    def __init__(self, id2label, model_name="b0", max_epochs=50, lr=2e-5, alpha=0.7, beta=0.3, class_weight=None, ignore_index=None, weight_decay=1e-3):
         super().__init__()
         self.save_hyperparameters(ignore=['id2label'])
 
@@ -54,7 +57,9 @@ class SegformerFinetuner(pl.LightningModule):
             ignore_mismatched_sizes=True
         )
         self.model.train()
-
+        # Store test results
+        self.test_results = {"predictions": torch.tensor(
+            []), "ground_truths": torch.tensor([])}  # Clear previous test results
         # Initialize metrics and move to the correct device
         self.metrics = SegMetrics(
             self.num_classes, self.device, ignore_index=self.ignore_index)
@@ -75,6 +80,21 @@ class SegformerFinetuner(pl.LightningModule):
         """
         self.train()
         self.model.train()
+
+    def on_train_start(self):
+        """
+        Called at the start of training, set model in training mode.
+        """
+        super().on_train_start()
+        self.model.train()
+
+    def on_test_start(self):
+        """
+        Add test-specific metrics at the start of the test phase.
+        """
+        super().on_test_start()
+        self.metrics = TestMetrics(
+            self.num_classes, self.device, self.ignore_index)
 
     def forward(self, images, masks=None):
         """
@@ -98,6 +118,15 @@ class SegformerFinetuner(pl.LightningModule):
             upsampled_logits, masks) if masks is not None else None
         return loss, upsampled_logits.argmax(dim=1)
 
+    def log_step(self, stage, loss, metrics):
+        # Logging loss and metrics
+        self.log(f"{stage}_loss", loss, prog_bar=True,
+                 on_step=False, on_epoch=True)
+
+        for metric_name, value in metrics.items():
+            self.log(f"{stage}_{metric_name}", value,
+                     prog_bar=True, on_step=False, on_epoch=True)
+
     def step(self, batch, stage):
         """
         Perform a single step in the training, validation loop.
@@ -116,31 +145,8 @@ class SegformerFinetuner(pl.LightningModule):
 
         self.metrics.update(predicted, masks)
         metrics = self.metrics.compute()
-
-        # Logging loss and metrics
-        self.log(f"{stage}_loss", loss, prog_bar=True,
-                 on_step=False, on_epoch=True)
-
-        for metric_name, value in metrics.items():
-            self.log(f"{stage}_{metric_name}", value,
-                     prog_bar=True, on_step=False, on_epoch=True)
-
+        self.log_step(stage, loss, metrics)
         return loss
-
-    def on_train_start(self):
-        """
-        Called at the start of training, set model in training mode.
-        """
-        super().on_train_start()
-        self.model.train()
-
-    def on_test_start(self):
-        """
-        Add test-specific metrics at the start of the test phase.
-        """
-        super().on_test_start()
-        self.metrics = TestMetrics(
-            self.num_classes, self.device, self.ignore_index)
 
     def training_step(self, batch, batch_idx):
         """
@@ -182,22 +188,18 @@ class SegformerFinetuner(pl.LightningModule):
         images, masks = batch['pixel_values'], batch['labels']
         loss, predicted = self(images, masks)
 
+        # Compute metrics
         self.metrics.update(predicted, masks)
+        metrics = self.metrics.compute()
+        self.log_step("test", loss, metrics)
 
-        return {
-            "loss": loss,
-            "predictions": predicted.view(-1).cpu(),
-            "ground_truths": masks.view(-1).cpu()
-        }
+        # Collect predictions and ground truths for this batch
+        self.test_results["predictions"] = torch.cat(
+            (self.test_results["predictions"], predicted.view(-1).cpu()), dim=0)
+        self.test_results["ground_truths"] = torch.cat(
+            (self.test_results["ground_truths"], masks.view(-1).cpu()), dim=0)
 
-    def on_validation_epoch_end(self):
-        """
-        Reset the metrics at the end of the validation epoch.
-
-        This prevents the accumulation of metric values across epochs and ensures metrics are calculated independently for each epoch.
-        """
-        self.metrics.reset()
-        return super().on_validation_epoch_end()
+        return loss
 
     def on_train_epoch_end(self):
         """
@@ -208,32 +210,21 @@ class SegformerFinetuner(pl.LightningModule):
         self.metrics.reset()
         return super().on_train_epoch_end()
 
-    def on_test_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         """
-        Compute and return test metrics and the confusion matrix.
-        """
-        # Aggregate predictions and ground truths
-        all_predictions = torch.cat([x["predictions"]
-                                    for x in outputs]).numpy()
-        all_ground_truths = torch.cat(
-            [x["ground_truths"] for x in outputs]).numpy()
+        Reset the metrics at the end of the validation epoch.
 
-        # Compute metrics
-        metrics = self.metrics.compute()
+        This prevents the accumulation of metric values across epochs and ensures metrics are calculated independently for each epoch.
+        """
         self.metrics.reset()
+        return super().on_validation_epoch_end()
 
-        # Compute confusion matrix as a NumPy array
-        conf_matrix = confusion_matrix(
-            y_true=all_ground_truths,
-            y_pred=all_predictions,
-            labels=list(self.id2label.keys())
-        )
-
-        # Return metrics and confusion matrix
-        return {
-            "metrics": metrics,
-            "confusion_matrix": conf_matrix,  # Keep as NumPy array
-        }
+    def on_test_epoch_end(self):
+        """
+        Reset the metrics at the end of the test epoch.
+        """
+        self.metrics.reset()
+        return super().on_test_epoch_end()
 
     def configure_optimizers(self):
         """
@@ -250,7 +241,7 @@ class SegformerFinetuner(pl.LightningModule):
             self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         scheduler = {
             'scheduler': CosineAnnealingLR(optimizer, T_max=self.max_epochs, eta_min=self.learning_rate*0.01),
-            'interval': 'epoch',  # Adjust LR every epoch
+            'interval': 'epoch',
             'frequency': 1
         }
         return [optimizer], [scheduler]
@@ -311,9 +302,13 @@ class SegformerFinetuner(pl.LightningModule):
         Returns:
             np.ndarray: The confusion matrix.
         """
-        # Flatten predictions and ground truths for the confusion matrix
-        predictions = self.test_results["predictions"].cpu().numpy()
-        ground_truths = self.test_results["ground_truths"].cpu().numpy()
+        from sklearn.metrics import confusion_matrix
+        predictions = self.test_results["predictions"].numpy()
+        ground_truths = self.test_results["ground_truths"].numpy()
+
+        # Reset test_results
+        self.test_results = {"predictions": torch.tensor(
+            []), "ground_truths": torch.tensor([])}
 
         # Compute the confusion matrix
         return confusion_matrix(

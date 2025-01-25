@@ -51,13 +51,13 @@ def test_test_step(mock_model, mock_batch):
 
     # Validate the loss
     assert isinstance(
-        result["loss"], torch.Tensor), "Test step loss should be a torch.Tensor."
-    assert result["loss"].item() > 0, "Test step loss should be positive."
+        result, torch.Tensor), "Test step result should be a torch.Tensor."
+    assert result.item() > 0, "Test step loss should be positive."
 
-    # Validate predictions and ground truths
-    assert result["predictions"].numel(
+    # Validate predictions and ground truths are being updated
+    assert mock_model.test_results["predictions"].numel(
     ) > 0, "Test results should contain predictions."
-    assert result["ground_truths"].numel(
+    assert mock_model.test_results["ground_truths"].numel(
     ) > 0, "Test results should contain ground truths."
 
 
@@ -68,33 +68,8 @@ def test_on_test_start(mock_model):
 
 
 def test_on_test_epoch_end(mock_model):
-    mock_model.on_test_start()
-
-    # Mock outputs to simulate aggregated test_step results
-    mock_outputs = [
-        {"predictions": torch.randint(
-            0, 3, (512 * 512,)), "ground_truths": torch.randint(0, 3, (512 * 512,))}
-    ]
-
-    # Mock metric reset to verify it is called
     mock_model.metrics.reset = MagicMock()
-
-    # Call on_test_epoch_end
-    results = mock_model.on_test_epoch_end(mock_outputs)
-
-    # Validate confusion matrix and metrics
-    assert "confusion_matrix" in results, "Confusion matrix should be in the results."
-    assert "metrics" in results, "Metrics should be in the results."
-
-    # Validate confusion matrix type
-    assert isinstance(results["confusion_matrix"],
-                      np.ndarray), "Confusion matrix should be a NumPy array."
-
-    # Ensure metrics are valid
-    assert isinstance(results["metrics"],
-                      dict), "Metrics should be a dictionary."
-
-    # Check that metrics.reset is called
+    mock_model.on_test_epoch_end()
     mock_model.metrics.reset.assert_called_once()
 
 
