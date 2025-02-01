@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
 from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
-from core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
+from ucs.core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
 
 
 class DiceLoss(nn.Module):
@@ -75,10 +75,10 @@ class CeDiceLoss(nn.Module):
         dice_loss (Dice): Dice loss for multi-class segmentation.
     """
 
-    def __init__(self, num_classes, alpha=0.5, beta=0.5, weights=None, ignore_index=None, reduction="mean"):
+    def __init__(self, num_classes, alpha=0.8, weights=None, ignore_index=None, reduction="mean"):
         super().__init__()
         self.alpha = alpha
-        self.beta = beta
+        self.beta = 1 - alpha
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.weights = self.initialize_weights(weights, num_classes)
@@ -155,25 +155,14 @@ class CeDiceLoss(nn.Module):
 
 class FocalLoss(nn.CrossEntropyLoss):
     """
-        Focal Loss for addressing class imbalance in classification tasks.
+    Focal Loss for addressing class imbalance in classification tasks.
 
-        Args:
-            num_classes (int): Number of classes.
-            gamma (float, optional): Focusing parameter. Defaults to 2.0.
-            alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class. Defaults to None.
-            ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Defaults to None.
-            reduction (str, optional): Specifies the reduction to apply to the output. Defaults to 'mean'.
-
-        Attributes:
-            ignore_index (int): The index to ignore in the target.
-            gamma (float): The focusing parameter.
-            reduction (str): The reduction method to apply to the output.
-            num_classes (int): The number of classes.
-            alpha (torch.Tensor): The weighting factor for each class.
-
-        Raises:
-            FocalAlphaTypeError: If the alpha type is unsupported.
-            FocalAlphaSizeError: If alpha does not match `num_classes`.
+    Args:
+        num_classes (int): Number of classes.
+        gamma (float, optional): Focusing parameter. Defaults to 2.0.
+        alpha (float, list, np.ndarray, torch.Tensor, optional): Weighting factor for each class. Defaults to None.
+        ignore_index (int, optional): Specifies a target value that is ignored. Defaults to None.
+        reduction (str, optional): Specifies the reduction to apply to the output. Defaults to 'mean'.
     """
 
     def __init__(self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction='mean'):
@@ -185,22 +174,55 @@ class FocalLoss(nn.CrossEntropyLoss):
         self.alpha = self.__set_alpha__(alpha)
 
     def forward(self, inputs, target):
+        """
+        Forward pass of the loss calculation.
+
+        Args:
+            inputs (torch.Tensor): Predicted logits of shape (N, C, H, W) where C is the number of classes
+            target (torch.Tensor): Ground truth labels of shape (N, H, W)
+
+        Returns:
+            torch.Tensor: Computed loss
+        """
         self.alpha = self.alpha.to(inputs.device)
+
+        # Calculate standard cross entropy
         cross_entropy = super().forward(inputs, target)
+
+        # Calculate probabilities (pt)
         pt = torch.exp(-cross_entropy)
-        at = self.alpha[target]
 
-        loss = at * ((1-pt)**self.gamma) * cross_entropy
+        # Apply focal scaling
+        focal_loss = (1 - pt) ** self.gamma * cross_entropy
 
-        valid_mask = (target != self.ignore_index)
-        valid_loss = loss[valid_mask]
+        # Apply alpha weighting properly (with broadcasting)
+        if self.alpha is not None:
+            # Convert target to one-hot encoding
+            target_one_hot = torch.zeros_like(inputs)
+            target_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
-        if self.reduction == 'mean':
-            return valid_loss.mean()
-        elif self.reduction == 'sum':
-            return valid_loss.sum()
+            # Apply alpha weights properly (with broadcasting)
+            alpha_weights = (self.alpha.view(1, -1, 1, 1)
+                             * target_one_hot).sum(dim=1)
+
+            # Mask the alpha weights for the ignored indices
+            valid_mask = (target != self.ignore_index)
+            focal_loss = alpha_weights * focal_loss
+
+            # Mask focal loss for ignored indices
+            focal_loss = focal_loss[valid_mask]
         else:
-            return loss
+            # If no alpha is provided, proceed without weighting
+            valid_mask = (target != self.ignore_index)
+            focal_loss = focal_loss[valid_mask]
+
+        # Apply reduction
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:  # 'none'
+            return focal_loss
 
     def __set_alpha__(self, alpha):
         """
@@ -211,27 +233,20 @@ class FocalLoss(nn.CrossEntropyLoss):
 
         Returns:
             torch.Tensor: The alpha tensor.
-
-        Raises:
-            FocalAlphaTypeError: If the alpha type is unsupported.
-            FocalAlphaSizeError: alpha does not match num_classes.
         """
         if alpha is None:
-            alpha_tensor = torch.ones(self.num_classes, dtype=torch.float)
-        elif isinstance(alpha, (float, int)):
-            alpha_tensor = torch.full(
-                (self.num_classes,), alpha, dtype=torch.float)
-        elif isinstance(alpha, (np.ndarray, list)):
-            alpha_tensor = torch.tensor(alpha, dtype=torch.float)
-        elif isinstance(alpha, torch.Tensor):
-            alpha_tensor = alpha
-        else:
-            raise LossWeightsTypeError(type(alpha))
+            return torch.ones(self.num_classes)
 
-        if alpha_tensor.size(0) != self.num_classes:
-            raise LossWeightsSizeError(alpha_tensor.size(0), self.num_classes)
+        if isinstance(alpha, (float, int)):
+            return torch.full((self.num_classes,), alpha)
 
-        return alpha_tensor
+        if isinstance(alpha, (list, np.ndarray)):
+            return torch.tensor(alpha)
+
+        if isinstance(alpha, torch.Tensor):
+            return alpha
+
+        raise TypeError(f"Unsupported alpha type: {type(alpha)}")
 
 
 class SegMetrics(MetricCollection):

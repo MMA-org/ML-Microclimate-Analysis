@@ -1,9 +1,8 @@
 import pytest
 import torch
 from unittest.mock import MagicMock
-from model.lightning_model import SegformerFinetuner, SegformerForSemanticSegmentation
-from utils.metrics import SegMetrics, TestMetrics
-import numpy as np
+from ucs.model.lightning_model import SegformerFinetuner, SegformerForSemanticSegmentation
+from ucs.utils.metrics import SegMetrics, TestMetrics
 
 
 @pytest.fixture

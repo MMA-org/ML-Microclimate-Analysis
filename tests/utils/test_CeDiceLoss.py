@@ -16,7 +16,7 @@ def sample_data():
 @pytest.fixture
 def loss_function():
     # Create a CeDiceLoss instance
-    return CeDiceLoss(num_classes=3, alpha=0.5, beta=0.5, weights=[1.0, 2.0, 1.5])
+    return CeDiceLoss(num_classes=3, alpha=0.5, weights=[1.0, 2.0, 1.5])
 
 
 def test_loss_computation(loss_function, sample_data):
@@ -61,15 +61,15 @@ def test_weights_application():
         weights, dtype=torch.float)), "Weights should match."
 
 
-def test_alpha_beta_scaling():
-    """Test the impact of alpha and beta scaling on the loss."""
+def test_alpha_scaling():
+    """Test the impact of alpha scaling on the loss."""
     inputs = torch.randn(4, 3, 256, 256)
     targets = torch.randint(0, 3, (4, 256, 256))
 
     loss_function1 = CeDiceLoss(
-        num_classes=3, alpha=1.0, beta=0.0)  # Only Cross-Entropy
+        num_classes=3, alpha=1.0)  # Only Cross-Entropy
     loss_function2 = CeDiceLoss(
-        num_classes=3, alpha=0.0, beta=1.0)  # Only Dice
+        num_classes=3, alpha=0.0)  # Only Dice
 
     ce_loss = loss_function1(inputs, targets)
     dice_loss = loss_function2(inputs, targets)
