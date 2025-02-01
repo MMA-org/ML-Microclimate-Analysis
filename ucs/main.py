@@ -67,7 +67,7 @@ def create_train_parser(subparsers, common_parser):
                               help="Reduce all labels by 1, converting 0 to 255.")
     # Add focal loss arguments
     train_parser.add_argument(
-        "--alpha", type=float,  help="loss alpha.")
+        "--gamma", type=float,  help="Focal loss gamma.")
     train_parser.add_argument(
         "--ignore_index", type=int,  help="loss function ignore index.")
     train_parser.add_argument(
