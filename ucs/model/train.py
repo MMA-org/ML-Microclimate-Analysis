@@ -1,12 +1,19 @@
 from pathlib import Path
-from pytorch_lightning import Trainer
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
+
 import torch
-from ucs.model.lightning_model import SegformerFinetuner
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
+from pytorch_lightning.loggers import TensorBoardLogger
+
 from ucs.data.data_module import SegmentationDataModule
 from ucs.data.transform import Augmentation
-from ucs.utils import get_next_version, find_checkpoint, load_class_weights, save_class_weights
+from ucs.model.lightning_model import SegformerFinetuner
+from ucs.utils import (
+    find_checkpoint,
+    get_next_version,
+    load_class_weights,
+    save_class_weights,
+)
 from ucs.utils.callbacks import SaveModel
 from ucs.utils.metrics import compute_class_weights
 
@@ -16,8 +23,9 @@ def prepare_paths(config, resume_version=None):
     Prepare directory paths for logging and checkpoints.
     """
     logs_dir = Path(config.directories.logs)
-    version = f"version_{resume_version}" if resume_version else get_next_version(
-        logs_dir)
+    version = (
+        f"version_{resume_version}" if resume_version else get_next_version(logs_dir)
+    )
     return {
         "version": version,
         "pretrained_dir": Path(config.directories.pretrained) / version,
@@ -33,7 +41,7 @@ def initialize_logger(logs_dir, resume_version):
     return TensorBoardLogger(
         save_dir=logs_dir,
         version=f"version_{resume_version}" if resume_version else None,
-        default_hp_metric=False
+        default_hp_metric=False,
     )
 
 
@@ -45,7 +53,7 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, callbacks_config):
         SaveModel(
             pretrained_dir=pretrained_dir,
             dirpath=checkpoint_dir,
-            filename='{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}',
+            filename="{epoch}-{val_loss:.2f}-{val_mean_iou:.2f}",
             monitor=callbacks_config.save_model_monitor,
             save_top_k=1,
             mode=callbacks_config.save_model_mode,
@@ -55,7 +63,7 @@ def initialize_callbacks(pretrained_dir, checkpoint_dir, callbacks_config):
             patience=callbacks_config.early_stop_patience,
             mode=callbacks_config.early_stop_mode,
         ),
-        LearningRateMonitor(logging_interval='epoch'),
+        LearningRateMonitor(logging_interval="epoch"),
     ]
 
 
@@ -143,27 +151,32 @@ def train(config, resume_version=None):
 
     # Initialize data module
     data_module = SegmentationDataModule(
-        config=config.dataset, transform=Augmentation(), model_name=config.dataset.model_name)
+        config=config.dataset,
+        transform=Augmentation(),
+        model_name=config.dataset.model_name,
+    )
 
     # compute class weights
     class_weight = get_class_weights(config, data_module)
 
     # Initialize fine tune model
-    model = SegformerFinetuner(
-        config=config.training, class_weights=class_weight)
+    model = SegformerFinetuner(config=config.training, class_weights=class_weight)
 
     # Initialize callbacks for trainer
     callbacks = initialize_callbacks(
-        paths["pretrained_dir"], paths["checkpoint_dir"],
-        callbacks_config=config.callbacks
+        paths["pretrained_dir"],
+        paths["checkpoint_dir"],
+        callbacks_config=config.callbacks,
     )
     # Initialize trainer
-    trainer = initialize_trainer(
-        config.training.max_epochs, callbacks, logger)
+    trainer = initialize_trainer(config.training.max_epochs, callbacks, logger)
 
     # Resolve checkpoint path if resuming from a checkpoint
-    resume_checkpoint = find_checkpoint(
-        config.directories.checkpoints, resume_version) if resume_version else None
+    resume_checkpoint = (
+        find_checkpoint(config.directories.checkpoints, resume_version)
+        if resume_version
+        else None
+    )
 
     # Log the session
     log_training_info(config, paths["version"], logger)

@@ -1,7 +1,7 @@
 import pytest
 import torch
-from utils.metrics import SegMetrics, compute_class_weights
 from torch.utils.data import DataLoader, Dataset
+from ucs.utils.metrics import SegMetrics
 
 
 class MockDataset(Dataset):
@@ -43,9 +43,11 @@ def test_metrics_initialization(metrics):
     Test the initialization of the Metrics class.
     """
     assert isinstance(
-        metrics.metrics["mean_iou"], torch.nn.Module), "IoU metric not initialized correctly."
+        metrics["mean_iou"], torch.nn.Module
+    ), "IoU metric not initialized correctly."
     assert isinstance(
-        metrics.metrics["mean_dice"], torch.nn.Module), "Dice metric not initialized correctly."
+        metrics["mean_dice"], torch.nn.Module
+    ), "Dice metric not initialized correctly."
     assert metrics.num_classes == 3, "Number of classes should be 3."
 
 

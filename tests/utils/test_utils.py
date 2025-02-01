@@ -1,11 +1,9 @@
-import pytest
-import numpy as np
-from utils.config import Config
-from utils import find_checkpoint, save_class_weights, load_class_weights
-import json
 import matplotlib
-from pathlib import Path
+import pytest
 import torch
+from ucs.utils import load_class_weights, save_class_weights
+from ucs.utils.config import Config
+
 matplotlib.use('Agg')
 
 
@@ -25,7 +23,7 @@ def mock_config(tmp_path):
     config_dict = {
         "directories": {
             "logs": str(logs_dir),  # Path for logs_dir
-            "checkpoint_dir": str(checkpoint_dir)  # Path for checkpoint_dir
+            "checkpoint_dir": str(checkpoint_dir),  # Path for checkpoint_dir
         }
     }
     return Config.from_dict(config_dict)
@@ -41,7 +39,8 @@ def test_load_class_weights(tmp_path):
     # Load weights and assert correctness
     loaded_weights = torch.tensor(load_class_weights(tmp_path))
     assert torch.equal(
-        loaded_weights, class_weights), "Loaded weights do not match the expected values."
+        loaded_weights, class_weights
+    ), "Loaded weights do not match the expected values."
 
 
 def test_save_class_weights(tmp_path):
@@ -56,4 +55,5 @@ def test_save_class_weights(tmp_path):
     # Verify file content
     saved_weights = torch.load(weights_file, weights_only=True)
     assert torch.equal(
-        saved_weights, class_weights), "Saved weights do not match the expected values."
+        saved_weights, class_weights
+    ), "Saved weights do not match the expected values."

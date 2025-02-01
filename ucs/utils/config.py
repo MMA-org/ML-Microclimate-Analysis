@@ -1,6 +1,7 @@
-from typing import Optional, Dict
 from dataclasses import field
 from pathlib import Path
+from typing import Dict, Optional
+
 import yaml
 from pydantic.dataclasses import dataclass
 
@@ -15,7 +16,7 @@ class CallbacksConfig:
 
 
 @dataclass
-class TrainingConfig:
+class TrainingConfig:  # pylint: disable=too-many-instance-attributes
     model_name: str = "b0"
     max_epochs: int = 50
     learning_rate: float = 2e-5
@@ -24,10 +25,19 @@ class TrainingConfig:
     # Options: "none", "balanced", "max", "sum", or "raw"
     weighting_strategy: str = "raw"
     gamma: float = 2
-    id2label: Dict[int, str] = field(default_factory=lambda: {
-        0: "background", 1: "bareland", 2: "rangeland", 3: "developed space",
-        4: "road", 5: "tree", 6: "water", 7: "agriculture land", 8: "buildings"
-    })
+    id2label: Dict[int, str] = field(
+        default_factory=lambda: {
+            0: "background",
+            1: "bareland",
+            2: "rangeland",
+            3: "developed space",
+            4: "road",
+            5: "tree",
+            6: "water",
+            7: "agriculture land",
+            8: "buildings",
+        }
+    )
 
 
 @dataclass
@@ -58,16 +68,22 @@ class Config:
 
     @classmethod
     def load_config(cls, config_path: Optional[str] = None, **overrides) -> "Config":
-        """Load YAML config, apply CLI overrides."""
+        """
+        Load YAML configuration file and apply overrides.
+
+        Args:
+            config_path (Optional[str]): Path to the configuration YAML file.
+            **overrides: Dictionary of command-line overrides.
+
+        Returns:
+            Config: An instance of the Config class with loaded values.
+        """
         config = cls()
 
-        if config_path:
-            try:
-                with open(config_path, "r") as file:
-                    yaml_data = yaml.safe_load(file) or {}
-                config = cls(**yaml_data)
-            except:
-                pass
+        if config_path and Path(config_path).resolve().exists():
+            with open(config_path, "r", encoding="utf8") as file:
+                yaml_data = yaml.safe_load(file) or {}
+            config = cls(**yaml_data)
 
         config.dataset.model_name = config.training.model_name
         config._apply_overrides(overrides)
@@ -75,6 +91,13 @@ class Config:
         return config
 
     def _apply_overrides(self, overrides):
+        """
+        Applies CLI override values to the configuration.
+
+        Args:
+            overrides (dict): Dictionary of values to override.
+        """
+
         for key, value in overrides.items():
             if value is None:
                 continue
@@ -82,14 +105,24 @@ class Config:
             for section_name in self.__annotations__:  # Iterate over attributes
                 section = getattr(self, section_name)
 
-                if hasattr(section, key):  # Check if the override key exists in the section
+                if hasattr(
+                    section, key
+                ):  # Check if the override key exists in the section
                     setattr(section, key, value)
                     break
 
     def create_directories(self):
+        """
+        Creates required directories if they do not exist.
+
+        Prints the directories that were created.
+        """
+
         created_dirs = [
-            dir_path for dir_path in vars(self.directories).values()
-            if not Path(dir_path).exists() and Path(dir_path).mkdir(parents=True, exist_ok=True) is None
+            dir_path
+            for dir_path in vars(self.directories).values()
+            if not Path(dir_path).exists()
+            and Path(dir_path).mkdir(parents=True, exist_ok=True) is None
         ]
         if created_dirs:
             print("Created directories:\n" + "\n".join(created_dirs))

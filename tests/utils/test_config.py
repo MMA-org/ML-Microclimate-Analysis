@@ -1,8 +1,7 @@
-import pytest
-import yaml
-import tempfile
 import os
-from utils.config import Config
+import tempfile
+import yaml
+from ucs.utils.config import Config
 
 
 def test_load_default_config():
@@ -16,15 +15,9 @@ def test_load_default_config():
 
 def test_load_yaml_config():
     yaml_data = {
-        "dataset": {
-            "batch_size": 64
-        },
-        "training": {
-            "learning_rate": 0.0005
-        },
-        "callbacks": {
-            "early_stop_patience": 10
-        }
+        "dataset": {"batch_size": 64},
+        "training": {"learning_rate": 0.0005},
+        "callbacks": {"early_stop_patience": 10},
     }
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_file:
@@ -52,15 +45,9 @@ def test_load_with_cli_overrides():
 
 def test_yaml_and_cli_combined():
     yaml_data = {
-        "dataset": {
-            "batch_size": 64
-        },
-        "training": {
-            "learning_rate": 0.0005
-        },
-        "callbacks": {
-            "early_stop_patience": 10
-        }
+        "dataset": {"batch_size": 64},
+        "training": {"learning_rate": 0.0005},
+        "callbacks": {"early_stop_patience": 10},
     }
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_file:

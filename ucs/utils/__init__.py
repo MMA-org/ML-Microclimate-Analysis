@@ -1,8 +1,8 @@
-
-from sklearn.metrics import ConfusionMatrixDisplay
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import ConfusionMatrixDisplay
 
 
 def get_last_version(logs_dir: Path) -> int:
@@ -51,7 +51,7 @@ def find_checkpoint(checkpoints_dir, version: int) -> Path:
     Locate the single checkpoint file in the specified versioned directory.
 
     Args:
-        config (Config): Configuration object.
+        chekpoints_dir (str): A path to parent checkpoints directory.
         version (int): The version folder name (e.g., "version_0").
 
     Returns:
@@ -62,7 +62,12 @@ def find_checkpoint(checkpoints_dir, version: int) -> Path:
         CheckpointNotFoundError: If no checkpoint file is found.
         MultipleCheckpointsError: If multiple checkpoint files are found.
     """
-    from ucs.core.errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
+    from ucs.core.errors import (
+        CheckpointDirectoryError,
+        CheckpointNotFoundError,
+        MultipleCheckpointsError,
+    )
+
     checkpoint_dir = Path(checkpoints_dir) / f"version_{version}"
 
     # Check if the checkpoint directory exists
@@ -92,18 +97,20 @@ def format_metrics(metrics):
     """
     metric_items = list(metrics.items())
     rows = [
-        "    ".join([f"{key}: {value:.3f}" for key,
-                    value in metric_items[i:i + 3]])
+        "    ".join([f"{key}: {value:.3f}" for key, value in metric_items[i : i + 3]])
         for i in range(0, len(metric_items), 3)
     ]
     return "\n".join(rows)
 
 
-def save_confusion_matrix_plot(conf_matrix, labels, save_path, metrics=None, title="Confusion Matrix"):
+def save_confusion_matrix_plot(
+    conf_matrix, labels, save_path, metrics=None, title="Confusion Matrix"
+):
     """
     Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
 
     Args:
+        conf_matrix (np.ndarray): Confusion matrix.
         labels (list): List of class labels.
         save_path (Path): path to save the confusion matrix plot.
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix. Defaults to None.
@@ -111,22 +118,34 @@ def save_confusion_matrix_plot(conf_matrix, labels, save_path, metrics=None, tit
     """
 
     # Create confusion matrix display
-    disp = ConfusionMatrixDisplay(
-        confusion_matrix=conf_matrix, display_labels=labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=labels)
 
     # Plot the confusion matrix
-    fig, ax = plt.subplots(figsize=(12, 12))
+    _, ax = plt.subplots(figsize=(12, 12))
     # 'd' for integer display
-    disp.plot(cmap='Blues', ax=ax, values_format='d')
+    disp.plot(cmap="Blues", ax=ax, values_format="d")
 
     # Add title
     ax.set_title(title)
-
+    bbox_params = {
+        "boxstyle": "round,pad=0.3",
+        "edgecolor": "gray",
+        "facecolor": "white",
+        "alpha": 0.5,
+    }
     # Add text annotation for metrics below the confusion matrix
     if metrics:
         metrics_text = format_metrics(metrics)
-        ax.text(0.5, -0.15, metrics_text, ha='center', va='top', fontsize=12, transform=ax.transAxes,
-                bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray', facecolor='white', alpha=0.5))
+        ax.text(
+            0.5,
+            -0.15,
+            metrics_text,
+            ha="center",
+            va="top",
+            fontsize=12,
+            transform=ax.transAxes,
+            bbox=bbox_params,
+        )
 
     # Save the plot
     plt.tight_layout()
@@ -145,7 +164,8 @@ def load_class_weights(class_weights_dir):
         torch.Tensor: Loaded class weights as a tensor.
     """
     from torch import load
-    weights_file = (Path(class_weights_dir)/"class_weights.pt").resolve()
+
+    weights_file = (Path(class_weights_dir) / "class_weights.pt").resolve()
     if weights_file.exists():
         print("Loading precomputed class weights from file.")
         return load(str(weights_file), weights_only=True)
@@ -161,7 +181,8 @@ def save_class_weights(class_weights_dir, class_weights):
         class_weights (list): Class weights to save.
     """
     from torch import save
-    weights_file = (Path(class_weights_dir)/"class_weights.pt").resolve()
+
+    weights_file = (Path(class_weights_dir) / "class_weights.pt").resolve()
     print("Saving class weights to file.")
     save(class_weights, str(weights_file))
 
@@ -199,6 +220,7 @@ def plot_image_and_mask(image, mask: np.ndarray, id2color):
         id2color (dict): Dictionary mapping class IDs to RGB color tuples.
     """
     from PIL import Image
+
     if not isinstance(image, Image.Image):
         image = Image.open(image)
     color_mask = apply_color_map(mask, id2color)
@@ -206,8 +228,8 @@ def plot_image_and_mask(image, mask: np.ndarray, id2color):
     _, ax = plt.subplots(1, 2, figsize=(12, 6))
     ax[0].imshow(image)
     ax[0].set_title("Image")
-    ax[0].axis('off')
+    ax[0].axis("off")
     ax[1].imshow(color_mask)
     ax[1].set_title("Mask")
-    ax[1].axis('off')
+    ax[1].axis("off")
     plt.show()

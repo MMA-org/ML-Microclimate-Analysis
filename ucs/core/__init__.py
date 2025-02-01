@@ -2,14 +2,14 @@
 
 from .errors import (
     BaseError,
-    CheckpointNotFoundError,
     CheckpointDirectoryError,
-    MultipleCheckpointsError,
+    CheckpointNotFoundError,
     ConfigId2LabelError,
-    NormalizeError,
-    LossWeightsTypeError,
-    LossWeightsSizeError,
     LossIgnoreIndexError,
+    LossWeightsSizeError,
+    LossWeightsTypeError,
+    MultipleCheckpointsError,
+    NormalizeError,
 )
 
 # Define the public API

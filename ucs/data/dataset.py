@@ -1,44 +1,45 @@
-from torch.utils.data import Dataset
 import numpy as np
+from torch.utils.data import Dataset
 
 
 class SemanticSegmentationDataset(Dataset):
     """
     A custom dataset class for semantic segmentation tasks.
 
-    This class is designed to handle datasets containing images and their corresponding segmentation masks.
+    This class handles datasets containing images and their corresponding segmentation masks.
     It supports preprocessing using a feature extractor and optional Albumentations transformations.
 
-    Args:
-        data (Dataset): 
-            The dataset containing images and masks. Each sample in the dataset should be a dictionary with 
-            keys for the image and the mask.
-        feature_extractor (SegformerImageProcessor): 
-            The feature extractor for preprocessing images. Typically used for resizing, normalization, and 
-            converting images into tensors.
-        transform (Compose, optional): 
-            Optional Albumentations transformations to be applied on the images and masks during training or evaluation.
-
     Attributes:
-        data (Dataset): 
-            The dataset containing images and masks.
-        feature_extractor (SegformerImageProcessor): 
-            The feature extractor for preprocessing images.
-        transform (Compose, optional): 
-            The Albumentations transformations applied on each sample.
+        data (Dataset): The dataset containing images and masks.
+        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+        transform (Compose, optional): The Albumentations transformations applied to each sample.
     """
 
     def __init__(self, data, feature_extractor, transform=None):
+        """
+        Initializes the dataset with the given data, feature extractor, and optional transformations.
+
+        Args:
+            data (Dataset): The dataset containing images and masks.
+            feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+            transform (Compose, optional): Optional Albumentations transformations to be applied.
+        """
         self.data = data
         self.feature_extractor = feature_extractor
         self.transform = transform
 
     def __len__(self):
+        """
+        Returns the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
         return len(self.data)
 
     def __getitem__(self, idx):
         """
-        Retrieves the image and mask at the specified index.
+        Retrieves and preprocesses the image and mask at the specified index.
 
         Args:
             idx (int): The index of the sample to retrieve.
@@ -47,9 +48,9 @@ class SemanticSegmentationDataset(Dataset):
             dict: A dictionary containing the preprocessed image and mask.
         """
         # Get image path from the loaded data
-        image = self.data[idx]['image'].convert("RGB")
+        image = self.data[idx]["image"].convert("RGB")
         # Get mask path from the loaded data
-        mask = self.data[idx]['mask'].convert("L")
+        mask = self.data[idx]["mask"].convert("L")
 
         image = np.array(image)
         mask = np.array(mask)
@@ -58,9 +59,8 @@ class SemanticSegmentationDataset(Dataset):
             image, mask = self.transform(image=image, mask=mask)
 
         # Apply feature extractor
-        encoded_inputs = self.feature_extractor(
-            image, mask, return_tensors="pt")
-        for k, v in encoded_inputs.items():
+        encoded_inputs = self.feature_extractor(image, mask, return_tensors="pt")
+        for k, _ in encoded_inputs.items():
             encoded_inputs[k].squeeze_()  # Remove batch dimension
 
         return encoded_inputs

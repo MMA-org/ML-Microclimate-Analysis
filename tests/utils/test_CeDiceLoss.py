@@ -1,7 +1,6 @@
 import pytest
 import torch
-import torch.nn as nn
-from utils.metrics import CeDiceLoss
+from ucs.utils.metrics import CeDiceLoss
 
 
 @pytest.fixture
@@ -57,8 +56,9 @@ def test_weights_application():
     assert loss.item() > 0, "Loss value should be positive."
 
     # Ensure weights are reflected in CrossEntropyLoss
-    assert torch.equal(loss_function.ce_loss.weight, torch.tensor(
-        weights, dtype=torch.float)), "Weights should match."
+    assert torch.equal(
+        loss_function.ce_loss.weight, torch.tensor(weights, dtype=torch.float)
+    ), "Weights should match."
 
 
 def test_alpha_scaling():
@@ -66,10 +66,8 @@ def test_alpha_scaling():
     inputs = torch.randn(4, 3, 256, 256)
     targets = torch.randint(0, 3, (4, 256, 256))
 
-    loss_function1 = CeDiceLoss(
-        num_classes=3, alpha=1.0)  # Only Cross-Entropy
-    loss_function2 = CeDiceLoss(
-        num_classes=3, alpha=0.0)  # Only Dice
+    loss_function1 = CeDiceLoss(num_classes=3, alpha=1.0)  # Only Cross-Entropy
+    loss_function2 = CeDiceLoss(num_classes=3, alpha=0.0)  # Only Dice
 
     ce_loss = loss_function1(inputs, targets)
     dice_loss = loss_function2(inputs, targets)

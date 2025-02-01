@@ -1,11 +1,20 @@
 # util/metric.py
-from typing import Optional, Literal
-import torch
-import torch.nn as nn
+from typing import Literal, Optional
+
 import numpy as np
+import torch
+from torch import nn
+from torchmetrics import (
+    Accuracy,
+    Dice,
+    JaccardIndex,
+    MetricCollection,
+    Precision,
+    Recall,
+)
 from tqdm import tqdm
-from torchmetrics import MetricCollection, JaccardIndex, Dice, Accuracy, Precision, Recall
-from ucs.core.errors import NormalizeError, LossWeightsSizeError, LossWeightsTypeError
+
+from ucs.core.errors import LossWeightsSizeError, LossWeightsTypeError, NormalizeError
 
 
 class DiceLoss(nn.Module):
@@ -16,14 +25,17 @@ class DiceLoss(nn.Module):
 
     def forward(self, inputs, targets):
         """
-        inputs: Tensor of shape (B, C, H, W), probabilities
-        target: Tensor of shape (B, H, W), class indices
+        Args:
+            inputs: Tensor of shape (B, C, H, W), probabilities
+            target: Tensor of shape (B, H, W), class indices
         """
 
         # One-hot encode the target to match the shape of inputs (B, C, H, W)
-        target_one_hot = torch.nn.functional.one_hot(
-            targets, num_classes=inputs.shape[1]
-        ).permute(0, 3, 1, 2).float()
+        target_one_hot = (
+            torch.nn.functional.one_hot(targets, num_classes=inputs.shape[1])
+            .permute(0, 3, 1, 2)
+            .float()
+        )
 
         if self.ignore_index is not None:
             # Create a mask for valid pixels (ignore_index excluded)
@@ -38,7 +50,7 @@ class DiceLoss(nn.Module):
         union = inputs.sum(dim=(2, 3)) + target_one_hot.sum(dim=(2, 3))
 
         # Compute Dice coefficient for each class and average across classes
-        dice = (2. * intersection + self.smooth) / (union + self.smooth)
+        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
         mean_dice = dice.mean(dim=1)  # Average across classes for each batch
 
         return 1 - mean_dice.mean()  # Average across batch
@@ -48,21 +60,21 @@ class DiceLoss(nn.Module):
 class CeDiceLoss(nn.Module):
     """
     A combined loss function that incorporates Cross-Entropy Loss (CE) and Dice Loss
-    for semantic segmentation tasks. The CE loss accounts for class imbalance, 
-    while the Dice loss measures the overlap between predicted and ground truth masks, 
+    for semantic segmentation tasks. The CE loss accounts for class imbalance,
+    while the Dice loss measures the overlap between predicted and ground truth masks,
     providing a robust metric for segmentation accuracy.
 
     Args:
         num_classes (int): The total number of classes in the segmentation task.
-        alpha (float, optional): Weight for Cross-Entropy Loss in the combined loss. 
+        alpha (float, optional): Weight for Cross-Entropy Loss in the combined loss.
             Default is 0.8.
         beta (float, optional): Weight for Dice Loss in the combined loss. Default is 0.2.
-        weights (list, np.ndarray, torch.Tensor, optional): Class weights for 
+        weights (list, np.ndarray, torch.Tensor, optional): Class weights for
             handling imbalanced datasets. If provided, it must match the number of classes.
-        ignore_index (int, optional): Class index to ignore during loss computation. 
-            Pixels with this index are excluded from both CE and Dice loss calculations. 
+        ignore_index (int, optional): Class index to ignore during loss computation.
+            Pixels with this index are excluded from both CE and Dice loss calculations.
             Default is None.
-        reduction (str, optional): Specifies the reduction to apply to the output of 
+        reduction (str, optional): Specifies the reduction to apply to the output of
             the CE loss. Must be one of "none", "mean" (default), or "sum".
 
     Attributes:
@@ -75,7 +87,9 @@ class CeDiceLoss(nn.Module):
         dice_loss (Dice): Dice loss for multi-class segmentation.
     """
 
-    def __init__(self, num_classes, alpha=0.8, weights=None, ignore_index=None, reduction="mean"):
+    def __init__(
+        self, num_classes, alpha=0.8, weights=None, ignore_index=None, reduction="mean"
+    ):
         super().__init__()
         self.alpha = alpha
         self.beta = 1 - alpha
@@ -103,7 +117,7 @@ class CeDiceLoss(nn.Module):
         calculated by first applying a softmax function to the `inputs` to get the predicted probabilities.
         The Dice loss is computed by comparing the predicted probabilities with the target labels.
 
-        The total loss is a weighted sum of the CE loss and Dice loss, with the weights specified by 
+        The total loss is a weighted sum of the CE loss and Dice loss, with the weights specified by
         the `alpha` and `beta` parameters.
 
         Args:
@@ -126,7 +140,7 @@ class CeDiceLoss(nn.Module):
         Initialize and validate weights for a loss function.
 
         Args:
-            weights (list, np.ndarray, torch.Tensor, optional): Weighting factor(s) for each class. 
+            weights (list, np.ndarray, torch.Tensor, optional): Weighting factor(s) for each class.
             num_classes (int): The total number of classes for the loss function.
 
         Returns:
@@ -165,13 +179,15 @@ class FocalLoss(nn.CrossEntropyLoss):
         reduction (str, optional): Specifies the reduction to apply to the output. Defaults to 'mean'.
     """
 
-    def __init__(self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction='mean'):
+    def __init__(
+        self, num_classes, gamma=2.0, alpha=None, ignore_index=None, reduction="mean"
+    ):
         self.ignore_index = ignore_index if ignore_index is not None else -100
-        super().__init__(ignore_index=self.ignore_index, reduction='none')
+        super().__init__(ignore_index=self.ignore_index, reduction="none")
         self.gamma = gamma
         self.reduction = reduction
         self.num_classes = num_classes
-        self.alpha = self.__set_alpha__(alpha)
+        self.alpha = self._set_alpha(alpha)
 
     def forward(self, inputs, target):
         """
@@ -202,29 +218,28 @@ class FocalLoss(nn.CrossEntropyLoss):
             target_one_hot.scatter_(1, target.unsqueeze(1), 1)
 
             # Apply alpha weights properly (with broadcasting)
-            alpha_weights = (self.alpha.view(1, -1, 1, 1)
-                             * target_one_hot).sum(dim=1)
+            alpha_weights = (self.alpha.view(1, -1, 1, 1) * target_one_hot).sum(dim=1)
 
             # Mask the alpha weights for the ignored indices
-            valid_mask = (target != self.ignore_index)
+            valid_mask = target != self.ignore_index
             focal_loss = alpha_weights * focal_loss
 
             # Mask focal loss for ignored indices
             focal_loss = focal_loss[valid_mask]
         else:
             # If no alpha is provided, proceed without weighting
-            valid_mask = (target != self.ignore_index)
+            valid_mask = target != self.ignore_index
             focal_loss = focal_loss[valid_mask]
 
         # Apply reduction
-        if self.reduction == 'mean':
+        if self.reduction == "mean":
             return focal_loss.mean()
-        elif self.reduction == 'sum':
+        if self.reduction == "sum":
             return focal_loss.sum()
-        else:  # 'none'
-            return focal_loss
+        # 'none'
+        return focal_loss
 
-    def __set_alpha__(self, alpha):
+    def _set_alpha(self, alpha):
         """
         Set the alpha value for class weighting.
 
@@ -233,7 +248,11 @@ class FocalLoss(nn.CrossEntropyLoss):
 
         Returns:
             torch.Tensor: The alpha tensor.
+
+        Raises:
+            TypeError: If the provided alpha is not of type float, list, np.ndarray, or torch.Tensor.
         """
+
         if alpha is None:
             return torch.ones(self.num_classes)
 
@@ -257,7 +276,7 @@ class SegMetrics(MetricCollection):
     Args:
         num_classes (int): Number of classes in the segmentation task.
         device (str, optional): Device to run the metrics on. Default is "cpu".
-        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the inputs gradient. Default is None.
 
     Attributes:
         num_classes (int): The number of classes.
@@ -268,16 +287,22 @@ class SegMetrics(MetricCollection):
     def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
         self.num_classes = num_classes
         self.ignore_index = ignore_index
-        self.metrics = {
-            "mean_iou": JaccardIndex(task='multiclass', average="macro", num_classes=num_classes, ignore_index=self.ignore_index).to(device),
-            "mean_dice": Dice(average='macro', num_classes=num_classes, ignore_index=self.ignore_index).to(device)
+        metrics = {
+            "mean_iou": JaccardIndex(
+                task="multiclass",
+                average="macro",
+                num_classes=num_classes,
+                ignore_index=self.ignore_index,
+            ).to(device),
+            "mean_dice": Dice(
+                average="macro", num_classes=num_classes, ignore_index=self.ignore_index
+            ).to(device),
         }
-        super().__init__(self.metrics)
+        super().__init__(metrics)
 
     def update(self, predicted: torch.Tensor, targets: torch.Tensor) -> None:
         predicted = predicted.view(-1)
         targets = targets.view(-1)
-
         super().update(predicted, targets)
 
 
@@ -289,7 +314,7 @@ class TestMetrics(SegMetrics):
     Args:
         num_classes (int): Number of classes in the segmentation task.
         device (str, optional): Device to run the metrics on. Default is "cpu".
-        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
+        ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the inputs gradient. Default is None.
 
     Attributes:
         num_classes (int): The number of classes.
@@ -300,14 +325,35 @@ class TestMetrics(SegMetrics):
     def __init__(self, num_classes, device="cpu", ignore_index: Optional[int] = None):
         super().__init__(num_classes, device, ignore_index)
         test_metrics = {
-            "accuracy": Accuracy(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
-            "precision": Precision(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
-            "recall": Recall(task="multiclass", num_classes=self.num_classes, average="macro", ignore_index=self.ignore_index).to(device),
+            "accuracy": Accuracy(
+                task="multiclass",
+                num_classes=self.num_classes,
+                average="macro",
+                ignore_index=self.ignore_index,
+            ).to(device),
+            "precision": Precision(
+                task="multiclass",
+                num_classes=self.num_classes,
+                average="macro",
+                ignore_index=self.ignore_index,
+            ).to(device),
+            "recall": Recall(
+                task="multiclass",
+                num_classes=self.num_classes,
+                average="macro",
+                ignore_index=self.ignore_index,
+            ).to(device),
         }
         self.add_metrics(test_metrics)
 
 
-def compute_class_weights(dataloader, num_classes, mask_key="labels", normalize: Literal["sum", "max", "raw", "balanced"] = "raw", ignore_index=None):
+def compute_class_weights(
+    dataloader,
+    num_classes,
+    mask_key="labels",
+    normalize: Literal["sum", "max", "raw", "balanced"] = "raw",
+    ignore_index=None,
+):
     """
     Compute class weights based on the frequencies of each class in the dataset.
 
@@ -344,7 +390,7 @@ def compute_class_weights(dataloader, num_classes, mask_key="labels", normalize:
     class_weights = torch.where(
         class_counts > 0,
         1 / torch.log(1.02 + (class_counts / total_pixels) + 1e-6),
-        torch.tensor(0.0, dtype=torch.float32)
+        torch.tensor(0.0, dtype=torch.float32),
     )
 
     # Compute class weights based on the normalization strategy
@@ -355,10 +401,8 @@ def compute_class_weights(dataloader, num_classes, mask_key="labels", normalize:
         class_weights /= class_weights.max()
 
     elif normalize == "balanced":
-        effective_classes = num_classes - \
-            (1 if ignore_index is not None else 0)
-        class_weights = class_weights * \
-            (effective_classes / class_weights.sum())
+        effective_classes = num_classes - (1 if ignore_index is not None else 0)
+        class_weights = class_weights * (effective_classes / class_weights.sum())
 
     elif normalize == "raw":
         pass

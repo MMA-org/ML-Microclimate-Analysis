@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from ucs.data.data_module import SegmentationDataModule
 from ucs.utils import find_checkpoint, get_last_version
 
@@ -36,15 +37,13 @@ def save_confusion_matrix(conf_matrix, metrics, labels, save_path, version):
         save_path: Path to save the confusion matrix plot.
     """
     from ucs.utils import save_confusion_matrix_plot
+
     # Save confusion matrix plot
     cm_save_path = Path(save_path) / f"version_{version}_confusion_matrix.png"
 
     print(f"Saving confusion matrix to: {cm_save_path}")
     save_confusion_matrix_plot(
-        conf_matrix=conf_matrix,
-        labels=labels,
-        save_path=cm_save_path,
-        metrics=metrics
+        conf_matrix=conf_matrix, labels=labels, save_path=cm_save_path, metrics=metrics
     )
     print("Confusion matrix saved successfully.")
 
@@ -66,5 +65,10 @@ def evaluate(config, version=None):
     metrics = tests[0]
     conf_matrix = model.calculate_confusion_matrix()
 
-    save_confusion_matrix(conf_matrix, metrics, list(
-        config.training.id2label.values()), config.directories.results, version)
+    save_confusion_matrix(
+        conf_matrix,
+        metrics,
+        list(config.training.id2label.values()),
+        config.directories.results,
+        version,
+    )
