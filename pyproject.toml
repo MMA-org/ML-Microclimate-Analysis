@@ -15,8 +15,7 @@ authors = [
 ]
 keywords = ["urban climate", "segmentation", "deep learning", "image analysis"]
 dependencies = [
-    "albucore==0.0.21",
-    "albumentations==1.4.22",
+    "albumentations==2.0.1",
     "datasets==3.0.0",
     "matplotlib==3.9.2",
     "pytorch-lightning==2.4.0",
@@ -26,6 +25,7 @@ dependencies = [
     "tqdm==4.66.5",
     "transformers==4.44.2",
     "tensorboardX==2.6.2.2",
+    "pydantic== 2.9.2"
 ]
 
 
@@ -33,17 +33,16 @@ dependencies = [
 Homepage = "https://github.com/MMA-org/ML-Microclimate-Analysis"
 Documentation = "https://mma-org.github.io/ML-Microclimate-Analysis/" 
 [project.scripts]
-landcover-model = "main:main"
+landcover-model = "ucs.main:main"
 ucs = "ucs.main:main"
 
 
 [tool.setuptools]
-package-dir = { "" = "ucs" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["ucs"]
-include = ["data","core","model","utils"]
+where = ["."]
+include = ["ucs*"]
 
 [project.optional-dependencies]
 dev = [

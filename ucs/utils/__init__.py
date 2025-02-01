@@ -3,7 +3,6 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
-import json
 
 
 def get_last_version(logs_dir: Path) -> int:
@@ -47,7 +46,7 @@ def get_next_version(logs_dir: Path) -> str:
     return f"version_{next_version}"
 
 
-def find_checkpoint(config, version: int) -> Path:
+def find_checkpoint(checkpoints_dir, version: int) -> Path:
     """
     Locate the single checkpoint file in the specified versioned directory.
 
@@ -63,9 +62,8 @@ def find_checkpoint(config, version: int) -> Path:
         CheckpointNotFoundError: If no checkpoint file is found.
         MultipleCheckpointsError: If multiple checkpoint files are found.
     """
-    from core.errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
-    checkpoint_dir = Path(config.directories.logs) / \
-        "checkpoints" / f"version_{version}"
+    from ucs.core.errors import CheckpointNotFoundError, CheckpointDirectoryError, MultipleCheckpointsError
+    checkpoint_dir = Path(checkpoints_dir) / f"version_{version}"
 
     # Check if the checkpoint directory exists
     if not checkpoint_dir.exists() or not checkpoint_dir.is_dir():
@@ -136,33 +134,36 @@ def save_confusion_matrix_plot(conf_matrix, labels, save_path, metrics=None, tit
     plt.close()
 
 
-def load_class_weights(weights_file):
+def load_class_weights(class_weights_dir):
     """
     Load precomputed class weights from a file and return as a torch tensor.
 
     Args:
-        weights_file (Path): path to the weights file.
+        class_weights_dir (str): path to the dir contain weights file.
 
     Returns:
         torch.Tensor: Loaded class weights as a tensor.
     """
-    import torch
-    print("Loading precomputed class weights from file.")
-    with weights_file.open("r") as f:
-        return torch.tensor(json.load(f), dtype=torch.float)
+    from torch import load
+    weights_file = (Path(class_weights_dir)/"class_weights.pt").resolve()
+    if weights_file.exists():
+        print("Loading precomputed class weights from file.")
+        return load(str(weights_file), weights_only=True)
+    return None
 
 
-def save_class_weights(weights_file, class_weights):
+def save_class_weights(class_weights_dir, class_weights):
     """
     Save computed class weights to a file.
 
     Args:
-        weights_file (Path): path to the weights file.
+        class_weights_dir (str): path to the dir contain weights file.
         class_weights (list): Class weights to save.
     """
+    from torch import save
+    weights_file = (Path(class_weights_dir)/"class_weights.pt").resolve()
     print("Saving class weights to file.")
-    with weights_file.open("w") as f:
-        json.dump(class_weights.tolist(), f)
+    save(class_weights, str(weights_file))
 
 
 def apply_color_map(mask, id2color) -> np.ndarray:

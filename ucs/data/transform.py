@@ -19,55 +19,33 @@ class Augmentation:
         photometric adjustments (e.g., brightness, contrast), distortions, occlusion handling,
         and tensor conversion.
         Example:
-            Create callable albumination.Compose::
+            Create callable albumentations.Compose::
 
             transform = Augmentation()
-            image,mask = transform(image,mask) # return augmented image and mask
-
+            # return augmented image and mask
+            image, mask = transform(image, mask)
         """
         self.transform = A.Compose([
             # Geometric Augmentations
-            A.OneOf([
-                A.HorizontalFlip(p=0.5),
-                A.VerticalFlip(p=0.5),
-                A.RandomRotate90(p=0.5),
-            ], p=0.5),
-
+            # Only horizontal flips, no 90-degree rotations
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.5),  # Added vertical flip
+            A.Affine(translate_percent=0.0625, scale=(0.9, 1.1),
+                     rotate=20, p=0.5),  # Replaces ShiftScaleRotate
+            # Helps small objects
+            A.ElasticTransform(alpha=1, sigma=50, p=0.3),
+            A.GridDistortion(num_steps=5, distort_limit=0.3, p=0.3),
             # Photometric Augmentations
-            A.OneOf([
-                A.RandomBrightnessContrast(
-                    brightness_limit=0.2, contrast_limit=0.2, p=0.5),
-                A.RandomGamma(gamma_limit=(80, 120), p=0.5),
-                A.HueSaturationValue(
-                    hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.3),
-            ], p=0.3),
-
-            # Distortions
-            A.OneOf([
-                A.ElasticTransform(
-                    alpha=1, sigma=50,
-                    border_mode=0,  # Replace deprecated mode with border_mode
-                    p=0.5
-                ),
-                A.GridDistortion(
-                    num_steps=5, distort_limit=0.3,
-                    border_mode=0,  # Replace deprecated mode with border_mode
-                    p=0.5
-                ),
-                A.OpticalDistortion(
-                    distort_limit=0.5, shift_limit=0.05,
-                    border_mode=0,  # Replace deprecated mode with border_mode
-                    p=0.5
-                ),
-            ], p=0.3),
-
-            # Blur
+            A.RandomBrightnessContrast(
+                brightness_limit=0.1, contrast_limit=0.1, p=0.3),
+            A.HueSaturationValue(
+                hue_shift_limit=5, sat_shift_limit=10, val_shift_limit=10, p=0.2),
+            A.GaussNoise(p=0.3),  # Added Gaussian noise
+            A.CLAHE(clip_limit=2.0, p=0.2),  # Enhances fine details
             A.OneOf([
                 A.MotionBlur(blur_limit=3, p=0.2),
                 A.GaussianBlur(blur_limit=(3, 7), p=0.2),
-            ], p=0.2),
-
-            # To Tensor (must always be last)
+            ], p=0.4),
             ToTensorV2()
         ])
 
