@@ -1,7 +1,9 @@
 import os
-import sys
-from sphinx.ext.autodoc import ClassDocumenter, _
 import re
+import sys
+
+from sphinx.ext.autodoc import ClassDocumenter, _
+
 # -- Project information -----------------------------------------------------
 project = 'ML-Microclimate-Analysis'
 copyright = '2025, Nave Cohen, Erik Pinhasov'
@@ -13,14 +15,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(current_dir, "../src")))
 
 # -- General configuration ---------------------------------------------------
 extensions = [
-    'sphinx.ext.autodoc',         # Automatically document code
-    'sphinx.ext.napoleon',        # Support for Google-style docstrings
-    'sphinx.ext.viewcode',        # Add links to source code
-    'myst_parser',                # Markdown support
-    'sphinx.ext.doctest',         # Run doctests
-    'sphinx.ext.intersphinx',     # Link to other project's documentation
-    'sphinx_copybutton',          # Add copy buttons to code blocks
-    'sphinx.ext.ifconfig',        # Conditional content
+    'sphinx.ext.autodoc',  # Automatically document code
+    'sphinx.ext.napoleon',  # Support for Google-style docstrings
+    'sphinx.ext.viewcode',  # Add links to source code
+    'myst_parser',  # Markdown support
+    'sphinx.ext.doctest',  # Run doctests
+    'sphinx.ext.intersphinx',  # Link to other project's documentation
+    'sphinx_copybutton',  # Add copy buttons to code blocks
+    'sphinx.ext.ifconfig',  # Conditional content
 ]
 
 # -- Intersphinx configuration -----------------------------------------------

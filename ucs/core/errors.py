@@ -58,7 +58,7 @@ class LossWeightsTypeError(BaseError):
     """Exception raised if 'weights' got wrong type."""
 
     exit_code = 7
-    message = "'weights' need to be type list|tensor got {}."
+    message = "'weights' need to be type tuple|np.ndarray|list|tensor got {}."
 
 
 class LossWeightsSizeError(BaseError):

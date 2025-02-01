@@ -158,8 +158,8 @@ class CeDiceLoss(nn.Module):
         if not isinstance(weights, torch.Tensor):
             try:
                 weights = torch.tensor(weights, dtype=torch.float)
-            except Exception:
-                raise LossWeightsTypeError(type(weights))
+            except ValueError as exc:
+                raise LossWeightsTypeError(type(weights)) from exc
         # Validate size
         if weights.size(0) != num_classes:
             raise LossWeightsSizeError(weights.size(0), num_classes)

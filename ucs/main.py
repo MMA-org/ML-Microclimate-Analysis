@@ -58,7 +58,6 @@ def create_train_parser(subparsers, common_parser):
         "--max_epochs", type=int, help="Maximum number of epochs."
     )
     train_parser.add_argument("--learning_rate", type=float, help="Learning rate.")
-    train_parser.add_argument("--dropout", type=float, help="Probability for dropout.")
     train_parser.add_argument("--weight_decay", type=float, help="Weight decay.")
     train_parser.add_argument(
         "--model_name",

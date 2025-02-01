@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from ucs.utils.callbacks import SaveModel
 
 
@@ -43,8 +44,7 @@ def test_save_model_calls_super_save_checkpoint(
     callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
     # Check that the parent method was called
-    mock_super_save.assert_called_once_with(
-        mock_trainer, "mock_checkpoint.ckpt")
+    mock_super_save.assert_called_once_with(mock_trainer, "mock_checkpoint.ckpt")
 
 
 @patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")
@@ -59,8 +59,7 @@ def test_save_model_saves_pretrained_on_global_zero(
     callback._save_checkpoint(mock_trainer, "mock_checkpoint.ckpt")
 
     # Ensure save_pretrained_model was called
-    mock_pl_module.save_pretrained_model.assert_called_once_with(
-        "mock_pretrained_dir")
+    mock_pl_module.save_pretrained_model.assert_called_once_with("mock_pretrained_dir")
 
 
 @patch("pytorch_lightning.callbacks.ModelCheckpoint._save_checkpoint")

@@ -1,6 +1,8 @@
 import os
 import tempfile
+
 import yaml
+
 from ucs.utils.config import Config
 
 
@@ -55,8 +57,7 @@ def test_yaml_and_cli_combined():
         with open(temp_file_path, "w") as yaml_file:
             yaml.dump(yaml_data, yaml_file)
 
-    config = Config.load_config(
-        temp_file_path, batch_size=128, early_stop_patience=20)
+    config = Config.load_config(temp_file_path, batch_size=128, early_stop_patience=20)
 
     assert config.dataset.batch_size == 128
     assert config.callbacks.early_stop_patience == 20

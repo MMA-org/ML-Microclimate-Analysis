@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
 import torch
-from ucs.data.dataset import SemanticSegmentationDataset
-from ucs.data.transform import Augmentation
 from PIL import Image
 from transformers import SegformerImageProcessor
+
+from ucs.data.dataset import SemanticSegmentationDataset
+from ucs.data.transform import Augmentation
 
 
 class MockFeatureExtractor:
@@ -57,6 +58,5 @@ def test_getitem_with_and_without_transform(mock_data, use_transform):
     assert "pixel_values" in sample
     assert "labels" in sample
     assert isinstance(sample["pixel_values"], torch.Tensor)
-    assert sample["pixel_values"].shape == (
-        3, 512, 512), "Pixel values shape mismatch"
+    assert sample["pixel_values"].shape == (3, 512, 512), "Pixel values shape mismatch"
     assert sample["labels"].shape == (512, 512), "Labels shape mismatch"

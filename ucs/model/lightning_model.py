@@ -150,11 +150,12 @@ class SegformerFinetuner(pl.LightningModule):
         super().on_train_start()
         self.model.train()
 
-    def on_test_start(self):  # pylint: disable=attribute-defined-outside-init
+    def on_test_start(self):
         """
         Add test-specific metrics at the start of the test phase.
         """
         super().on_test_start()
+        # pylint: disable=attribute-defined-outside-init
         self.metrics = TestMetrics(
             self.num_classes, self.device, self.hparams.ignore_index
         )
@@ -179,8 +180,7 @@ class SegformerFinetuner(pl.LightningModule):
             mode="bilinear",
             align_corners=False,
         )
-        loss = self.criterion(
-            upsampled_logits, masks) if masks is not None else None
+        loss = self.criterion(upsampled_logits, masks) if masks is not None else None
         return loss, upsampled_logits.argmax(dim=1)
 
     def log_step(self, stage, loss, metrics):
@@ -192,8 +192,7 @@ class SegformerFinetuner(pl.LightningModule):
             loss (torch.Tensor): Loss value for the current step.
             metrics (dict): Computed segmentation metrics.
         """
-        self.log(f"{stage}_loss", loss, prog_bar=True,
-                 on_step=False, on_epoch=True)
+        self.log(f"{stage}_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
 
         for metric_name, value in metrics.items():
             self.log(
