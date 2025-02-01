@@ -62,9 +62,12 @@ class Config:
         config = cls()
 
         if config_path:
-            with open(config_path, "r") as file:
-                yaml_data = yaml.safe_load(file) or {}
-            config = cls(**yaml_data)
+            try:
+                with open(config_path, "r") as file:
+                    yaml_data = yaml.safe_load(file) or {}
+                config = cls(**yaml_data)
+            except:
+                pass
 
         config.dataset.model_name = config.training.model_name
         config._apply_overrides(overrides)
