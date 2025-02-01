@@ -1,7 +1,6 @@
 
-from core.parser import ArgParser
+from ucs.core.parser import ArgParser
 from argparse import RawTextHelpFormatter
-from utils.config import Config
 
 
 def create_common_parser():
@@ -41,7 +40,7 @@ def create_train_parser(subparsers, common_parser):
     train_parser.add_argument(
         "--max_epochs", type=int,  help="Maximum number of epochs.")
     train_parser.add_argument(
-        "--lr", type=float,  help="Learning rate.")
+        "--learning_rate", type=float,  help="Learning rate.")
     train_parser.add_argument(
         "--dropout", type=float,  help="Probability for dropout.")
     train_parser.add_argument(
@@ -60,11 +59,15 @@ def create_train_parser(subparsers, common_parser):
         "--save_model_mode", type=str, choices=["min", "max"], help="Save model callback metrics mode for metrics.")
     train_parser.add_argument("--checkpoints_dir", type=str, metavar="[path]",
                               help="Path to checkpoints directiory.")
+    train_parser.add_argument(
+        "--num_workers", type=int, help="Number of subprocesses for data loading. Use 0 for single-threaded loading.")
+    train_parser.add_argument("--pin_memory", type=bool,
+                              help="Enable pinned memory for faster GPU transfer.")
+    train_parser.add_argument("--do_reduce_labels", type=bool,
+                              help="Reduce all labels by 1, converting 0 to 255.")
     # Add focal loss arguments
     train_parser.add_argument(
         "--alpha", type=float,  help="loss alpha.")
-    train_parser.add_argument(
-        "--beta", type=float,  help="loss beta.")
     train_parser.add_argument(
         "--ignore_index", type=int,  help="loss function ignore index.")
     train_parser.add_argument(
@@ -118,7 +121,7 @@ def parse_args():
 
     # Create subparsers
     subparsers = parser.add_subparsers(
-        dest="command", required=False, title="Commands")
+        dest="command", required=False, title="Commands", metavar="[command]")
 
     # Common parser for shared arguments
     common_parser = create_common_parser()
@@ -149,19 +152,17 @@ def main():
     and dispatches train or evaluate based on the selected command.
     """
     args = parse_args()
+    from ucs.utils.config import Config
     args_dict, config_path, command = handle_arparse(args)
 
     # Load configuration
-    config = Config(config_path=config_path)
-    config.load_from_args(args_dict)
-    config.__create_directories__()
+    config = Config.load_config(config_path, **args_dict)
 
-    # Dispatch the appropriate subcommand
     if command == "train":
-        from model.train import train
+        from ucs.model.train import train
         train(config, resume_version=args.resume)
     elif command == "evaluate":
-        from model.evaluate import evaluate
+        from ucs.model.evaluate import evaluate
         evaluate(config, version=args.version)
 
 

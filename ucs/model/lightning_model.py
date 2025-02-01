@@ -1,9 +1,11 @@
 import pytorch_lightning as pl
 from transformers import SegformerForSemanticSegmentation
 import torch
+from dataclasses import asdict
 from torch import nn
-from utils.metrics import SegMetrics, CeDiceLoss, TestMetrics
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from ucs.utils.config import TrainingConfig
+from ucs.utils.metrics import SegMetrics, FocalLoss, TestMetrics
 
 if torch.cuda.is_available():
     torch.set_float32_matmul_precision('medium')  # pragma: no cover
@@ -18,8 +20,7 @@ class SegformerFinetuner(pl.LightningModule):
         model_name (str): The name of the Segformer model variant to use. Default is "b0".
         max_epochs (int): Maximum number of training epochs. Default is 50.
         lr (float): Learning rate for the optimizer. Default is 2e-5.
-        alpha (float): Weighting factor for Dice loss. Default is 0.7.
-        beta (float): Weighting factor for cross-entropy loss. Default is 0.3.
+        alpha (float): Weighting factor for Dice loss. Default is 0.8.
         class_weight (torch.Tensor, optional): Class weights for the loss function. Default is None.
         ignore_index (int, optional): Specifies a target value that is ignored and does not contribute to the input gradient. Default is None.
         weight_decay (float): Weight decay (L2 regularization) coefficient for the optimizer. Helps prevent overfitting. Default is 1e-3.
@@ -36,42 +37,68 @@ class SegformerFinetuner(pl.LightningModule):
         test_results (dict): Contains 'predictions' and 'ground_truths' tensors for calculating confusion matrix after tests.
     """
 
-    def __init__(self, id2label, model_name="b0", max_epochs=50, lr=2e-5, alpha=0.7, beta=0.3, class_weight=None, ignore_index=None, weight_decay=1e-3):
+    def __init__(self, config: TrainingConfig = None, class_weights=None, **kwargs):
         super().__init__()
-        self.save_hyperparameters(ignore=['id2label'])
+        config = config or TrainingConfig()
 
-        self.id2label = id2label
-        self.label2id = {v: k for k, v in id2label.items()}
-        self.num_classes = len(id2label)
-        self.learning_rate = lr
-        self.ignore_index = ignore_index
-        self.weight_decay = weight_decay
-        self.max_epochs = max_epochs
+        # Save all hyperparameters, handle eta_min & class_weights
+        self._save_hparams(config, class_weights, **kwargs)
 
         # Initialize the model
+        self._initialize_model()
+
+        # Initialize metrics
+        self._initialize_metrics()
+
+        # Initialize loss function
+        self._initialize_loss()
+
+        # Initialize test results storage
+        self.test_results = {"predictions": torch.tensor(
+            []), "ground_truths": torch.tensor([])}
+
+    def _save_hparams(self, config, class_weights, **kwargs):
+        """Handles hyperparameter saving and ensures eta_min is set correctly."""
+        class_weights = class_weights.tolist() if class_weights is not None else None
+        self.save_hyperparameters(
+            {**config.__dict__, **kwargs, "class_weights": class_weights})
+
+        if not hasattr(self.hparams, "eta_min"):
+            self.hparams.eta_min = self.hparams.learning_rate * 0.01
+
+        if self.hparams.class_weights is not None:
+            self.hparams.class_weights = torch.tensor(
+                self.hparams.class_weights, dtype=torch.float32)
+
+    def _initialize_model(self):
+        """Loads the SegFormer model with the correct parameters."""
+        self.label2id = {v: k for k, v in self.hparams.id2label.items()}
+        self.num_classes = len(self.hparams.id2label)
+
         self.model = SegformerForSemanticSegmentation.from_pretrained(
-            f"nvidia/segformer-{model_name}-finetuned-ade-512-512",
+            f"nvidia/segformer-{self.hparams.model_name}-finetuned-ade-512-512",
             num_labels=self.num_classes,
-            id2label=self.id2label,
+            id2label=self.hparams.id2label,
             label2id=self.label2id,
-            ignore_mismatched_sizes=True
+            ignore_mismatched_sizes=True,
+            semantic_loss_ignore_index=self.hparams.ignore_index
         )
         self.model.train()
-        # Store test results
-        self.test_results = {"predictions": torch.tensor(
-            []), "ground_truths": torch.tensor([])}  # Clear previous test results
-        # Initialize metrics and move to the correct device
-        self.metrics = SegMetrics(
-            self.num_classes, self.device, ignore_index=self.ignore_index)
 
-        # Initialize the loss function (CeDiceLoss)
-        self.criterion = CeDiceLoss(
+    def _initialize_metrics(self):
+        """Initializes metrics for evaluation."""
+        self.metrics = SegMetrics(
+            self.num_classes, self.device, ignore_index=self.hparams.ignore_index
+        )
+
+    def _initialize_loss(self):
+        """Initializes the loss function."""
+        self.criterion = FocalLoss(
             num_classes=self.num_classes,
-            weights=class_weight,
-            alpha=alpha,
-            beta=beta,
+            alpha=self.hparams.class_weights,
+            gamma=self.hparams.gamma,
             reduction='mean',
-            ignore_index=self.ignore_index
+            ignore_index=self.hparams.ignore_index
         )
 
     def on_fit_start(self):
@@ -94,7 +121,7 @@ class SegformerFinetuner(pl.LightningModule):
         """
         super().on_test_start()
         self.metrics = TestMetrics(
-            self.num_classes, self.device, self.ignore_index)
+            self.num_classes, self.device, self.hparams.ignore_index)
 
     def forward(self, images, masks=None):
         """
@@ -238,9 +265,9 @@ class SegformerFinetuner(pl.LightningModule):
 
         # Set up the optimizer
         optimizer = torch.optim.AdamW(
-            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            self.parameters(), lr=self.hparams.learning_rate, weight_decay=self.hparams.weight_decay)
         scheduler = {
-            'scheduler': CosineAnnealingLR(optimizer, T_max=self.max_epochs, eta_min=self.learning_rate*0.01),
+            'scheduler': CosineAnnealingLR(optimizer, T_max=self.hparams.max_epochs, eta_min=self.hparams.eta_min),
             'interval': 'epoch',
             'frequency': 1
         }
@@ -313,5 +340,5 @@ class SegformerFinetuner(pl.LightningModule):
         # Compute the confusion matrix
         return confusion_matrix(
             y_true=ground_truths, y_pred=predictions, labels=list(
-                self.id2label.keys())
+                self.hparams.id2label.keys())
         )

@@ -1,11 +1,9 @@
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from transformers import SegformerImageProcessor
-from .dataset import SemanticSegmentationDataset
 from datasets import load_dataset
-from utils import load_class_weights, save_class_weights
-from utils.metrics import compute_class_weights
-from pathlib import Path
+from ucs.data.dataset import SemanticSegmentationDataset
+from ucs.utils.config import DatasetConfig
 
 
 class SegmentationDataModule(LightningDataModule):
@@ -34,7 +32,7 @@ class SegmentationDataModule(LightningDataModule):
         test_dataloader(): Returns a DataLoader for the test dataset.
     """
 
-    def __init__(self, dataset_path, batch_size, num_workers, model_name, id2label, transform=None, class_weights_path=None, weighting_strategy='raw', ignore_index=None):
+    def __init__(self, config: DatasetConfig = None, transform=None, **kwargs):
         """
         Initializes the SegmentationDataModule.
 
@@ -50,20 +48,17 @@ class SegmentationDataModule(LightningDataModule):
             ignore_index (int, optional): Index to ignore during class weight computation.
         """
         super().__init__()
-        self.dataset_path = dataset_path
-        self.batch_size = batch_size
-        self.num_workers = num_workers
+        self._load_config(config or DatasetConfig(), kwargs)
         self.transform = transform
-        self.weighting_strategy = weighting_strategy
-        self.class_weights_path = class_weights_path
-        self.id2label = id2label
-        self.ignore_index = ignore_index
-        self.class_weights = None
-        self.pin_memory = True
-        self.persistent_workers = True if num_workers > 0 else False
+        self.persistent_workers = True if self.num_workers > 0 else False
         self.feature_extractor = SegformerImageProcessor.from_pretrained(
-            f"nvidia/segformer-{model_name}-finetuned-ade-512-512", do_reduce_labels=False
+            f"nvidia/segformer-{self.model_name}-finetuned-ade-512-512", do_reduce_labels=self.do_reduce_labels
         )
+
+    def _load_config(self, config: DatasetConfig, overrides: dict):
+        """Assign config values to self, allowing overrides from kwargs."""
+        for key, value in vars(config).items():
+            setattr(self, key, overrides.get(key, value))
 
     def prepare_data(self):
         """
@@ -79,14 +74,13 @@ class SegmentationDataModule(LightningDataModule):
         Args:
             stage (str, optional): The stage to set up. Options are 'fit', 'validate', 'test'.
         """
-        if stage == "fit":
-            self.train_dataset = self._prepare_dataset(
-                self.raw_dataset["train"], self.transform)
-            self.val_dataset = self._prepare_dataset(
-                self.raw_dataset["validation"])
-            self.class_weights = self._compute_class_weights()
 
-        elif stage == "test":
+        self.train_dataset = self._prepare_dataset(
+            self.raw_dataset["train"], self.transform)
+        self.val_dataset = self._prepare_dataset(
+            self.raw_dataset["validation"])
+
+        if stage == "test":
             self.test_dataset = self._prepare_dataset(self.raw_dataset["test"])
 
     def train_dataloader(self):
@@ -109,29 +103,6 @@ class SegmentationDataModule(LightningDataModule):
             DataLoader: A PyTorch DataLoader for the test dataset.
         """
         return self._create_dataloader(self.test_dataset)
-
-    def _compute_class_weights(self):
-        """
-        Computes class weights based on the selected weighting strategy.
-
-        Returns:
-            torch.Tensor or None: A tensor containing class weights, or None if no weighting is applied.
-        """
-        if self.weighting_strategy == "none":
-            return None
-
-        weights_file = Path(self.class_weights_path)
-        if weights_file.exists():
-            return load_class_weights(weights_file)
-        # Compute class weights based on the weighting strategy
-        class_weights = compute_class_weights(
-            dataloader=self.train_dataloader(),
-            num_classes=len(self.id2label),
-            normalize=self.weighting_strategy,  # Pass the strategy here
-            ignore_index=self.ignore_index,
-        )
-        save_class_weights(weights_file, class_weights)
-        return class_weights
 
     def _prepare_dataset(self, dataset_split, transform=None):
         """
