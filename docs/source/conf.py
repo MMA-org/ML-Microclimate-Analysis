@@ -54,6 +54,7 @@ autodoc_default_options = {
     'undoc-members': False,  # Exclude undocumented members
     'exclude-members': '__weakref__',  # Exclude specific members
     'show-inheritance': True,
+    'private-members': False,
 }
 
 autodoc_typehints = "description"  # Include type hints in descriptions
