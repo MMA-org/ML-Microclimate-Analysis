@@ -15,8 +15,7 @@ authors = [
 ]
 keywords = ["urban climate", "segmentation", "deep learning", "image analysis"]
 dependencies = [
-    "albucore==0.0.21",
-    "albumentations==1.4.22",
+    "albumentations==2.0.1",
     "datasets==3.0.0",
     "matplotlib==3.9.2",
     "pytorch-lightning==2.4.0",
@@ -26,6 +25,7 @@ dependencies = [
     "tqdm==4.66.5",
     "transformers==4.44.2",
     "tensorboardX==2.6.2.2",
+    "pydantic== 2.9.2"
 ]
 
 
@@ -33,27 +33,26 @@ dependencies = [
 Homepage = "https://github.com/MMA-org/ML-Microclimate-Analysis"
 Documentation = "https://mma-org.github.io/ML-Microclimate-Analysis/" 
 [project.scripts]
-landcover-model = "main:main"
+landcover-model = "ucs.main:main"
 ucs = "ucs.main:main"
 
 
 [tool.setuptools]
-package-dir = { "" = "ucs" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["ucs"]
-include = ["data","core","model","utils"]
+where = ["."]
+include = ["ucs*"]
 
 [project.optional-dependencies]
 dev = [
     "pre-commit",
     "black",
-    "flake8",
     "pytest",
     "pytest-mock",
     "coverage",
     "pytest-cov",
+    "isort",
 ]
 docs = [
     "sphinx>=4.0",
@@ -71,3 +70,16 @@ omit = ["ucs/main.py", "ucs/model/evaluate.py", "ucs/model/train.py"]
 testpaths = ["tests"]
 filterwarnings = ["ignore::UserWarning"]
 addopts = "--cov=ucs --cov-report=term-missing --cov-report=xml"
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310']
+skip-string-normalization = true  # Avoids changing " to '
+
+[tool.isort]
+profile = "black"  # Match isort formatting with Black
+multi_line_output = 3
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 88
+combine_as_imports = true  # Merge "import x as y" imports into one line

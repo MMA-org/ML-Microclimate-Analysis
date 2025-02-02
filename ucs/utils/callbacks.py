@@ -1,12 +1,11 @@
-from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.callbacks import ModelCheckpoint, Callback
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint
 
 
 class SaveModel(ModelCheckpoint):
     """
     A PyTorch Lightning callback to save the pretrained model after checkpointing.
 
-    This callback extends the functionality of ModelCheckpoint to save the pretrained 
+    This callback extends the functionality of ModelCheckpoint to save the pretrained
     model to a specified directory in addition to saving the training checkpoint.
 
     Args:
@@ -30,18 +29,17 @@ class SaveModel(ModelCheckpoint):
         super()._save_checkpoint(trainer, filepath)
 
         if trainer.is_global_zero:  # main process
-            trainer.lightning_module.save_pretrained_model(
-                self.pretrained_dir)
+            trainer.lightning_module.save_pretrained_model(self.pretrained_dir)
 
 
 class UnfreezeOnPlateau(Callback):
     """
-    A PyTorch Lightning callback to unfreeze the layers of the model 
+    A PyTorch Lightning callback to unfreeze the layers of the model
     when the monitored metric plateaus. Stops monitoring after unfreezing.
 
     Args:
         monitor (str): The metric to monitor for improvements (e.g., "val_loss").
-        mode (str): One of {"min", "max"}. In "min" mode, lower values are better. 
+        mode (str): One of {"min", "max"}. In "min" mode, lower values are better.
                     In "max" mode, higher values are better.
         patience (int): Number of epochs to wait for improvement before unfreezing layers.
         delta (float): Minimum change in the monitored metric to qualify as an improvement.
@@ -59,8 +57,7 @@ class UnfreezeOnPlateau(Callback):
 
         # Validate mode
         if self.mode not in {"min", "max"}:
-            raise ValueError(
-                f"Invalid mode: {self.mode}. Choose 'min' or 'max'.")
+            raise ValueError(f"Invalid mode: {self.mode}. Choose 'min' or 'max'.")
 
     def on_validation_end(self, trainer, pl_module):
         """
@@ -113,8 +110,7 @@ class UnfreezeOnPlateau(Callback):
         improvement = current_value - self.best_value
         if self.mode == "min":
             return improvement <= -self.delta
-        else:  # mode == "max"
-            return improvement >= self.delta
+        return improvement >= self.delta
 
     def _update_best_value(self, current_value):
         """
@@ -131,6 +127,7 @@ class UnfreezeOnPlateau(Callback):
         Unfreezes the specified layers in the Lightning module and stops further monitoring.
 
         Args:
+            trainer (Trainer): The Lightning trainer instance.
             pl_module (LightningModule): The Lightning module being trained.
         """
         pl_module.unfreeze_encoder_layers()
@@ -151,18 +148,21 @@ class UnfreezeOnPlateau(Callback):
             print(f"\n{message}\n")
             if hasattr(trainer.logger.experiment, "log"):
                 trainer.logger.experiment.log(
-                    {"event_message": message, "epoch": trainer.current_epoch})
+                    {"event_message": message, "epoch": trainer.current_epoch}
+                )
             # Handle TensorBoardLogger
             elif hasattr(trainer.logger.experiment, "add_text"):
                 trainer.logger.experiment.add_text(
-                    "event_logs", message, global_step=trainer.current_epoch)
+                    "event_logs", message, global_step=trainer.current_epoch
+                )
             # Handle MLFlowLogger
             elif hasattr(trainer.logger.experiment, "set_tags"):
                 trainer.logger.experiment.set_tags({"event_message": message})
             # Fallback
             else:
                 trainer.logger.log_metrics(
-                    {"event_message": message}, step=trainer.current_epoch)
+                    {"event_message": message}, step=trainer.current_epoch
+                )
 
 
 class LossAdjustmentCallback(Callback):
@@ -170,8 +170,8 @@ class LossAdjustmentCallback(Callback):
     A callback to adjust the loss function weights dynamically during training.
 
     The callback changes the weights of the loss components (Cross-Entropy and Dice loss)
-    over the course of the training process. It starts with pure Cross-Entropy loss during 
-    the warmup phase, then transitions smoothly to a balanced combination of Cross-Entropy 
+    over the course of the training process. It starts with pure Cross-Entropy loss during
+    the warmup phase, then transitions smoothly to a balanced combination of Cross-Entropy
     and Dice loss, and finally focuses on Dice loss towards the end of training.
 
     The transition between loss components happens in three phases:
@@ -211,8 +211,9 @@ class LossAdjustmentCallback(Callback):
             alpha, beta = 1.0, 0.0
         # Pure Dice loss after transition
         elif self.warmup_epochs <= current_epoch <= self.transition_end:
-            progress = progress = (
-                current_epoch - self.warmup_epochs) / (self.transition_end - self.warmup_epochs)
+            progress = progress = (current_epoch - self.warmup_epochs) / (
+                self.transition_end - self.warmup_epochs
+            )
             alpha = 1 - progress
             beta = progress
         # Linear transition phase

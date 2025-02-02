@@ -1,117 +1,81 @@
-import pytest
-from pathlib import Path
-from utils.config import Config
+import os
+import tempfile
+
 import yaml
-import shutil
 
-MOCK_CONFIG = {
-    "dataset": {
-        "id2label": {
-            0: "example1",
-            1: "example2"
-        }
-    },
-    "directories": {
-        "models": "models",
-        "pretrained": "pretrained_models",
-        "logs": "logs",
-        "checkpoints"
-        "results": "results",
-    }
-}
+from ucs.utils.config import Config
 
 
-@pytest.fixture
-def mock_config_file(tmp_path):
-    """
-    Create a temporary mock configuration file with absolute paths.
-    """
-    config_file = tmp_path / "config.yaml"
+def test_load_default_config():
+    config = Config.load_config()
 
-    # Update paths to be absolute
-    absolute_paths = {key: str(tmp_path / value)
-                      for key, value in MOCK_CONFIG["directories"].items()}
+    assert config.dataset.batch_size == 16
+    assert config.training.learning_rate == 2e-5
+    assert config.callbacks.early_stop_patience == 5
+    assert config.training.weighting_strategy == "raw"
 
-    config_dict = {
-        "directories": absolute_paths,
-        "dataset": MOCK_CONFIG["dataset"]
+
+def test_load_yaml_config():
+    yaml_data = {
+        "dataset": {"batch_size": 64},
+        "training": {"learning_rate": 0.0005},
+        "callbacks": {"early_stop_patience": 10},
     }
 
-    with open(config_file, "w") as f:
-        yaml.dump(config_dict, f)
-    return config_file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_file:
+        temp_file_path = temp_file.name
+        with open(temp_file_path, "w") as yaml_file:
+            yaml.dump(yaml_data, yaml_file)
+
+    config = Config.load_config(temp_file_path)
+
+    assert config.dataset.batch_size == 64
+    assert config.training.learning_rate == 0.0005
+    assert config.callbacks.early_stop_patience == 10
+    assert config.dataset.num_workers == 8
+
+    os.remove(temp_file_path)
 
 
-@pytest.fixture
-def cleanup_directories():
-    """
-    Helper fixture to clean up directories after tests.
-    """
-    created_dirs = []
+def test_load_with_cli_overrides():
+    config = Config.load_config(batch_size=128, early_stop_patience=20)
 
-    def register(dirs):
-        created_dirs.extend(dirs)
-
-    yield register
-
-    for dir_path in created_dirs:
-        shutil.rmtree(dir_path, ignore_errors=True)
+    assert config.dataset.batch_size == 128
+    assert config.callbacks.early_stop_patience == 20
+    assert config.training.learning_rate == 2e-5
 
 
-@pytest.mark.parametrize("create_dirs", [True, False])
-def test_from_dict(tmp_path, create_dirs, cleanup_directories):
-    """
-    Test Config creation from a dictionary.
-    """
-    # Update directories directories to be relative to tmp_path
-    directories_dirs = {key: str(tmp_path / value)
-                        for key, value in MOCK_CONFIG["directories"].items()}
+def test_yaml_and_cli_combined():
+    yaml_data = {
+        "dataset": {"batch_size": 64},
+        "training": {"learning_rate": 0.0005},
+        "callbacks": {"early_stop_patience": 10},
+    }
 
-    # Register directories for cleanup
-    cleanup_directories(list(directories_dirs.values()))
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_file:
+        temp_file_path = temp_file.name
+        with open(temp_file_path, "w") as yaml_file:
+            yaml.dump(yaml_data, yaml_file)
 
-    # Create Config from dictionary
-    config = Config.from_dict(
-        {"directories": directories_dirs}, create_dirs=create_dirs)
+    config = Config.load_config(temp_file_path, batch_size=128, early_stop_patience=20)
 
-    for dir_path in directories_dirs.values():
-        dir_path_obj = Path(dir_path)
-        if create_dirs:
-            assert dir_path_obj.exists(
-            ), f"Directory '{dir_path_obj}' was not created."
-        else:
-            assert not dir_path_obj.exists(
-            ), f"Directory '{dir_path_obj}' should not have been created."
+    assert config.dataset.batch_size == 128
+    assert config.callbacks.early_stop_patience == 20
+    assert config.training.learning_rate == 0.0005
+    assert config.dataset.num_workers == 8
+
+    os.remove(temp_file_path)
 
 
-def test_missing_config_key():
-    """
-    Test accessing a non-existent configuration key.
-    """
-    config = Config.from_dict(
-        {"directories": {"logs": "logs"}}, create_dirs=False)
+def test_missing_yaml_file():
+    config = Config.load_config("non_existent.yaml")
 
-    with pytest.raises(AttributeError, match="Configuration key 'non_existent_key' not found."):
-        _ = config.non_existent_key
+    assert config.dataset.batch_size == 16
+    assert config.training.learning_rate == 2e-5
 
 
-def test_get_existing_key():
-    """
-    Test retrieving an existing key with `get`.
-    """
-    config = Config.from_dict(
-        {"directories": {"logs": "logs"}}, create_dirs=False)
-    assert config.get(
-        "directories", "logs") == "logs", "Failed to retrieve an existing key."
+def test_invalid_cli_argument():
+    config = Config.load_config(invalid_arg=123)
 
-
-def test_get_missing_key():
-    """
-    Test retrieving a missing key with a default value using `get`.
-    """
-    config = Config.from_dict(
-        {"directories": {"logs": "logs"}}, create_dirs=False)
-    default_value = "default_value"
-    assert config.get("directories", "non_existent_key", default=default_value) == default_value, (
-        "Did not return the default value for a missing key."
-    )
+    assert not hasattr(config, "invalid_arg")
+    assert config.dataset.batch_size == 16
