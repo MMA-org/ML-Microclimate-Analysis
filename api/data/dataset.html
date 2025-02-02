@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,33 +273,6 @@
           <section id="dataset-module">
 <h1>dataset Module<a class="headerlink" href="#dataset-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>dataset</cite> module provides functionality for managing datasets for semantic segmentation.</p>
-<dl class="py class" id="module-data.dataset">
-<dt class="sig sig-object py" id="data.dataset.SemanticSegmentationDataset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.dataset.</span></span><span class="sig-name descname"><span class="pre">SemanticSegmentationDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_extractor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/dataset.html#SemanticSegmentationDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.dataset.SemanticSegmentationDataset" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a></p>
-<p>A custom dataset class for semantic segmentation tasks.</p>
-<p>This class is designed to handle datasets containing images and their corresponding segmentation masks.
-It supports preprocessing using a feature extractor and optional Albumentations transformations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a>) – The dataset containing images and masks. Each sample in the dataset should be a dictionary with
-keys for the image and the mask.</p></li>
-<li><p><strong>feature_extractor</strong> (<a class="reference external" href="https://huggingface.co/docs/transformers/main/en/model_doc/segformer#transformers.SegformerImageProcessor" title="(in transformers vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SegformerImageProcessor</span></code></a>) – The feature extractor for preprocessing images. Typically used for resizing, normalization, and
-converting images into tensors.</p></li>
-<li><p><strong>transform</strong> (<em>Compose</em><em>, </em><em>optional</em>) – Optional Albumentations transformations to be applied on the images and masks during training or evaluation.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Variables<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>data</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a>) – The dataset containing images and masks.</p></li>
-<li><p><strong>feature_extractor</strong> (<a class="reference external" href="https://huggingface.co/docs/transformers/main/en/model_doc/segformer#transformers.SegformerImageProcessor" title="(in transformers vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SegformerImageProcessor</span></code></a>) – The feature extractor for preprocessing images.</p></li>
-<li><p><strong>transform</strong> (<em>Compose</em><em>, </em><em>optional</em>) – The Albumentations transformations applied on each sample.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
         </article>
@@ -345,27 +318,8 @@ converting images into tensors.</p></li>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">dataset Module</a><ul>
-<li><a class="reference internal" href="#data.dataset.SemanticSegmentationDataset"><code class="docutils literal notranslate"><span class="pre">SemanticSegmentationDataset</span></code></a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

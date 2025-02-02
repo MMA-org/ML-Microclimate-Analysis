@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,61 +273,6 @@
           <section id="segmentation-data-module">
 <h1>Segmentation Data Module<a class="headerlink" href="#segmentation-data-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>data_module</cite> module provides a PyTorch Lightning <cite>LightningDataModule</cite> for semantic segmentation tasks.</p>
-<dl class="py class" id="module-data.data_module">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data.data_module.</span></span><span class="sig-name descname"><span class="pre">SegmentationDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id2label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weights_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'raw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningDataModule</span></code></p>
-<p>A PyTorch Lightning DataModule for semantic segmentation tasks. This class handles dataset
-preparation, transformation, and creation of data loaders for training, validation, and testing.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> to the dataset or dataset identifier.</p></li>
-<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Batch size for the data loaders.</p></li>
-<li><p><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of workers for data loading.</p></li>
-<li><p><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The model name used to load the feature extractor.</p></li>
-<li><p><strong>id2label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>) – A dictionary mapping class IDs to class labels.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – Transformations to apply to the dataset.</p></li>
-<li><p><strong>class_weights_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, optional) – <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> to save or load the class weights.</p></li>
-<li><p><strong>weighting_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>,optional) – Normalization method for class weights (‘none’, ‘balanced’, etc.).</p></li>
-<li><p><strong>ignore_index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, optional) – Index to ignore during class weight computation.</p></li>
-<li><p><strong>class_weights</strong> (<a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></a> or None) – Tensor containing class weights.</p></li>
-<li><p><strong>feature_extractor</strong> (<a class="reference external" href="https://huggingface.co/docs/transformers/main/en/model_doc/segformer#transformers.SegformerImageProcessor" title="(in transformers vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SegformerImageProcessor</span></code></a>) – Pre-trained feature extractor.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule.prepare_data">
-<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule.prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule.prepare_data" title="Link to this definition">¶</a></dt>
-<dd><p>Prepares the raw dataset. Called once during setup.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule.setup" title="Link to this definition">¶</a></dt>
-<dd><p>Sets up datasets for the specified stage (train/val/test).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule.train_dataloader">
-<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule.train_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule.train_dataloader" title="Link to this definition">¶</a></dt>
-<dd><p>Returns a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code></a> for the training dataset.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule.val_dataloader">
-<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule.val_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule.val_dataloader" title="Link to this definition">¶</a></dt>
-<dd><p>Returns a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code></a> for the validation dataset.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="data.data_module.SegmentationDataModule.test_dataloader">
-<span class="sig-name descname"><span class="pre">test_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/data/data_module.html#SegmentationDataModule.test_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data.data_module.SegmentationDataModule.test_dataloader" title="Link to this definition">¶</a></dt>
-<dd><p>Returns a <a class="reference external" href="https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader" title="(in PyTorch v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code></a> for the test dataset.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 
         </article>
@@ -373,34 +318,8 @@ preparation, transformation, and creation of data loaders for training, validati
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Segmentation Data Module</a><ul>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule</span></code></a><ul>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule.prepare_data"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule.prepare_data()</span></code></a></li>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule.setup"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule.setup()</span></code></a></li>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule.train_dataloader"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule.train_dataloader()</span></code></a></li>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule.val_dataloader"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule.val_dataloader()</span></code></a></li>
-<li><a class="reference internal" href="#data.data_module.SegmentationDataModule.test_dataloader"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule.test_dataloader()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

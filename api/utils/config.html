@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,42 +273,6 @@
           <section id="config-module">
 <h1>config Module<a class="headerlink" href="#config-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>config</cite> module defines utilities for managing configurations, including loading and validation.</p>
-<dl class="py class" id="module-utils.config">
-<dt class="sig sig-object py" id="utils.config.Config">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">utils.config.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'config.yaml'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils/config.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.config.Config" title="Link to this definition">¶</a></dt>
-<dd><p>ConfigLoader class to load configurations from a default YAML file,
-a custom YAML file, or argparse arguments.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="utils.config.Config.from_dict">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_dirs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils/config.html#Config.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.config.Config.from_dict" title="Link to this definition">¶</a></dt>
-<dd><p>Create a <a class="reference internal" href="#utils.config.Config" title="utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a> object from a dictionary.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="utils.config.Config.get">
-<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils/config.html#Config.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.config.Config.get" title="Link to this definition">¶</a></dt>
-<dd><p>Get nested configuration values with a fallback default.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="utils.config.Config.load_from_args">
-<span class="sig-name descname"><span class="pre">load_from_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils/config.html#Config.load_from_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.config.Config.load_from_args" title="Link to this definition">¶</a></dt>
-<dd><p>Update the configuration with command-line arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="utils.config.Config.to_dict">
-<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/utils/config.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#utils.config.Config.to_dict" title="Link to this definition">¶</a></dt>
-<dd><p>Get the entire configuration as a dictionary.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 
         </article>
@@ -354,33 +318,8 @@ a custom YAML file, or argparse arguments.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">config Module</a><ul>
-<li><a class="reference internal" href="#utils.config.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a><ul>
-<li><a class="reference internal" href="#utils.config.Config.from_dict"><code class="docutils literal notranslate"><span class="pre">Config.from_dict()</span></code></a></li>
-<li><a class="reference internal" href="#utils.config.Config.get"><code class="docutils literal notranslate"><span class="pre">Config.get()</span></code></a></li>
-<li><a class="reference internal" href="#utils.config.Config.load_from_args"><code class="docutils literal notranslate"><span class="pre">Config.load_from_args()</span></code></a></li>
-<li><a class="reference internal" href="#utils.config.Config.to_dict"><code class="docutils literal notranslate"><span class="pre">Config.to_dict()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>
