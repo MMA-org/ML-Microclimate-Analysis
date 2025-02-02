@@ -7,13 +7,13 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 def get_last_version(logs_dir: Path) -> int:
     """
-    Get the last version number for the logs directory containing only 'version_*' folders.
+    Get the last version number for the logs directory containing only 'version_[n]' folders.
 
     Args:
         logs_dir (Path): The base directory where 'lightning_logs' are stored.
 
     Returns:
-        int: The last version number. Returns -1 if no 'version_*' folders exist.
+        int: The last version number. Returns -1 if no 'version_[n]' folders exist.
     """
     lightning_logs_dir = logs_dir / "lightning_logs"
 
@@ -33,13 +33,13 @@ def get_last_version(logs_dir: Path) -> int:
 
 def get_next_version(logs_dir: Path) -> str:
     """
-    Get the next version number for the logs directory containing only 'version_*' folders.
+    Get the next version number for the logs directory containing only 'version_[n]' folders.
 
     Args:
         logs_dir (Path): The base directory where 'lightning_logs' are stored.
 
     Returns:
-        str: The next version number in the format 'version_{n}'.
+        str: The next version number in the format 'version_[n]'.
     """
     last_version = get_last_version(logs_dir)
     next_version = last_version + 1
@@ -110,7 +110,7 @@ def save_confusion_matrix_plot(
     Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
 
     Args:
-        conf_matrix (np.ndarray): Confusion matrix.
+        conf_matrix (np.ndarray): Confusion matrix containing `y_true` (actual labels) and `y_pred` (predicted labels).
         labels (list): List of class labels.
         save_path (Path): path to save the confusion matrix plot.
         metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix. Defaults to None.

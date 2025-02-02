@@ -11,8 +11,8 @@ author = 'Nave Cohen, Erik Pinhasov'
 
 # -- Setup paths -------------------------------------------------------------
 current_dir = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, os.path.abspath(os.path.join(current_dir, "../src")))
-
+src_path = os.path.abspath(os.path.join(current_dir, "..", "..", "src"))
+sys.path.insert(0, src_path)
 # -- General configuration ---------------------------------------------------
 extensions = [
     'sphinx.ext.autodoc',  # Automatically document code
@@ -115,18 +115,23 @@ replacements = {
     r"\bSegformerImageProcessor\b": ":class:`~transformers.SegformerImageProcessor`",
     r"\balbumentations\.Compose\b": ":class:`~albumentations.Compose`",
     r"\bDataset\b": ":class:`~datasets.Dataset`",
-    r"\bSegMetrics\b": ":class:`~utils.metrics.SegMetrics`",
-    r"\bTestMetrics\b": ":class:`~utils.metrics.TestMetrics`",
-    r"\bFocalLoss\b": ":class:`~utils.metrics.FocalLoss`",
-    r"\bCeDiceLoss\b": ":class:`~utils.metrics.CeDiceLoss`",
-    r"\bConfig\b": ":class:`~utils.config.Config`",
-    r"\bCheckpointDirectoryError\b": "`~core.errors.CheckpointDirectoryError`",
-    r"\bCheckpointNotFoundError\b": "`~core.errors.CheckpointNotFoundError`",
-    r"\bMultipleCheckpointsError\b": "`~core.errors.MultipleCheckpointsError`",
-    r"\bConfigId2LabelError\b": "`~core.errors.ConfigId2LabelError`",
-    r"\bFocalAlphaTypeError\b": "`~core.errors.FocalAlphaTypeError`",
-    r"\bFocalAlphaSizeError\b": "`~core.errors.FocalAlphaSizeError`",
-    r"\bNormalizeError\b": "`~core.errors.NormalizeError`",
+    r"\bSegMetrics\b": ":class:`~ucs.utils.metrics.SegMetrics`",
+    r"\bFocalLoss\b": ":class:`~ucs.utils.metrics.FocalLoss`",
+    r"\bTestMetrics\b": ":class:`~ucs.utils.metrics.TestMetrics`",
+    r"\bFocalLoss\b": ":class:`~ucs.utils.metrics.FocalLoss`",
+    r"\bCeDiceLoss\b": ":class:`~ucs.utils.metrics.CeDiceLoss`",
+    r"\bConfig\b": ":class:`~ucs.utils.config.Config`",
+    r"\bTrainingConfig\b": ":class:`~ucs.utils.config.TrainingConfig`",
+    r"\bDatasetConfig\b": ":class:`~ucs.utils.config.DatasetConfig`",
+    r"\bDirectoriesConfig\b": ":class:`~ucs.utils.config.DirectoriesConfig`",
+    r"\bCallbacksConfig\b": ":class:`~ucs.utils.config.CallbacksConfig`",
+    r"\bCheckpointDirectoryError\b": "`~ucs.core.errors.CheckpointDirectoryError`",
+    r"\bCheckpointNotFoundError\b": "`~ucs.core.errors.CheckpointNotFoundError`",
+    r"\bMultipleCheckpointsError\b": "`~ucs.core.errors.MultipleCheckpointsError`",
+    r"\bConfigId2LabelError\b": "`~ucs.core.errors.ConfigId2LabelError`",
+    r"\bFocalAlphaTypeError\b": "`~ucs.core.errors.FocalAlphaTypeError`",
+    r"\bFocalAlphaSizeError\b": "`~ucs.core.errors.FocalAlphaSizeError`",
+    r"\bNormalizeError\b": "`~ucs.core.errors.NormalizeError`",
     r"\bPath\b": ":class:`~pathlib.Path`",
     r"\bint\b": ":class:`int`",
     r"\bfloat\b": ":class:`float`",
@@ -146,9 +151,9 @@ def autodoc_process_docstring(app, what, name, obj, options, lines):
     for i, line in enumerate(lines):
         # Apply replacements only if the term is not preceded by a dot or followed by parentheses
         for pattern, replacement in replacements.items():
-            # Ensure we only replace the exact class name and not a part of another word (e.g., `torch.Tensor` or `utils.metrics.FocalLoss`)
+            # Ensure we only replace the exact class name and not a part of another word (e.g., `torch.Tensor` or `ucs.utils.metrics.FocalLoss`)
             if re.search(pattern, line):
-                # Skip replacement if preceded by a dot (e.g., `torch.Tensor` or `utils.metrics.FocalLoss`)
+                # Skip replacement if preceded by a dot (e.g., `torch.Tensor` or `ucs.utils.metrics.FocalLoss`)
                 if re.search(r"\.\b" + pattern[2:], line):
                     continue
                 # Skip replacement if followed by parentheses (e.g., `FocalLoss(...)`)

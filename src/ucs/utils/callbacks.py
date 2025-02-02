@@ -175,9 +175,10 @@ class LossAdjustmentCallback(Callback):
     and Dice loss, and finally focuses on Dice loss towards the end of training.
 
     The transition between loss components happens in three phases:
-    1. **Warmup Phase** (First `warmup_epochs` epochs): Uses only Cross-Entropy loss.
-    2. **Transition Phase** (From `warmup_epochs` to `transition_end`): Linearly adjusts from CE loss to a mix of CE and Dice loss.
-    3. **Dice Loss Phase** (After `transition_end` epochs): Uses only Dice loss.
+
+        1. **Warmup Phase** (First `warmup_epochs` epochs): Uses only Cross-Entropy loss.
+        2. **Transition Phase** (From `warmup_epochs` to `transition_end`): Linearly adjusts from CE loss to a mix of CE and Dice loss.
+        3. **Dice Loss Phase** (After `transition_end` epochs): Uses only Dice loss.
 
     Args:
         warmup_epochs (int): The number of epochs for the warmup phase where only Cross-Entropy loss is used.

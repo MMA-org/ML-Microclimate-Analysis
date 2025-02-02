@@ -5,25 +5,22 @@ from albumentations.pytorch import ToTensorV2
 class Augmentation:
     """
     A class to define and manage data augmentation pipelines for training.
-
     Attributes:
-        transform (albumentations.Compose):
-            A composition of augmentation transformations applied to training images and masks.
+        transform (albumentations.Compose): A composition of augmentation transformations applied to training images and masks.
+
+    Methods:
+        __call__(image, mask): Applies transformations to an image and (optionally) a mask.
+
+    Example:
+        .. code-block:: python
+
+            transform = Augmentation()
+            image, mask = transform(image, mask)  # Apply augmentation
     """
 
     def __init__(self):
         """
         Initializes the Augmentation class with a set of training transformations.
-
-        The transformations include geometric augmentations (e.g., flips, rotations),
-        photometric adjustments (e.g., brightness, contrast), distortions, occlusion handling,
-        and tensor conversion.
-        Example:
-            Create callable albumentations.Compose::
-
-            transform = Augmentation()
-            # return augmented image and mask
-            image, mask = transform(image, mask)
         """
         self.transform = A.Compose(
             [
