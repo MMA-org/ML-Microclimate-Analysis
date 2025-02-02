@@ -20,19 +20,22 @@ class SegformerFinetuner(pl.LightningModule):
         metrics (SegMetrics): Metrics object for tracking performance.
         criterion (FocalLoss): The loss function used for training.
         test_results (dict): Stores 'predictions' and 'ground_truths' for test evaluation.
-        hparams.model_name (str): The SegFormer variant to use (e.g., "b0").
-        hparams.max_epochs (int): Maximum number of training epochs.
-        hparams.learning_rate (float): Learning rate for the optimizer.
-        hparams.weight_decay (float): Weight decay (L2 regularization).
-        hparams.ignore_index (int or None): Label index to ignore during training.
-        hparams.weighting_strategy (str): Strategy for class weighting ('none', 'balanced', 'max', 'sum', or 'raw').
-        hparams.gamma (float): Focal loss gamma parameter.
-        hparams.id2label (dict): Mapping from class indices to class labels.
 
     Args:
-        config (TrainingConfig, optional): Training configuration containing model hyperparameters.
-        class_weights (torch.Tensor, optional): Class weights for loss balancing.
-        **kwargs: Additional hyperparameters to override config values.
+        config (TrainingConfig, optional):
+            Training configuration containing model hyperparameters, stored in `self.hparams`.
+        class_weights (torch.Tensor, optional):
+            Class weights for loss balancing.
+        **kwargs (dict): Additional hyperparameters that override `config`, such as:
+
+            - **model_name** (str): The SegFormer variant to use (e.g., "b0").
+            - **max_epochs** (int): Maximum number of training epochs.
+            - **learning_rate** (float): Learning rate for the optimizer.
+            - **weight_decay** (float): Weight decay (L2 regularization).
+            - **ignore_index** (Optional[int]): Label index to ignore during training.
+            - **weighting_strategy** (str): Strategy for class weighting ('none', 'balanced', 'max', 'sum', or 'raw').
+            - **gamma** (float): Focal loss gamma parameter.
+            - **id2label** (Dict[int, str]): Mapping from class indices to class labels.
     """
 
     def __init__(self, config: TrainingConfig = None, class_weights=None, **kwargs):

@@ -25,16 +25,16 @@ class SegmentationDataModule(LightningDataModule):
         train_dataset (Dataset or None): The processed training dataset.
         val_dataset (Dataset or None): The processed validation dataset.
         test_dataset (Dataset or None): The processed test dataset.
+
+    Args:
+        config (DatasetConfig, optional): Configuration object containing dataset parameters.
+        transform (callable, optional): Transformations to apply to the dataset.
+        **kwargs: Additional keyword arguments for overriding dataset configurations.
     """
 
     def __init__(self, config: DatasetConfig = None, transform=None, **kwargs):
         """
         Initializes the SegmentationDataModule with dataset configurations.
-
-        Args:
-            config (DatasetConfig, optional): Configuration object containing dataset parameters.
-            transform (callable, optional): Transformations to apply to the dataset.
-            **kwargs: Additional keyword arguments for overriding dataset configurations.
         """
 
         super().__init__()

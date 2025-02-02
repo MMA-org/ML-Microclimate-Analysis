@@ -38,11 +38,11 @@ ucs = "ucs.main:main"
 
 
 [tool.setuptools]
+package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["ucs*"]
+where = ["src"]
 
 [project.optional-dependencies]
 dev = [

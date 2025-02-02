@@ -13,16 +13,16 @@ class SemanticSegmentationDataset(Dataset):
         data (Dataset): The dataset containing images and masks.
         feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
         transform (Compose, optional): The Albumentations transformations applied to each sample.
+
+    Args:
+        data (Dataset): The dataset containing images and masks.
+        feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
+        transform (Compose, optional): Optional Albumentations transformations to be applied.
     """
 
     def __init__(self, data, feature_extractor, transform=None):
         """
         Initializes the dataset with the given data, feature extractor, and optional transformations.
-
-        Args:
-            data (Dataset): The dataset containing images and masks.
-            feature_extractor (SegformerImageProcessor): The feature extractor for preprocessing images.
-            transform (Compose, optional): Optional Albumentations transformations to be applied.
         """
         self.data = data
         self.feature_extractor = feature_extractor

@@ -87,7 +87,7 @@ class Config:
 
         config.dataset.model_name = config.training.model_name
         config._apply_overrides(overrides)
-        config.create_directories()
+        config._create_directories()
         return config
 
     def _apply_overrides(self, overrides):
@@ -111,7 +111,7 @@ class Config:
                     setattr(section, key, value)
                     break
 
-    def create_directories(self):
+    def _create_directories(self):
         """
         Creates required directories if they do not exist.
 
