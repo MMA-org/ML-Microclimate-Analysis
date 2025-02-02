@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -218,7 +218,7 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../model.html">model</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of model</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">Fine Tuner Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">SegformerFinetuner</a></li>
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../utils.html">utils</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of utils</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,6 +273,26 @@
           <section id="transform-module">
 <h1>transform Module<a class="headerlink" href="#transform-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>transform</cite> module contains augmentations for preprocessing images.</p>
+<dl class="py class" id="module-ucs.data.transform">
+<dt class="sig sig-object py" id="ucs.data.transform.Augmentation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.data.transform.</span></span><span class="sig-name descname"><span class="pre">Augmentation</span></span><a class="reference internal" href="../../_modules/ucs/data/transform.html#Augmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.data.transform.Augmentation" title="Link to this definition">¶</a></dt>
+<dd><p>A class to define and manage data augmentation pipelines for training.
+:ivar transform: A composition of augmentation transformations applied to training images and masks.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ucs.data.transform.Augmentation.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/data/transform.html#Augmentation.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.data.transform.Augmentation.__call__" title="Link to this definition">¶</a></dt>
+<dd><p>Applies transformations to an image and (optionally) a mask.</p>
+</dd></dl>
+
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transform</span> <span class="o">=</span> <span class="n">Augmentation</span><span class="p">()</span>
+<span class="n">image</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>  <span class="c1"># Apply augmentation</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 
         </article>
@@ -318,8 +338,30 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">transform Module</a><ul>
+<li><a class="reference internal" href="#ucs.data.transform.Augmentation"><code class="docutils literal notranslate"><span class="pre">Augmentation</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.data.transform.Augmentation.__call__"><code class="docutils literal notranslate"><span class="pre">Augmentation.__call__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

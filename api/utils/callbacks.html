@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -218,7 +218,7 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../model.html">model</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of model</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">Fine Tuner Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">SegformerFinetuner</a></li>
 </ul>
 </li>
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../utils.html">utils</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of utils</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,6 +273,105 @@
           <section id="callbacks-module">
 <h1>Callbacks Module<a class="headerlink" href="#callbacks-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>callbacks</cite> module includes functionality for handling checkpoints and saving pretrained models.</p>
+<dl class="py class" id="module-ucs.utils.callbacks">
+<dt class="sig sig-object py" id="ucs.utils.callbacks.LossAdjustmentCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.utils.callbacks.</span></span><span class="sig-name descname"><span class="pre">LossAdjustmentCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/callbacks.html#LossAdjustmentCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.callbacks.LossAdjustmentCallback" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
+<p>A callback to adjust the loss function weights dynamically during training.</p>
+<p>The callback changes the weights of the loss components (Cross-Entropy and Dice loss)
+over the course of the training process. It starts with pure Cross-Entropy loss during
+the warmup phase, then transitions smoothly to a balanced combination of Cross-Entropy
+and Dice loss, and finally focuses on Dice loss towards the end of training.</p>
+<p>The transition between loss components happens in three phases:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p><strong>Warmup Phase</strong> (First <cite>warmup_epochs</cite> epochs): Uses only Cross-Entropy loss.</p></li>
+<li><p><strong>Transition Phase</strong> (From <cite>warmup_epochs</cite> to <cite>transition_end</cite>): Linearly adjusts from CE loss to a mix of CE and Dice loss.</p></li>
+<li><p><strong>Dice Loss Phase</strong> (After <cite>transition_end</cite> epochs): Uses only Dice loss.</p></li>
+</ol>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>warmup_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The number of epochs for the warmup phase where only Cross-Entropy loss is used.
+Default is 10.</p></li>
+<li><p><strong>transition_end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The epoch at which the transition to pure Dice loss should end. Default is 40.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ucs.utils.callbacks.LossAdjustmentCallback.on_train_epoch_start">
+<span class="sig-name descname"><span class="pre">on_train_epoch_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/callbacks.html#LossAdjustmentCallback.on_train_epoch_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.callbacks.LossAdjustmentCallback.on_train_epoch_start" title="Link to this definition">¶</a></dt>
+<dd><p>This method is called at the start of each epoch to adjust the loss weights
+based on the current epoch number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<em>pl.Trainer</em>) – The PyTorch Lightning Trainer instance.</p></li>
+<li><p><strong>pl_module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code>) – The LightningModule for which the callback is applied.</p></li>
+</ul>
+</dd>
+</dl>
+<p>The loss weights (<cite>alpha</cite> and <cite>beta</cite>) are dynamically set based on the epoch:
+- During the warmup phase (epochs 0 to <cite>warmup_epochs</cite>), only Cross-Entropy loss is used (<cite>alpha=1.0</cite>, <cite>beta=0.0</cite>).
+- In the transition phase (epochs <cite>warmup_epochs</cite> to <cite>transition_end</cite>), the weights linearly shift from Cross-Entropy to a combination of Cross-Entropy and Dice loss.
+- After <cite>transition_end</cite> epochs, only Dice loss is used (<cite>alpha=0.0</cite>, <cite>beta=1.0</cite>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ucs.utils.callbacks.SaveModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.utils.callbacks.</span></span><span class="sig-name descname"><span class="pre">SaveModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained_dir</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/callbacks.html#SaveModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.callbacks.SaveModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ModelCheckpoint</span></code></p>
+<p>A PyTorch Lightning callback to save the pretrained model after checkpointing.</p>
+<p>This callback extends the functionality of ModelCheckpoint to save the pretrained
+model to a specified directory in addition to saving the training checkpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pretrained_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The directory where the pretrained model will be saved.</p></li>
+<li><p><strong>*args</strong> – Variable length argument <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> for the base ModelCheckpoint class.</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments for the base ModelCheckpoint class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ucs.utils.callbacks.UnfreezeOnPlateau">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.utils.callbacks.</span></span><span class="sig-name descname"><span class="pre">UnfreezeOnPlateau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">monitor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val_loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'min'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/callbacks.html#UnfreezeOnPlateau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.callbacks.UnfreezeOnPlateau" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Callback</span></code></p>
+<p>A PyTorch Lightning callback to unfreeze the layers of the model
+when the monitored metric plateaus. Stops monitoring after unfreezing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>monitor</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The metric to monitor for improvements (e.g., “val_loss”).</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – One of {“min”, “max”}. In “min” mode, lower values are better.
+In “max” mode, higher values are better.</p></li>
+<li><p><strong>patience</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of epochs to wait for improvement before unfreezing layers.</p></li>
+<li><p><strong>delta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Minimum change in the monitored metric to qualify as an improvement.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="ucs.utils.callbacks.UnfreezeOnPlateau.on_validation_end">
+<span class="sig-name descname"><span class="pre">on_validation_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/callbacks.html#UnfreezeOnPlateau.on_validation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.callbacks.UnfreezeOnPlateau.on_validation_end" title="Link to this definition">¶</a></dt>
+<dd><p>Triggered at the end of validation. Checks if the monitored metric has plateaued
+and unfreezes the specified layers if necessary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<em>Trainer</em>) – The Lightning trainer instance.</p></li>
+<li><p><strong>pl_module</strong> (<em>LightningModule</em>) – The Lightning module being trained.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
         </article>
@@ -318,8 +417,35 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Callbacks Module</a><ul>
+<li><a class="reference internal" href="#ucs.utils.callbacks.LossAdjustmentCallback"><code class="docutils literal notranslate"><span class="pre">LossAdjustmentCallback</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.utils.callbacks.LossAdjustmentCallback.on_train_epoch_start"><code class="docutils literal notranslate"><span class="pre">LossAdjustmentCallback.on_train_epoch_start()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.utils.callbacks.SaveModel"><code class="docutils literal notranslate"><span class="pre">SaveModel</span></code></a></li>
+<li><a class="reference internal" href="#ucs.utils.callbacks.UnfreezeOnPlateau"><code class="docutils literal notranslate"><span class="pre">UnfreezeOnPlateau</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.utils.callbacks.UnfreezeOnPlateau.on_validation_end"><code class="docutils literal notranslate"><span class="pre">UnfreezeOnPlateau.on_validation_end()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

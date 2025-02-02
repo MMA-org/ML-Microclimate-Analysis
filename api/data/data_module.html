@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -218,7 +218,7 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../model.html">model</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of model</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">Fine Tuner Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">SegformerFinetuner</a></li>
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../utils.html">utils</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of utils</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,6 +273,39 @@
           <section id="segmentation-data-module">
 <h1>Segmentation Data Module<a class="headerlink" href="#segmentation-data-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>data_module</cite> module provides a PyTorch Lightning <cite>LightningDataModule</cite> for semantic segmentation tasks.</p>
+<dl class="py class" id="module-ucs.data.data_module">
+<dt class="sig sig-object py" id="ucs.data.data_module.SegmentationDataModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.data.data_module.</span></span><span class="sig-name descname"><span class="pre">SegmentationDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/data/data_module.html#SegmentationDataModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.data.data_module.SegmentationDataModule" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningDataModule</span></code></p>
+<p>A PyTorch Lightning DataModule for semantic segmentation tasks. This class handles dataset
+preparation, transformation, and creation of data loaders for training, validation, and testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> to the dataset or dataset identifier, initialized from the config.</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Batch size for the data loaders, initialized from the config.</p></li>
+<li><p><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of workers for data loading, initialized from the config.</p></li>
+<li><p><strong>do_reduce_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to reduce label values, initialized from the config.</p></li>
+<li><p><strong>pin_memory</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to use pinned memory for faster data transfer, initialized from the config.</p></li>
+<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – Transformations to apply to the dataset.</p></li>
+<li><p><strong>persistent_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to use persistent workers in data loading.</p></li>
+<li><p><strong>feature_extractor</strong> (<a class="reference external" href="https://huggingface.co/docs/transformers/main/en/model_doc/segformer#transformers.SegformerImageProcessor" title="(in transformers vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SegformerImageProcessor</span></code></a>) – Pre-trained feature extractor initialized with the model name.</p></li>
+<li><p><strong>raw_dataset</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> or None) – The raw dataset loaded from the dataset source.</p></li>
+<li><p><strong>train_dataset</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> or None) – The processed training dataset.</p></li>
+<li><p><strong>val_dataset</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> or None) – The processed validation dataset.</p></li>
+<li><p><strong>test_dataset</strong> (<a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/main_classes#datasets.Dataset" title="(in datasets vmain)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></a> or None) – The processed test dataset.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>config</strong> (<a class="reference internal" href="../utils/config.html#ucs.utils.config.DatasetConfig" title="ucs.utils.config.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a>, optional) – Configuration object containing dataset parameters.</p></li>
+<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – Transformations to apply to the dataset.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments for overriding dataset configurations.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
         </article>
@@ -318,8 +351,27 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Segmentation Data Module</a><ul>
+<li><a class="reference internal" href="#ucs.data.data_module.SegmentationDataModule"><code class="docutils literal notranslate"><span class="pre">SegmentationDataModule</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

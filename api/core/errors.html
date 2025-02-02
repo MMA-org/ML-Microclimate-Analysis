@@ -180,7 +180,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -218,7 +218,7 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../model.html">model</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of model</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">Fine Tuner Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../model/lightning_model.html">SegformerFinetuner</a></li>
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../utils.html">utils</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of utils</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -264,7 +264,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -273,6 +273,165 @@
           <section id="errors-module">
 <h1>errors Module<a class="headerlink" href="#errors-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>errors</cite> module defines custom exceptions and error-handling utilities.</p>
+<dl class="py exception" id="module-ucs.core.errors">
+<dt class="sig sig-object py" id="ucs.core.errors.BaseError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">BaseError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#BaseError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.BaseError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Base class for all project-specific errors.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.BaseError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#ucs.core.errors.BaseError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ucs.core.errors.BaseError.handle">
+<span class="sig-name descname"><span class="pre">handle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#BaseError.handle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.BaseError.handle" title="Link to this definition">¶</a></dt>
+<dd><p>Prints the error message and exits with the specified code.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.BaseError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'An</span> <span class="pre">error</span> <span class="pre">occurred.'</span></em><a class="headerlink" href="#ucs.core.errors.BaseError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointDirectoryError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">CheckpointDirectoryError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#CheckpointDirectoryError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.CheckpointDirectoryError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Raised when the checkpoint directory is invalid or missing.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointDirectoryError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#ucs.core.errors.CheckpointDirectoryError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointDirectoryError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Checkpoint</span> <span class="pre">directory</span> <span class="pre">not</span> <span class="pre">found</span> <span class="pre">or</span> <span class="pre">invalid:</span> <span class="pre">{}.'</span></em><a class="headerlink" href="#ucs.core.errors.CheckpointDirectoryError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointNotFoundError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">CheckpointNotFoundError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#CheckpointNotFoundError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.CheckpointNotFoundError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Raised when no checkpoint files are found.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointNotFoundError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#ucs.core.errors.CheckpointNotFoundError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.CheckpointNotFoundError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'No</span> <span class="pre">checkpoint</span> <span class="pre">files</span> <span class="pre">found</span> <span class="pre">in</span> <span class="pre">directory:</span> <span class="pre">{}.'</span></em><a class="headerlink" href="#ucs.core.errors.CheckpointNotFoundError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.ConfigId2LabelError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">ConfigId2LabelError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#ConfigId2LabelError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.ConfigId2LabelError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Raised when the ‘id2label’ mapping is missing from the configuration or dataset.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.ConfigId2LabelError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#ucs.core.errors.ConfigId2LabelError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.ConfigId2LabelError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;'id2label'</span> <span class="pre">mapping</span> <span class="pre">is</span> <span class="pre">missing</span> <span class="pre">in</span> <span class="pre">config.</span> <span class="pre">Please</span> <span class="pre">provide</span> <span class="pre">it</span> <span class="pre">to</span> <span class="pre">ensure</span> <span class="pre">correct</span> <span class="pre">label</span> <span class="pre">mapping.&quot;</span></em><a class="headerlink" href="#ucs.core.errors.ConfigId2LabelError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.LossIgnoreIndexError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">LossIgnoreIndexError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#LossIgnoreIndexError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.LossIgnoreIndexError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Exception raised if weights size is not equal to num class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossIgnoreIndexError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></em><a class="headerlink" href="#ucs.core.errors.LossIgnoreIndexError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossIgnoreIndexError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;'ignore_index'</span> <span class="pre">{}</span> <span class="pre">is</span> <span class="pre">out</span> <span class="pre">of</span> <span class="pre">bounds</span> <span class="pre">for</span> <span class="pre">'num_classes'</span> <span class="pre">{}.&quot;</span></em><a class="headerlink" href="#ucs.core.errors.LossIgnoreIndexError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsSizeError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">LossWeightsSizeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#LossWeightsSizeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.LossWeightsSizeError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Exception raised if weights size is not equal to num class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsSizeError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#ucs.core.errors.LossWeightsSizeError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsSizeError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;'weights'</span> <span class="pre">size</span> <span class="pre">{}.</span> <span class="pre">!=</span> <span class="pre">num_classes</span> <span class="pre">{}.&quot;</span></em><a class="headerlink" href="#ucs.core.errors.LossWeightsSizeError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsTypeError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">LossWeightsTypeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#LossWeightsTypeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.LossWeightsTypeError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Exception raised if ‘weights’ got wrong type.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsTypeError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#ucs.core.errors.LossWeightsTypeError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.LossWeightsTypeError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;'weights'</span> <span class="pre">need</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">type</span> <span class="pre">tuple|np.ndarray|list|tensor</span> <span class="pre">got</span> <span class="pre">{}.&quot;</span></em><a class="headerlink" href="#ucs.core.errors.LossWeightsTypeError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.MultipleCheckpointsError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">MultipleCheckpointsError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#MultipleCheckpointsError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.MultipleCheckpointsError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Raised when multiple checkpoint files are found.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.MultipleCheckpointsError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#ucs.core.errors.MultipleCheckpointsError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.MultipleCheckpointsError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Multiple</span> <span class="pre">checkpoint</span> <span class="pre">files</span> <span class="pre">found</span> <span class="pre">in</span> <span class="pre">directory:</span> <span class="pre">{}.</span> <span class="pre">Expected</span> <span class="pre">exactly</span> <span class="pre">one.'</span></em><a class="headerlink" href="#ucs.core.errors.MultipleCheckpointsError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ucs.core.errors.NormalizeError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.core.errors.</span></span><span class="sig-name descname"><span class="pre">NormalizeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/core/errors.html#NormalizeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.core.errors.NormalizeError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ucs.core.errors.BaseError" title="ucs.core.errors.BaseError"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseError</span></code></a></p>
+<p>Exception raised if normalize is not from valid options.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.NormalizeError.exit_code">
+<span class="sig-name descname"><span class="pre">exit_code</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#ucs.core.errors.NormalizeError.exit_code" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ucs.core.errors.NormalizeError.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;'normalize'</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">'max'</span> <span class="pre">|</span> <span class="pre">'balance'</span> <span class="pre">|</span> <span class="pre">'sum'</span> <span class="pre">got</span> <span class="pre">{}&quot;</span></em><a class="headerlink" href="#ucs.core.errors.NormalizeError.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 
         </article>
@@ -318,8 +477,72 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">errors Module</a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.BaseError"><code class="docutils literal notranslate"><span class="pre">BaseError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.BaseError.exit_code"><code class="docutils literal notranslate"><span class="pre">BaseError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.BaseError.handle"><code class="docutils literal notranslate"><span class="pre">BaseError.handle()</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.BaseError.message"><code class="docutils literal notranslate"><span class="pre">BaseError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointDirectoryError"><code class="docutils literal notranslate"><span class="pre">CheckpointDirectoryError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointDirectoryError.exit_code"><code class="docutils literal notranslate"><span class="pre">CheckpointDirectoryError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointDirectoryError.message"><code class="docutils literal notranslate"><span class="pre">CheckpointDirectoryError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointNotFoundError"><code class="docutils literal notranslate"><span class="pre">CheckpointNotFoundError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointNotFoundError.exit_code"><code class="docutils literal notranslate"><span class="pre">CheckpointNotFoundError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.CheckpointNotFoundError.message"><code class="docutils literal notranslate"><span class="pre">CheckpointNotFoundError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.ConfigId2LabelError"><code class="docutils literal notranslate"><span class="pre">ConfigId2LabelError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.ConfigId2LabelError.exit_code"><code class="docutils literal notranslate"><span class="pre">ConfigId2LabelError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.ConfigId2LabelError.message"><code class="docutils literal notranslate"><span class="pre">ConfigId2LabelError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.LossIgnoreIndexError"><code class="docutils literal notranslate"><span class="pre">LossIgnoreIndexError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.LossIgnoreIndexError.exit_code"><code class="docutils literal notranslate"><span class="pre">LossIgnoreIndexError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.LossIgnoreIndexError.message"><code class="docutils literal notranslate"><span class="pre">LossIgnoreIndexError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsSizeError"><code class="docutils literal notranslate"><span class="pre">LossWeightsSizeError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsSizeError.exit_code"><code class="docutils literal notranslate"><span class="pre">LossWeightsSizeError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsSizeError.message"><code class="docutils literal notranslate"><span class="pre">LossWeightsSizeError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsTypeError"><code class="docutils literal notranslate"><span class="pre">LossWeightsTypeError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsTypeError.exit_code"><code class="docutils literal notranslate"><span class="pre">LossWeightsTypeError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.LossWeightsTypeError.message"><code class="docutils literal notranslate"><span class="pre">LossWeightsTypeError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.MultipleCheckpointsError"><code class="docutils literal notranslate"><span class="pre">MultipleCheckpointsError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.MultipleCheckpointsError.exit_code"><code class="docutils literal notranslate"><span class="pre">MultipleCheckpointsError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.MultipleCheckpointsError.message"><code class="docutils literal notranslate"><span class="pre">MultipleCheckpointsError.message</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ucs.core.errors.NormalizeError"><code class="docutils literal notranslate"><span class="pre">NormalizeError</span></code></a><ul>
+<li><a class="reference internal" href="#ucs.core.errors.NormalizeError.exit_code"><code class="docutils literal notranslate"><span class="pre">NormalizeError.exit_code</span></code></a></li>
+<li><a class="reference internal" href="#ucs.core.errors.NormalizeError.message"><code class="docutils literal notranslate"><span class="pre">NormalizeError.message</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
