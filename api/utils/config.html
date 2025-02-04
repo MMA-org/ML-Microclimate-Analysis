@@ -330,7 +330,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="ucs.utils.config.TrainingConfig">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.utils.config.</span></span><span class="sig-name descname"><span class="pre">TrainingConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name='b0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs=50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate=2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay=0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_index=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_strategy='raw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma=2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id2label=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/config.html#TrainingConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.config.TrainingConfig" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ucs.utils.config.</span></span><span class="sig-name descname"><span class="pre">TrainingConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name='b0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs=50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate=2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay=0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_index=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting_strategy='raw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha=0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id2label=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ucs/utils/config.html#TrainingConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ucs.utils.config.TrainingConfig" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -340,14 +340,14 @@
 <li><p><strong>weight_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
 <li><p><strong>ignore_index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>weighting_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
-<li><p><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
 <li><p><strong>id2label</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="ucs.utils.config.TrainingConfig.gamma">
-<span class="sig-name descname"><span class="pre">gamma</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#ucs.utils.config.TrainingConfig.gamma" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ucs.utils.config.TrainingConfig.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.7</span></em><a class="headerlink" href="#ucs.utils.config.TrainingConfig.alpha" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -583,7 +583,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#ucs.utils.config.TrainingConfig"><code class="docutils literal notranslate"><span class="pre">TrainingConfig</span></code></a><ul>
-<li><a class="reference internal" href="#ucs.utils.config.TrainingConfig.gamma"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.gamma</span></code></a></li>
+<li><a class="reference internal" href="#ucs.utils.config.TrainingConfig.alpha"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.alpha</span></code></a></li>
 <li><a class="reference internal" href="#ucs.utils.config.TrainingConfig.id2label"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.id2label</span></code></a></li>
 <li><a class="reference internal" href="#ucs.utils.config.TrainingConfig.ignore_index"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.ignore_index</span></code></a></li>
 <li><a class="reference internal" href="#ucs.utils.config.TrainingConfig.learning_rate"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.learning_rate</span></code></a></li>

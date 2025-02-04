@@ -337,7 +337,7 @@
 <span class="w">  </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-3</span>
 <span class="w">  </span><span class="nt">ignore_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="w">  </span><span class="nt">weighting_strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;raw&quot;</span>
-<span class="w">  </span><span class="nt">gamma</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">  </span><span class="nt">alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.7</span>
 <span class="w">  </span><span class="nt">id2label</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">0</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;background&quot;</span>
 <span class="w">    </span><span class="nt">1</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bareland&quot;</span>
@@ -358,7 +358,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">weight_decay</span></code>: Strength of L2 regularization applied to the optimizer.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ignore_index</span></code>: Label index to ignore during training (<code class="docutils literal notranslate"><span class="pre">int</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">weighting_strategy</span></code>: Method for normalizing class weights (<code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;balanced&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sum&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;raw&quot;</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code>: Focal loss gamma parameter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code>: Cross-Entroy loss alpha weight parameter, beta = 1 - alpha.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">id2label</span></code>: Mapping from class indices to class labels.</p></li>
 </ul>
 </section>

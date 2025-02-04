@@ -271,7 +271,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SegformerForSemanticSegmentation</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">ucs.utils.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainingConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ucs.utils.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">FocalLoss</span><span class="p">,</span> <span class="n">SegMetrics</span><span class="p">,</span> <span class="n">TestMetrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ucs.utils.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">CeDiceLoss</span><span class="p">,</span> <span class="n">SegMetrics</span><span class="p">,</span> <span class="n">TestMetrics</span>
 
 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="s2">&quot;medium&quot;</span><span class="p">)</span>  <span class="c1"># pragma: no cover</span>
@@ -286,7 +286,7 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        model (SegformerForSemanticSegmentation): The SegFormer model for semantic segmentation.</span>
 <span class="sd">        metrics (SegMetrics): Metrics object for tracking performance.</span>
-<span class="sd">        criterion (FocalLoss): The loss function used for training.</span>
+<span class="sd">        criterion (CeDiceLoss): The loss function used for training.</span>
 <span class="sd">        test_results (dict): Stores &#39;predictions&#39; and &#39;ground_truths&#39; for test evaluation.</span>
 
 <span class="sd">    Args:</span>
@@ -302,7 +302,7 @@
 <span class="sd">            - **weight_decay** (float): Weight decay (L2 regularization).</span>
 <span class="sd">            - **ignore_index** (Optional[int]): Label index to ignore during training.</span>
 <span class="sd">            - **weighting_strategy** (str): Strategy for class weighting (&#39;none&#39;, &#39;balanced&#39;, &#39;max&#39;, &#39;sum&#39;, or &#39;raw&#39;).</span>
-<span class="sd">            - **gamma** (float): Focal loss gamma parameter.</span>
+<span class="sd">            - **alpha** (float): CeDiceLoss loss alpha parameter.</span>
 <span class="sd">            - **id2label** (Dict[int, str]): Mapping from class indices to class labels.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -388,18 +388,18 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the Focal Loss function.</span>
+<span class="sd">        Initializes the CeDiceLoss Loss function.</span>
 
 <span class="sd">        Uses:</span>
-<span class="sd">            - `gamma` hyperparameter for focusing.</span>
+<span class="sd">            - `alpha` hyperparameter for focusing.</span>
 <span class="sd">            - `class_weights` if provided.</span>
 <span class="sd">            - `ignore_index` to exclude certain labels.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">FocalLoss</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">CeDiceLoss</span><span class="p">(</span>
             <span class="n">num_classes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span>
-            <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hparams</span><span class="o">.</span><span class="n">class_weights</span><span class="p">,</span>
-            <span class="n">gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hparams</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
+            <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hparams</span><span class="o">.</span><span class="n">class_weights</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hparams</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
             <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span>
             <span class="n">ignore_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hparams</span><span class="o">.</span><span class="n">ignore_index</span><span class="p">,</span>
         <span class="p">)</span>
