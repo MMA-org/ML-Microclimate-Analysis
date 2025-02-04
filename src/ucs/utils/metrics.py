@@ -88,7 +88,7 @@ class CeDiceLoss(nn.Module):
     """
 
     def __init__(
-        self, num_classes, alpha=0.8, weights=None, ignore_index=None, reduction="mean"
+        self, num_classes, alpha=0.7, weights=None, ignore_index=None, reduction="mean"
     ):
         super().__init__()
         self.alpha = alpha
