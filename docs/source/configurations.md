@@ -73,7 +73,7 @@ training:
   weight_decay: 1e-3
   ignore_index: 0
   weighting_strategy: "raw"
-  gamma: 2.0
+  alpha: 0.7
   id2label:
     0: "background"
     1: "bareland"
@@ -94,7 +94,7 @@ training:
 - `weight_decay`: Strength of L2 regularization applied to the optimizer.
 - `ignore_index`: Label index to ignore during training (`int` or `None`).
 - `weighting_strategy`: Method for normalizing class weights (`"none"`, `"balanced"`, `"max"`, `"sum"`, `"raw"`).
-- `gamma`: Focal loss gamma parameter.
+- `alpha`: Cross-Entroy loss alpha weight parameter, beta = 1 - alpha.
 - `id2label`: Mapping from class indices to class labels.
 
 ---

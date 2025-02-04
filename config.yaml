@@ -22,7 +22,7 @@ training:
   weight_decay: 1e-3
   ignore_index: 0 # int | None
   weighting_strategy: "raw" # Options: "none", "balanced", "max", "sum", or "raw"
-  gamma: 2.0
+  alpha: 0.7
   id2label:
     0: "background"
     1: "bareland"

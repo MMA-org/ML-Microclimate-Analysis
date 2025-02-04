@@ -24,7 +24,7 @@ class TrainingConfig:  # pylint: disable=too-many-instance-attributes
     ignore_index: Optional[int] = 0  # int | None
     # Options: "none", "balanced", "max", "sum", or "raw"
     weighting_strategy: str = "raw"
-    gamma: float = 2
+    alpha: float = 0.7
     id2label: Dict[int, str] = field(
         default_factory=lambda: {
             0: "background",

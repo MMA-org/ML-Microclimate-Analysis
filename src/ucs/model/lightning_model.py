@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from transformers import SegformerForSemanticSegmentation
 
 from ucs.utils.config import TrainingConfig
-from ucs.utils.metrics import FocalLoss, SegMetrics, TestMetrics
+from ucs.utils.metrics import CeDiceLoss, SegMetrics, TestMetrics
 
 if torch.cuda.is_available():
     torch.set_float32_matmul_precision("medium")  # pragma: no cover
@@ -18,7 +18,7 @@ class SegformerFinetuner(pl.LightningModule):
     Attributes:
         model (SegformerForSemanticSegmentation): The SegFormer model for semantic segmentation.
         metrics (SegMetrics): Metrics object for tracking performance.
-        criterion (FocalLoss): The loss function used for training.
+        criterion (CeDiceLoss): The loss function used for training.
         test_results (dict): Stores 'predictions' and 'ground_truths' for test evaluation.
 
     Args:
@@ -34,7 +34,7 @@ class SegformerFinetuner(pl.LightningModule):
             - **weight_decay** (float): Weight decay (L2 regularization).
             - **ignore_index** (Optional[int]): Label index to ignore during training.
             - **weighting_strategy** (str): Strategy for class weighting ('none', 'balanced', 'max', 'sum', or 'raw').
-            - **gamma** (float): Focal loss gamma parameter.
+            - **alpha** (float): CeDiceLoss loss alpha parameter.
             - **id2label** (Dict[int, str]): Mapping from class indices to class labels.
     """
 
@@ -120,18 +120,18 @@ class SegformerFinetuner(pl.LightningModule):
 
     def _initialize_loss(self):
         """
-        Initializes the Focal Loss function.
+        Initializes the CeDiceLoss Loss function.
 
         Uses:
-            - `gamma` hyperparameter for focusing.
+            - `alpha` hyperparameter for focusing.
             - `class_weights` if provided.
             - `ignore_index` to exclude certain labels.
         """
 
-        self.criterion = FocalLoss(
+        self.criterion = CeDiceLoss(
             num_classes=self.num_classes,
-            alpha=self.hparams.class_weights,
-            gamma=self.hparams.gamma,
+            weights=self.hparams.class_weights,
+            alpha=self.hparams.alpha,
             reduction="mean",
             ignore_index=self.hparams.ignore_index,
         )

@@ -130,10 +130,11 @@ def log_training_info(config, version, tensorboard_logger):
     • Batch Size: {config.dataset.batch_size}  
     • Max Epochs: {config.training.max_epochs}  
 
-    🎯 Focal Loss Settings:  
+    🎯 Cross-Entropy + Dice Loss Loss Settings:  
     • Ignore Index: {config.training.ignore_index}  
     • Weighting Strategy: {config.training.weighting_strategy}  
-    • Gamma: {config.training.gamma}  
+    • alpha: {config.training.alpha}  
+    • beta: {1 - int(config.training.alpha)} 
     """
     print(log_text.strip(), "\n")
     tensorboard_logger.experiment.add_text("Training Info", log_text)
