@@ -6,14 +6,12 @@ This document provides instructions for setting up and installing the project on
 
 Before installing the project, ensure that you have the following prerequisites installed on your system:
 
-<<<<<<< HEAD
-- **Python**: Version 3.9 or higher
-=======
-- **Python**: Version 3.8 or higher
->>>>>>> 510856727fce09b9a7f37d7e40587e228972e368
-- **pip**: The Python package manager
-- **Virtual Environment** (optional but recommended): `venv`, `virtualenv`, or a similar tool
-- Any other system requirements (e.g., specific libraries, tools, or dependencies)
+- **Python**: Version 3.9 or higher ([Download Python](https://www.python.org/downloads/))
+- **pip**: The Python package manager ([Learn More](https://pip.pypa.io/en/stable/installation/))
+
+```{tip} Recommended
+Virtual Environment: `venv`, `virtualenv`, or a similar tool
+```
 
 ## Installation Steps
 
@@ -33,7 +31,7 @@ cd ML-Microclimate-Analysis
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # On Linux/macOS
-.venv\Scripts\activate   # On Windows
+.venv\\Scripts\\activate   # On Windows
 ```
 
 ### 3. Install the Project
@@ -50,16 +48,16 @@ For development purposes:
 pip install -e .[dev]
 ```
 
-## Verifying Installation
+### 4. Verifying Installation
 
 Run the following command to ensure the project is correctly installed:
 
 ```bash
-lcm --help
+ucs --help
 ```
 
 This should display the project's CLI usage or help information.
 
-## Using the Project
+### Using the Project
 
-After installation, you can begin using the project. Refer to the relevant sections in the documentation for usage instructions.
+After installation, you can begin using the project. Refer to the [Usage Guide](usage.md) for detailed instructions.

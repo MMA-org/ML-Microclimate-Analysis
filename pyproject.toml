@@ -3,16 +3,19 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ML-Microclimate-Analysis"
+name = "ucs"
 version = "0.1.0"
-description = "Machine Learning Microclimate Prediction Project"
+description = "Urban Climate Segmentation Model"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-
+authors = [
+    { name = "Nave Cohen", email = "navecohen81@gmail.com" },
+    { name = "Erik Pinhasov", email = "erik944@gmail.com" }
+]
+keywords = ["urban climate", "segmentation", "deep learning", "image analysis"]
 dependencies = [
-    "albucore==0.0.21",
-    "albumentations==1.4.22",
+    "albumentations==2.0.1",
     "datasets==3.0.0",
     "matplotlib==3.9.2",
     "pytorch-lightning==2.4.0",
@@ -22,7 +25,17 @@ dependencies = [
     "tqdm==4.66.5",
     "transformers==4.44.2",
     "tensorboardX==2.6.2.2",
+    "pydantic== 2.9.2"
 ]
+
+
+[project.urls]
+Homepage = "https://github.com/MMA-org/ML-Microclimate-Analysis"
+Documentation = "https://mma-org.github.io/ML-Microclimate-Analysis/" 
+[project.scripts]
+landcover-model = "ucs.main:main"
+ucs = "ucs.main:main"
+
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -30,37 +43,43 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["data","core","model","utils"]
-
-
-
 
 [project.optional-dependencies]
 dev = [
     "pre-commit",
     "black",
-    "flake8",
     "pytest",
     "pytest-mock",
     "coverage",
     "pytest-cov",
+    "isort",
 ]
 docs = [
     "sphinx>=4.0",
     "sphinx-rtd-theme",
     "myst-parser",
     "sphinx-copybutton",
+    "furo",
 ]
 
-[project.scripts]
-landcover-model = "main:main"
-lcm = "main:main"
-
 [tool.coverage.run]
-source = ["src"]
-omit = ["src/main.py", "src/model/evaluate.py", "src/model/train.py"]
+source = ["ucs"]
+omit = ["ucs/main.py", "ucs/model/evaluate.py", "ucs/model/train.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["ignore::UserWarning"]
-addopts = "--cov=src --cov-report=term-missing --cov-report=xml"
+addopts = "--cov=ucs --cov-report=term-missing --cov-report=xml"
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310']
+skip-string-normalization = true  # Avoids changing " to '
+
+[tool.isort]
+profile = "black"  # Match isort formatting with Black
+multi_line_output = 3
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 88
+combine_as_imports = true  # Merge "import x as y" imports into one line

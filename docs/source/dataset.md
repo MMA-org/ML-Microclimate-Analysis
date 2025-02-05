@@ -2,12 +2,14 @@
 
 This project utilizes publicly available datasets designed for land cover classification tasks in urban and rural environments. Below is a detailed summary of the datasets, their classes, and primary use cases.
 
-**Source Acknowledgment**
-The content for this dataset summary is derived from the official dataset sources listed below. For more detailed and up-to-date information, please refer to the respective dataset pages.
+```{note}
+The content for this dataset summary is derived from the official dataset sources listed below. For more detailed and up-to-date information, please refer to the source [Alet BM](https://www.kaggle.com/datasets/aletbm/global-land-cover-mapping-openearthmap).
+```
 
 ---
 
-**[LandCover Urban/Rural Climate Dataset](https://huggingface.co/datasets/erikpinhasov/landcover_dataset)**
+## [LandCover Urban / Rural Climate Dataset](https://huggingface.co/datasets/erikpinhasov/landcover_dataset)
+
 This dataset provides comprehensive data for land cover classification, focusing on both urban and rural regions. The dataset includes high-resolution imagery and annotations mapped to the following **8 classes**:
 
 ### Classes (`id2label` Mapping):
@@ -24,10 +26,19 @@ This dataset provides comprehensive data for land cover classification, focusing
 | 7        | Agriculture Land |
 | 8        | Buildings        |
 
-### Key Features:
+---
 
-- **Annotations**: Pixel-level segmentation masks aligned with the 8 defined classes.
-- **Applications**: Suitable for tasks such as urban planning, environmental monitoring, and rural land cover analysis.
+### Preprocessing and Modifications
+
+The original dataset from [Alet BM](https://www.kaggle.com/datasets/aletbm/global-land-cover-mapping-openearthmap) contained images with a resolution of **1000 × 1000 pixels**. To prepare the data for training and improve model performance:
+
+- The images were split into **512 × 512 tiles**.
+- A **24-pixel overlap** was applied between adjacent tiles to ensure no loss of contextual information at the edges.
+- Corresponding segmentation masks were also tiled to match the new image sizes and maintain alignment.
+
+These modifications ensure compatibility with the segmentation model and allow better handling of edge cases during training and inference.
+
+---
 
 ### Use Cases:
 
@@ -36,36 +47,21 @@ This dataset provides comprehensive data for land cover classification, focusing
 2. **Rural Land Cover Monitoring**:
    - Identify agricultural land, water bodies, and natural features like forests and rangelands.
 
-### Dataset Access:
+---
 
-- **Dataset Link**: [LandCover Urban/Rural Climate Dataset](https://huggingface.co/datasets/erikpinhasov/landcover_dataset)
-- **Loading Example**:
+**Loading Example:**
 
-  ```python
-  from datasets import load_dataset
+```python
+from datasets import load_dataset
 
-  dataset = load_dataset("erikpinhasov/landcover_dataset")
-  print(dataset)
-  ```
+dataset = load_dataset("erikpinhasov/landcover_dataset")
+print(dataset)
+```
+
+**HuggingFace**: [LandCover / Rural Climate Dataset](https://huggingface.co/datasets/erikpinhasov/landcover_dataset)
 
 ---
 
-The content in this section has been adapted directly from the [Global Land Cover Mapping (OpenEarthMap)](https://www.kaggle.com/datasets/aletbm/global-land-cover-mapping-openearthmap) Kaggle page. This dataset provides globally distributed land cover data with diverse features and high-quality segmentation annotations, supporting various land cover classification tasks across different geographic regions.
-For more details, visit the [official daataset page)](https://www.kaggle.com/datasets/aletbm/global-land-cover-mapping-openearthmap)
+### Credits:
 
-#### Key Features:
-
-- **Global Coverage**: Includes images from urban, suburban, and rural settings worldwide.
-- **High Resolution**: Suitable for detailed land cover mapping and segmentation.
-- **Classes**: Various land cover types, including vegetation, water bodies, and built-up areas.
-
-#### Applications:
-
-1. **Environmental Monitoring**:
-   - Analyze the impact of human activities on natural ecosystems globally.
-2. **Land Use Planning**:
-   - Support urban development strategies and agricultural resource management.
-3. **Climate Change Analysis**:
-   - Understand the relationship between land cover changes and climate effects.
-
-**Credits**: This dataset is maintained by [Alet BM](https://www.kaggle.com/aletbm) on Kaggle.
+This dataset is adapted from [Alet BM](https://www.kaggle.com/datasets/aletbm/global-land-cover-mapping-openearthmap) on Kaggle. The original dataset has been updated and enhanced for improved usability, including modifications to labels, preprocessing steps, and documentation to better support land cover classification tasks.

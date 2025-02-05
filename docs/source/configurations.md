@@ -4,15 +4,11 @@ This document provides an overview of the `config.yaml` file used for configurin
 
 ## Overview of `config.yaml`
 
-The `config.yaml` file organizes the project configuration into three main sections: `DATA`, `project`, and `training`.
+The `config.yaml` file organizes the project configuration into three main sections: `DATA`, `directories`, and `training`.
 
-<<<<<<< HEAD
-=======
----
-
->>>>>>> 510856727fce09b9a7f37d7e40587e228972e368
-> **_NOTE_**  
-> The YAML file is **not required** for running the project with default settings. The project is designed to run seamlessly without a `config.yaml` file by using pre-defined default configuration values.
+```{note}
+The YAML file is **not required** for running the project with default settings. The project is designed to run seamlessly without a `config.yaml` file by using pre-defined default configuration values.
+```
 
 ---
 
@@ -25,6 +21,59 @@ The `DATA` section specifies the dataset and its properties:
 ```yaml
 dataset:
   dataset_path: "erikpinhasov/landcover_dataset"
+  batch_size: 16
+  num_workers: 8
+  do_reduce_labels: False
+  pin_memory: True
+```
+
+**Details:**
+
+- `dataset_path`: Path to the dataset. In this case, it references a Hugging Face dataset.
+- `batch_size`: Number of samples processed per training batch.
+- `num_workers`: Number of worker threads for data loading.
+- `do_reduce_labels`: Whether to apply label reduction.
+- `pin_memory`: If `True`, enables faster GPU transfer by pinning memory.
+- `id2label`: Maps class indices to their corresponding labels.
+
+---
+
+### Project Configuration
+
+The `directories` section defines directory paths for saving models, logs, and results:
+
+```yaml
+directories:
+  models: models
+  pretrained: models/pretrained_models
+  logs: models/logs
+  checkpoints: models/logs/checkpoints
+  results: results
+```
+
+**Details:**
+
+- `models`: Directory to save trained models.
+- `pretrained`: Directory for storing pre-trained models.
+- `logs`: Directory for logs.
+- `checkpoints`: Directory for storing training checkpoints.
+- `results`: Directory for evaluation results.
+
+---
+
+### Training Configuration
+
+The `training` section provides options for training parameters:
+
+```yaml
+training:
+  model_name: b0
+  max_epochs: 50
+  learning_rate: 2e-5
+  weight_decay: 1e-3
+  ignore_index: 0
+  weighting_strategy: "raw"
+  alpha: 0.7
   id2label:
     0: "background"
     1: "bareland"
@@ -39,66 +88,37 @@ dataset:
 
 **Details:**
 
-- `dataset_path`: Path to the dataset. In this case, it references a Hugging Face dataset.
-- `id2label`: Maps class indices to their corresponding labels.
-
----
-
-### Project Configuration
-
-The `project` section defines directory paths for saving models, logs, and results:
-
-```yaml
-project:
-  models_dir: models
-  pretrained_dir: models/pretrained_models
-  logs_dir: models/logs
-  results_dir: results
-```
-
-**Details:**
-
-- `models_dir`: Directory to save trained models.
-- `pretrained_dir`: Directory for storing pre-trained models.
-- `logs_dir`: Directory for logs.
-- `results_dir`: Directory for evaluation results.
-
----
-
-### Training Configuration
-
-The `training` section provides options for training parameters:
-
-```yaml
-training:
-  batch_size: 16
-  max_epochs: 50
-  num_workers: 8
-  log_every_n_steps: 10
-  learning_rate: 1e-3
-  model_name: b4
-  early_stop:
-    patience: 10
-
-  focal_loss:
-    weights:
-      class_weights: True # bool (default True)
-      normalize: "balanced" # max | sum | balanced (default 'balanced')
-    gamma: 2.0 # float
-    alpha: None # None | float
-    ignore_index: 0 # None | int
-```
-
-**Details:**
-
-- `batch_size`: Number of samples processed per training batch.
+- `model_name`: Name of the SegFormer variant (e.g., `b0`).
 - `max_epochs`: Maximum number of epochs for training.
-- `num_workers`: Number of worker threads for data loading.
-- `log_every_n_steps`: Logging frequency during training.
 - `learning_rate`: Learning rate for the optimizer.
-- `model_name`: Name of the model architecture (e.g., `b4`).
-- `early_stop.patience`: Number of epochs to wait for improvement before stopping training.
-- `focal_loss`: Configuration for the focal loss function, with options for class weights, gamma, and alpha.
+- `weight_decay`: Strength of L2 regularization applied to the optimizer.
+- `ignore_index`: Label index to ignore during training (`int` or `None`).
+- `weighting_strategy`: Method for normalizing class weights (`"none"`, `"balanced"`, `"max"`, `"sum"`, `"raw"`).
+- `alpha`: Cross-Entroy loss alpha weight parameter, beta = 1 - alpha.
+- `id2label`: Mapping from class indices to class labels.
+
+---
+
+### Callbacks Configuration
+
+The `callbacks` section defines parameters for managing callbacks during training:
+
+```yaml
+callbacks:
+  early_stop_patience: 5
+  early_stop_monitor: "val_loss"
+  early_stop_mode: "min"
+  save_model_monitor: "val_mean_iou"
+  save_model_mode: "max"
+```
+
+**Details:**
+
+- `early_stop_patience`: Number of epochs to wait for improvement before stopping training.
+- `early_stop_monitor`: Metric to monitor for early stopping (e.g., `"val_loss"`).
+- `early_stop_mode`: Direction of improvement (`"min"` for decreasing metrics, `"max"` for increasing metrics).
+- `save_model_monitor`: Metric to track for saving the best model (e.g., `"val_mean_iou"`).
+- `save_model_mode`: Direction of improvement (`"min"` for decreasing metrics, `"max"` for increasing metrics).
 
 ---
 
@@ -109,15 +129,13 @@ Command-line options allow overriding `config.yaml` settings or default values. 
 - Specify a custom configuration file:
 
   ```bash
-  lcm train --config path/to/config.yaml
+  ucs --config path/to/config.yaml train
   ```
 
 - Override specific parameters without a configuration file:
   ```bash
-  lcm train --batch_size 32 --lr 0.001
+  ucs train --batch_size 32 --learning_rate 0.001
   ```
-
-Refer to the [Usage Guide](./usage.md) for additional examples.
 
 ---
 

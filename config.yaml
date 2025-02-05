@@ -1,6 +1,28 @@
 # DATA
 dataset:
   dataset_path: "erikpinhasov/landcover_dataset"
+  batch_size: 16
+  num_workers: 8
+  do_reduce_labels: False
+  pin_memory: True
+
+# PROJECT DIRECTORIES
+directories:
+  models: models
+  pretrained: models/pretrained_models
+  logs: models/logs
+  checkpoints: models/logs/checkpoints
+  results: results
+
+# TRAINING SETTINGS
+training:
+  model_name: b0
+  max_epochs: 50
+  learning_rate: 2e-5
+  weight_decay: 1e-3
+  ignore_index: 0 # int | None
+  weighting_strategy: "raw" # Options: "none", "balanced", "max", "sum", or "raw"
+  alpha: 0.7
   id2label:
     0: "background"
     1: "bareland"
@@ -12,26 +34,10 @@ dataset:
     7: "agriculture land"
     8: "buildings"
 
-project:
-  models_dir: models
-  pretrained_dir: models/pretrained_models
-  logs_dir: models/logs
-  results_dir: results
-
-training:
-  batch_size: 16
-  max_epochs: 50
-  num_workers: 8
-  log_every_n_steps: 10
-  learning_rate: 2e-5
-  model_name: b0
-  early_stop:
-    patience: 10
-
-  focal_loss:
-    weights:
-      class_weights: True # bool (default True)
-      normalize: "balanced" # max | sum | balanced (default 'balanced')
-    gamma: 2.0 # float
-    alpha: None # None | float
-    ignore_index: 0 # None | int
+# CALLBACKS SETTINGS
+callbacks:
+  early_stop_patience: 5
+  early_stop_monitor: "val_loss"
+  early_stop_mode: "min"
+  save_model_monitor: "val_mean_iou"
+  save_model_mode: "max"
