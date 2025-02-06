@@ -1,7 +1,7 @@
 # Urban Climate Segmentation Model
 
 Welcome to the **Urban Climate Segmentation Model** repository. This project is dedicated to advancing semantic segmentation tasks with a specific focus on urban climate analysis. Our model has been fine-tuned using state-of-the-art datasets to explore land cover and building detection in urban environments.
-## **_ Project GUI Tool repository: [Micro-Climate-Analysis-Tool](https://github.com/MMA-org/Microclimate-Analysis-Tool) _**
+## ** Project GUI Tool repository: [Micro-Climate-Analysis-Tool](https://github.com/MMA-org/Microclimate-Analysis-Tool) **
 ---
 
 ## Repository Structure and Navigation
