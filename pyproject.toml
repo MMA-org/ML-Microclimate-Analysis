@@ -17,12 +17,12 @@ keywords = ["urban climate", "segmentation", "deep learning", "image analysis"]
 dependencies = [
     "albumentations==2.0.1",
     "datasets==3.0.0",
-    "matplotlib==3.9.2",
+    "matplotlib",
     "pytorch-lightning==2.4.0",
     "scikit-learn==1.5.2",
     "torch==2.4.1",
-    "torchmetrics==1.4.2",
-    "tqdm==4.66.5",
+    "torchmetrics==1.6.1",
+    "tqdm",
     "transformers==4.44.2",
     "tensorboardX==2.6.2.2",
     "pydantic== 2.9.2"
