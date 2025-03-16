@@ -18,7 +18,7 @@ def create_common_parser():
         help="ID to label mapping as a JSON string.",
     )
 
-    # Project arguments
+    # Project Directories arguments
     common_parser.add_argument(
         "--models_dir", type=str, metavar="[path]", help="Directory to save models."
     )
@@ -47,7 +47,10 @@ def create_train_parser(subparsers, common_parser):
         parents=[common_parser],
         formatter_class=RawTextHelpFormatter,
     )
-    # Add training-specific arguments
+
+    # ---------------------------
+    # Training Hyperparameters
+    # ---------------------------
     train_parser.add_argument(
         "--resume",
         type=int,
@@ -60,12 +63,16 @@ def create_train_parser(subparsers, common_parser):
     train_parser.add_argument("--learning_rate", type=float, help="Learning rate.")
     train_parser.add_argument("--weight_decay", type=float, help="Weight decay.")
     train_parser.add_argument(
-        "--model_name",
+        "--backbone",
         type=str,
         choices=["b0", "b1", "b2", "b3", "b4"],
         metavar="b1-b4",
-        help="Model name.",
+        help="Model backbone.",
     )
+
+    # ---------------------------
+    # Callbacks & Checkpoints
+    # ---------------------------
     train_parser.add_argument(
         "--early_stop_patience", type=int, help="Early stopping callback patience."
     )
@@ -93,7 +100,7 @@ def create_train_parser(subparsers, common_parser):
         "--checkpoints_dir",
         type=str,
         metavar="[path]",
-        help="Path to checkpoints directiory.",
+        help="Path to checkpoints directory.",
     )
     train_parser.add_argument(
         "--num_workers",
@@ -104,30 +111,66 @@ def create_train_parser(subparsers, common_parser):
         "--pin_memory", type=bool, help="Enable pinned memory for faster GPU transfer."
     )
     train_parser.add_argument(
-        "--do_reduce_labels",
+        "--include_background",
         type=bool,
-        help="Reduce all labels by 1, converting 0 to 255.",
+        help="Include background in dataset (or adjust labels accordingly).",
     )
-    # Add alpha loss arguments
+
+    # ---------------------------
+    # Loss & Metric Settings
+    # ---------------------------
     train_parser.add_argument(
         "--alpha", type=float, help="Cross-Entropy loss alpha weight."
     )
     train_parser.add_argument(
-        "--ignore_index", type=int, help="loss function ignore index."
+        "--ignore_index", type=int, help="Loss function ignore index."
     )
     train_parser.add_argument(
         "--weighting_strategy",
         type=str,
-        # Unified parameter options
         choices=["none", "balanced", "max", "sum", "raw"],
         metavar="[none | balanced | max | sum | raw]",
-        help="Strategy for computing class weights: "
-        "'raw' for inverse frequency without normalization, "
-        "'balanced' to normalize weights so their sum equals 1, "
-        "'max' to normalize weights so the max weight equals 1, "
-        "'sum' to normalize weights so their sum equals 1, "
-        "or 'none' to disable class weights.",
+        help=("Strategy for computing class weights."),
     )
+
+    # ---------------------------
+    # Logger (WandB) Settings
+    # ---------------------------
+    train_parser.add_argument(
+        "--project_name",
+        type=str,
+        help="Project name for logging (default: landcover-seg).",
+    )
+    train_parser.add_argument(
+        "--wandb", type=bool, help="Enable WandB logging (default: True)."
+    )
+    train_parser.add_argument(
+        "--wandb_watch", type=bool, help="Enable WandB model watch (default: True)."
+    )
+    train_parser.add_argument(
+        "--wandb_log", type=str, help="WandB logging setting (default: 'all')."
+    )
+    train_parser.add_argument(
+        "--wandb_log_freq",
+        type=int,
+        help="Frequency (in iterations) for WandB logging (default: 500).",
+    )
+    train_parser.add_argument(
+        "--wandb_log_graph",
+        type=bool,
+        help="Enable WandB graph logging (default: False).",
+    )
+    train_parser.add_argument(
+        "--tags",
+        nargs="+",
+        help="List of tags for WandB (default: ['segmentation', 'landcover']).",
+    )
+    train_parser.add_argument(
+        "--notes",
+        type=str,
+        help="WandB notes for the run (default: 'Fine-Tune SegFormer with landcover dataset').",
+    )
+
     return train_parser
 
 
@@ -209,7 +252,6 @@ def main():
 
     # Load configuration
     config = Config.load_config(config_path, **args_dict)
-
     if command == "train":
         from ucs.model.train import train
 

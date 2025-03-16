@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import torch
+from torchmetrics.classification import MulticlassConfusionMatrix
 
 from ucs.model.lightning_model import (
     SegformerFinetuner,
@@ -20,8 +21,15 @@ def mock_model(mock_id2label):
     """
     Create a mock SegformerFinetuner instance.
     """
-    model = SegformerFinetuner(id2label=mock_id2label, model_name="b0")
-    model.metrics = SegMetrics(num_classes=len(mock_id2label))
+    model = SegformerFinetuner(id2label=mock_id2label, backbone="b0")
+    model.train_metrics = SegMetrics(num_classes=len(mock_id2label), prefix="train")
+    model.val_metrics = SegMetrics(num_classes=len(mock_id2label), prefix="val")
+    model.test_metrics = TestMetrics(num_classes=len(mock_id2label), prefix="test")
+    model.confmat = MulticlassConfusionMatrix(
+        num_classes=len(mock_id2label),
+        ignore_index=255,
+        normalize="true",
+    )
     model.log = MagicMock()
     return model
 
@@ -59,38 +67,12 @@ def test_test_step(mock_model, mock_batch):
     ), "Test step result should be a torch.Tensor."
     assert result.item() > 0, "Test step loss should be positive."
 
-    # Validate predictions and ground truths are being updated
-    assert (
-        mock_model.test_results["predictions"].numel() > 0
-    ), "Test results should contain predictions."
-    assert (
-        mock_model.test_results["ground_truths"].numel() > 0
-    ), "Test results should contain ground truths."
-
 
 def test_on_test_start(mock_model):
     mock_model.on_test_start()
     assert isinstance(
-        mock_model.metrics, TestMetrics
+        mock_model.test_metrics, TestMetrics
     ), "Metrics should be an instance of TestMetrics."
-
-
-def test_on_test_epoch_end(mock_model):
-    mock_model.metrics.reset = MagicMock()
-    mock_model.on_test_epoch_end()
-    mock_model.metrics.reset.assert_called_once()
-
-
-def test_on_train_epoch_end(mock_model):
-    mock_model.metrics.reset = MagicMock()
-    mock_model.on_train_epoch_end()
-    mock_model.metrics.reset.assert_called_once()
-
-
-def test_on_validation_epoch_end(mock_model):
-    mock_model.metrics.reset = MagicMock()
-    mock_model.on_validation_epoch_end()
-    mock_model.metrics.reset.assert_called_once()
 
 
 def test_forward_pass(mock_model, mock_batch):

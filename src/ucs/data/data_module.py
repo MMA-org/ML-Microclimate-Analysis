@@ -42,8 +42,8 @@ class SegmentationDataModule(LightningDataModule):
         self.transform = transform
         self.persistent_workers = self.num_workers > 0
         self.feature_extractor = SegformerImageProcessor.from_pretrained(
-            f"nvidia/segformer-{self.model_name}-finetuned-ade-512-512",
-            do_reduce_labels=self.do_reduce_labels,
+            f"nvidia/segformer-{self.backbone}-finetuned-ade-512-512",
+            do_reduce_labels=not self.include_background,
         )
         self.raw_dataset = None
         self.train_dataset = None

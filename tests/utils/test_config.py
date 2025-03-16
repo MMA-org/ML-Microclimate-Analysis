@@ -17,8 +17,7 @@ def test_load_default_config():
 
 def test_load_yaml_config():
     yaml_data = {
-        "dataset": {"batch_size": 64},
-        "training": {"learning_rate": 0.0005},
+        "hparams": {"learning_rate": 0.0005, "batch_size": 64},
         "callbacks": {"early_stop_patience": 10},
     }
 
@@ -48,7 +47,7 @@ def test_load_with_cli_overrides():
 def test_yaml_and_cli_combined():
     yaml_data = {
         "dataset": {"batch_size": 64},
-        "training": {"learning_rate": 0.0005},
+        "hparams": {"learning_rate": 0.0005},
         "callbacks": {"early_stop_patience": 10},
     }
 
@@ -57,7 +56,9 @@ def test_yaml_and_cli_combined():
         with open(temp_file_path, "w") as yaml_file:
             yaml.dump(yaml_data, yaml_file)
 
-    config = Config.load_config(temp_file_path, batch_size=128, early_stop_patience=20)
+    config = Config.load_config(
+        config_path=temp_file_path, batch_size=128, early_stop_patience=20
+    )
 
     assert config.dataset.batch_size == 128
     assert config.callbacks.early_stop_patience == 20

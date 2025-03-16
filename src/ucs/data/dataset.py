@@ -60,7 +60,6 @@ class SemanticSegmentationDataset(Dataset):
 
         # Apply feature extractor
         encoded_inputs = self.feature_extractor(image, mask, return_tensors="pt")
-        for k, _ in encoded_inputs.items():
-            encoded_inputs[k].squeeze_()  # Remove batch dimension
-
+        for _, encoded_input in encoded_inputs.items():
+            encoded_input.squeeze_(0)  # Remove batch dimension
         return encoded_inputs

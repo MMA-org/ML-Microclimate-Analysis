@@ -166,9 +166,9 @@ def load_class_weights(class_weights_dir, strategy):
     if weights_file.exists():
         print("Loading precomputed class weights from file.")
         loaded_data = load(str(weights_file), weights_only=True)
-        if loaded_data["strategy"] != strategy:
-            return None
-    return loaded_data['class_weights']
+        if loaded_data["strategy"] == strategy:
+            return loaded_data['class_weights']
+    return None
 
 
 def save_class_weights(class_weights_dir, class_weights, strategy):

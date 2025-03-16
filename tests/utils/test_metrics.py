@@ -1,87 +1,178 @@
-import pytest
-import torch
-from torch.utils.data import DataLoader, Dataset
+# File: tests/test_metrics.py
+import os
+import sys
 
-from ucs.utils.metrics import SegMetrics
+from tests.mocks.data import mock_batch, mock_batch_with_ignore  # adjust if needed
+from ucs.utils.metrics import SegMetrics, TestMetrics
+
+# Add the project root to sys.path so that the tests package is recognized.
 
 
-class MockDataset(Dataset):
+def test_seg_metrics_init():
+    seg_metrics = SegMetrics(
+        num_classes=2, prefix="test_seg", ignore_index=255, average="macro"
+    )
+    assert seg_metrics.num_classes == 2
+    # Note: The prefix is set with a trailing slash in the constructor.
+    assert seg_metrics.prefix == "test_seg/"
+    assert seg_metrics.ignore_index == 255
+    assert seg_metrics.average == "macro"
+
+
+def test_seg_metrics_forward(mock_batch):
+    preds, targets = mock_batch
+    seg_metrics = SegMetrics(
+        num_classes=2, prefix="test_seg", ignore_index=255, average="macro"
+    )
+    out = seg_metrics.forward(preds, targets)
+    # Check that the output is a dictionary with the expected metric keys.
+    assert isinstance(out, dict), "Output should be a dictionary of metrics."
+    assert "test_seg/mean_iou" in out
+    assert "test_seg/mean_dice" in out
+
+
+def test_seg_metrics_update_compute(mock_batch):
+    preds, targets = mock_batch
+    seg_metrics = SegMetrics(
+        num_classes=2, prefix="test_seg", ignore_index=255, average="macro"
+    )
+    seg_metrics.update(preds, targets)
+    results = seg_metrics.compute()
+    # Check expected keys and that metric values are between 0 and 1.
+    assert "test_seg/mean_iou" in results
+    assert "test_seg/mean_dice" in results
+    mean_iou = results["test_seg/mean_iou"]
+    mean_dice = results["test_seg/mean_dice"]
+    assert 0.0 <= mean_iou <= 1.0
+    assert 0.0 <= mean_dice <= 1.0
+
+
+def test_test_metrics_init():
+    test_metrics = TestMetrics(
+        num_classes=2, prefix="test_eval", ignore_index=255, average="weighted"
+    )
+    assert test_metrics.num_classes == 2
+    assert test_metrics.prefix == "test_eval/"
+    assert test_metrics.ignore_index == 255
+    assert test_metrics.average == "weighted"
+
+
+def test_test_metrics_forward(mock_batch):
+    preds, targets = mock_batch
+    test_metrics = TestMetrics(
+        num_classes=2, prefix="test_eval", ignore_index=255, average="weighted"
+    )
+    out = test_metrics.forward(preds, targets)
+    # Check that all expected metric keys are present.
+    assert isinstance(out, dict), "Output should be a dictionary of metrics."
+    for key in [
+        "test_eval/mean_iou",
+        "test_eval/mean_dice",
+        "test_eval/accuracy",
+        "test_eval/precision",
+        "test_eval/recall",
+    ]:
+        assert key in out, f"Missing {key} in output."
+
+
+def test_test_metrics_update_compute(mock_batch):
+    preds, targets = mock_batch
+    test_metrics = TestMetrics(
+        num_classes=2, prefix="test_eval", ignore_index=255, average="weighted"
+    )
+    test_metrics.update(preds, targets)
+    results = test_metrics.compute()
+    # Check that all expected keys are present.
+    for key in [
+        "test_eval/mean_iou",
+        "test_eval/mean_dice",
+        "test_eval/accuracy",
+        "test_eval/precision",
+        "test_eval/recall",
+    ]:
+        assert key in results, f"Missing {key} in results."
+        val = results[key]
+        assert 0.0 <= val <= 1.0, f"Metric {key} is out of range: {val}"
+
+
+def test_seg_metrics_forward_ignore(mock_batch_with_ignore):
     """
-    A mock dataset for testing compute_class_weights.
+    Test the forward method of SegMetrics with masks that include ignore index.
     """
-
-    def __init__(self, masks, mask_key="labels"):
-        self.masks = masks
-        self.mask_key = mask_key
-
-    def __len__(self):
-        return len(self.masks)
-
-    def __getitem__(self, idx):
-        return {self.mask_key: self.masks[idx]}
-
-
-@pytest.fixture
-def metrics():
-    return SegMetrics(num_classes=3, device="cpu")  # Explicitly set device
+    preds, targets = mock_batch_with_ignore
+    seg_metrics = SegMetrics(
+        num_classes=2, prefix="test_seg", ignore_index=255, average="macro"
+    )
+    assert (targets == 255).any(), "Expected ignore index 255 in targets"
+    out = seg_metrics.forward(preds, targets)
+    # Check that the output is a dictionary with the expected metric keys.
+    assert isinstance(out, dict), "Output should be a dictionary of metrics."
+    assert "test_seg/mean_iou" in out
+    assert "test_seg/mean_dice" in out
 
 
-@pytest.fixture
-def mock_dataloader():
+def test_seg_metrics_update_compute_ignore(mock_batch_with_ignore):
     """
-    Mock dataloader for testing class weights computation.
+    Test update and compute methods of SegMetrics with ignore index in masks.
     """
-    masks = [
-        torch.randint(0, 3, (2, 2)),  # Random labels in a small 2x2 grid
-        torch.randint(0, 3, (2, 2)),
+    preds, targets = mock_batch_with_ignore
+    assert (targets == 255).any(), "Expected ignore index 255 in targets"
+    seg_metrics = SegMetrics(
+        num_classes=2, prefix="test_seg", ignore_index=255, average="macro"
+    )
+    seg_metrics.update(preds, targets)
+    results = seg_metrics.compute()
+    # Check that expected keys are present and values are within [0, 1].
+    assert "test_seg/mean_iou" in results
+    assert "test_seg/mean_dice" in results
+    for key in ["test_seg/mean_iou", "test_seg/mean_dice"]:
+        val = results[key]
+        assert 0.0 <= val <= 1.0, f"Metric {key} is out of range: {val}"
+
+
+def test_test_metrics_forward_ignore(mock_batch_with_ignore):
+    """
+    Test the forward method of TestMetrics with masks that include ignore index.
+    """
+    preds, targets = mock_batch_with_ignore
+    assert (targets == 255).any(), "Expected ignore index 255 in targets"
+
+    test_metrics = TestMetrics(
+        num_classes=2, prefix="test_eval", ignore_index=255, average="weighted"
+    )
+    out = test_metrics.forward(preds, targets)
+    assert isinstance(out, dict), "Output should be a dictionary of metrics."
+    expected_keys = [
+        "test_eval/mean_iou",
+        "test_eval/mean_dice",
+        "test_eval/accuracy",
+        "test_eval/precision",
+        "test_eval/recall",
     ]
-    dataset = MockDataset(masks, mask_key="labels")
-    return DataLoader(dataset, batch_size=1)
+    for key in expected_keys:
+        assert key in out, f"Missing {key} in output."
 
 
-def test_metrics_initialization(metrics):
+def test_test_metrics_update_compute_ignore(mock_batch_with_ignore):
     """
-    Test the initialization of the Metrics class.
+    Test update and compute methods of TestMetrics with ignore index in masks.
     """
-    assert isinstance(
-        metrics["mean_iou"], torch.nn.Module
-    ), "IoU metric not initialized correctly."
-    assert isinstance(
-        metrics["mean_dice"], torch.nn.Module
-    ), "Dice metric not initialized correctly."
-    assert metrics.num_classes == 3, "Number of classes should be 3."
+    preds, targets = mock_batch_with_ignore
+    assert (targets == 255).any(), "Expected ignore index 255 in targets"
 
-
-def test_metrics_update(metrics):
-    """
-    Test the update method of the Metrics class.
-    """
-    predicted = torch.randint(0, 3, (4, 4))
-    targets = torch.randint(0, 3, (4, 4))
-    metrics.update(predicted, targets)
-
-    # Ensure no exceptions occur and metrics are updated
-    assert True, "Metrics update failed."
-
-
-def test_metrics_compute(metrics):
-    """
-    Test the compute method of the Metrics class.
-    """
-    predicted = torch.randint(0, 3, (4, 4))
-    targets = torch.randint(0, 3, (4, 4))
-    metrics.update(predicted, targets)
-    results = metrics.compute()
-
-    assert "mean_iou" in results, "mean_iou missing in computed metrics."
-    assert "mean_dice" in results, "mean_dice missing in computed metrics."
-    assert results["mean_iou"] >= 0, "mean_iou should be non-negative."
-    assert results["mean_dice"] >= 0, "mean_dice should be non-negative."
-
-
-def test_metrics_reset(metrics):
-    """
-    Test the reset method of the Metrics class.
-    """
-    metrics.reset()
-    assert True, "Metrics reset failed."
+    test_metrics = TestMetrics(
+        num_classes=2, prefix="test_eval", ignore_index=255, average="weighted"
+    )
+    test_metrics.update(preds, targets)
+    results = test_metrics.compute()
+    expected_keys = [
+        "test_eval/mean_iou",
+        "test_eval/mean_dice",
+        "test_eval/accuracy",
+        "test_eval/precision",
+        "test_eval/recall",
+    ]
+    for key in expected_keys:
+        assert key in results, f"Missing {key} in results."
+        val = results[key]
+        assert 0.0 <= val <= 1.0, f"Metric {key} is out of range: {val}"
