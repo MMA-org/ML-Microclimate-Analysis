@@ -2,10 +2,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import ConfusionMatrixDisplay
 
 
-def get_last_version(logs_dir: Path) -> int:
+def get_last_version(logs_dir: Path, project_name: str = "lightning_logs") -> int:
     """
     Get the last version number for the logs directory containing only 'version_[n]' folders.
 
@@ -15,7 +14,7 @@ def get_last_version(logs_dir: Path) -> int:
     Returns:
         int: The last version number. Returns -1 if no 'version_[n]' folders exist.
     """
-    lightning_logs_dir = logs_dir / "lightning_logs"
+    lightning_logs_dir = Path(logs_dir) / project_name
 
     # Ensure the 'lightning_logs' directory exists
     if not lightning_logs_dir.exists():
@@ -31,7 +30,7 @@ def get_last_version(logs_dir: Path) -> int:
     return max(version_numbers, default=-1)
 
 
-def get_next_version(logs_dir: Path) -> str:
+def get_next_version(logs_dir: Path, project_name: str) -> str:
     """
     Get the next version number for the logs directory containing only 'version_[n]' folders.
 
@@ -41,9 +40,9 @@ def get_next_version(logs_dir: Path) -> str:
     Returns:
         str: The next version number in the format 'version_[n]'.
     """
-    last_version = get_last_version(logs_dir)
+    last_version = get_last_version(logs_dir, project_name)
     next_version = last_version + 1
-    return f"version_{next_version}"
+    return next_version
 
 
 def find_checkpoint(checkpoints_dir, version: int) -> Path:
@@ -104,38 +103,35 @@ def format_metrics(metrics):
 
 
 def save_confusion_matrix_plot(
-    conf_matrix, labels, save_path, metrics=None, title="Confusion Matrix"
+    confmat, save_path, metrics=None, title="Confusion Matrix", labels=None
 ):
     """
-    Save a confusion matrix plot to a file using sklearn's ConfusionMatrixDisplay.
+    Save a confusion matrix plot using `torchmetrics`' built-in `plot()` method.
 
     Args:
-        conf_matrix (np.ndarray): Confusion matrix containing `y_true` (actual labels) and `y_pred` (predicted labels).
-        labels (list): List of class labels.
-        save_path (Path): path to save the confusion matrix plot.
-        metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix. Defaults to None.
-        title (str, optional): Title for the confusion matrix plot. Defaults to "Confusion Matrix".
+        confmat (MulticlassConfusionMatrix): TorchMetrics confusion matrix instance.
+        save_path (str or Path): Path to save the confusion matrix plot.
+        metrics (dict, optional): Dictionary of metrics to annotate below the confusion matrix.
+        title (str, optional): Title for the confusion matrix plot.
     """
+    # Compute confusion matrix
+    _, ax = plt.subplots(figsize=(8, 6))
+    confmat.plot(ax=ax, cmap="Blues", labels=labels)
 
-    # Create confusion matrix display
-    disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=labels)
-
-    # Plot the confusion matrix
-    _, ax = plt.subplots(figsize=(12, 12))
-    # 'd' for integer display
-    disp.plot(cmap="Blues", ax=ax, values_format="d")
-
-    # Add title
+    # Set title
     ax.set_title(title)
-    bbox_params = {
-        "boxstyle": "round,pad=0.3",
-        "edgecolor": "gray",
-        "facecolor": "white",
-        "alpha": 0.5,
-    }
-    # Add text annotation for metrics below the confusion matrix
+
+    # Add text annotation for additional metrics
     if metrics:
-        metrics_text = format_metrics(metrics)
+        metrics_text = "\n".join(
+            [f"{key}: {value:.4f}" for key, value in metrics.items()]
+        )
+        bbox_params = {
+            "boxstyle": "round,pad=0.3",
+            "edgecolor": "gray",
+            "facecolor": "white",
+            "alpha": 0.5,
+        }
         ax.text(
             0.5,
             -0.15,
@@ -149,11 +145,12 @@ def save_confusion_matrix_plot(
 
     # Save the plot
     plt.tight_layout()
+    save_path = Path(save_path)
     plt.savefig(save_path)
     plt.close()
 
 
-def load_class_weights(class_weights_dir):
+def load_class_weights(class_weights_dir, strategy):
     """
     Load precomputed class weights from a file and return as a torch tensor.
 
@@ -168,11 +165,13 @@ def load_class_weights(class_weights_dir):
     weights_file = (Path(class_weights_dir) / "class_weights.pt").resolve()
     if weights_file.exists():
         print("Loading precomputed class weights from file.")
-        return load(str(weights_file), weights_only=True)
-    return None
+        loaded_data = load(str(weights_file), weights_only=True)
+        if loaded_data["strategy"] != strategy:
+            return None
+    return loaded_data['class_weights']
 
 
-def save_class_weights(class_weights_dir, class_weights):
+def save_class_weights(class_weights_dir, class_weights, strategy):
     """
     Save computed class weights to a file.
 
@@ -183,8 +182,9 @@ def save_class_weights(class_weights_dir, class_weights):
     from torch import save
 
     weights_file = (Path(class_weights_dir) / "class_weights.pt").resolve()
-    print("Saving class weights to file.")
-    save(class_weights, str(weights_file))
+    data_to_save = {'class_weights': class_weights, 'strategy': strategy}
+    print(f"Saving class weights to {weights_file} with strategy: {strategy}")
+    save(data_to_save, str(weights_file))
 
 
 def apply_color_map(mask, id2color) -> np.ndarray:
