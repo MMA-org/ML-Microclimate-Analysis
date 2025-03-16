@@ -1,9 +1,17 @@
-from dataclasses import field
+from dataclasses import asdict, field, replace
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import yaml
 from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class HparamsConfig:
+    batch_size: int = 16
+    learning_rate: float = 2e-5
+    weight_decay: float = 1e-3
+    backbone: str = "b0"
 
 
 @dataclass
@@ -16,14 +24,11 @@ class CallbacksConfig:
 
 
 @dataclass
-class TrainingConfig:  # pylint: disable=too-many-instance-attributes
-    model_name: str = "b0"
+class TrainingConfig(HparamsConfig):
     max_epochs: int = 50
-    learning_rate: float = 2e-5
-    weight_decay: float = 1e-3
-    ignore_index: Optional[int] = 0  # int | None
-    # Options: "none", "balanced", "max", "sum", or "raw"
-    weighting_strategy: str = "raw"
+    weighting_strategy: str = (
+        "raw"  # Options: "none", "balanced", "max", "sum", or "raw"
+    )
     alpha: float = 0.7
     id2label: Dict[int, str] = field(
         default_factory=lambda: {
@@ -50,13 +55,24 @@ class DirectoriesConfig:
 
 
 @dataclass
-class DatasetConfig:
+class DatasetConfig(HparamsConfig):
     dataset_path: str = "erikpinhasov/landcover_dataset"
-    batch_size: int = 16
     num_workers: int = 8
-    do_reduce_labels: bool = False
     pin_memory: bool = True
-    model_name: Optional[str] = None
+    batch_size: int = field(default=16)
+    include_background: bool = True
+
+
+@dataclass
+class LoggersConfig:
+    project_name: str = "landcover-seg"
+    tags: List[str] = field(default_factory=lambda: ["segmentation", "landcover"])
+    notes: str = "Fine-Tune SegFormer with landcover dataset"
+    wandb: bool = True
+    wandb_watch: bool = True
+    wandb_log: str = "all"
+    wandb_log_freq: int = 500
+    wandb_log_graph: bool = False
 
 
 @dataclass
@@ -65,6 +81,8 @@ class Config:
     directories: DirectoriesConfig = field(default_factory=DirectoriesConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
     callbacks: CallbacksConfig = field(default_factory=CallbacksConfig)
+    loggers: LoggersConfig = field(default_factory=LoggersConfig)
+    hparams: HparamsConfig = field(default_factory=HparamsConfig, repr=False)
 
     @classmethod
     def load_config(cls, config_path: Optional[str] = None, **overrides) -> "Config":
@@ -85,7 +103,6 @@ class Config:
                 yaml_data = yaml.safe_load(file) or {}
             config = cls(**yaml_data)
 
-        config.dataset.model_name = config.training.model_name
         config._apply_overrides(overrides)
         config._create_directories()
         return config
@@ -109,7 +126,9 @@ class Config:
                     section, key
                 ):  # Check if the override key exists in the section
                     setattr(section, key, value)
-                    break
+
+        self.dataset = replace(self.dataset, **asdict(self.hparams))
+        self.training = replace(self.training, **asdict(self.hparams))
 
     def _create_directories(self):
         """
@@ -125,4 +144,4 @@ class Config:
             and Path(dir_path).mkdir(parents=True, exist_ok=True) is None
         ]
         if created_dirs:
-            print("Created directories:\n" + "\n".join(created_dirs))
+            print("Created directories:\n" + " ".join(created_dirs))

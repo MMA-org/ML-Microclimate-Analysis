@@ -19,13 +19,13 @@ dependencies = [
     "datasets==3.0.0",
     "matplotlib",
     "pytorch-lightning==2.4.0",
-    "scikit-learn==1.5.2",
     "torch==2.4.1",
     "torchmetrics==1.6.1",
     "tqdm",
     "transformers==4.44.2",
-    "tensorboardX==2.6.2.2",
-    "pydantic== 2.9.2"
+    "tensorboard==2.6.2.2",
+    "pydantic== 2.9.2",
+    "wandb"
 ]
 
 
@@ -63,11 +63,12 @@ docs = [
 ]
 
 [tool.coverage.run]
-source = ["ucs"]
-omit = ["ucs/main.py", "ucs/model/evaluate.py", "ucs/model/train.py"]
+source = ["src/ucs"]
+omit = ["src/ucs/main.py", "src/ucs/model/evaluate.py", "src/ucs/model/train.py","src/ucs/core/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pytohnpath = ["."]
 filterwarnings = ["ignore::UserWarning"]
 addopts = "--cov=ucs --cov-report=term-missing --cov-report=xml"
 
